@@ -1,0 +1,22 @@
+[{
+        "image": "http://images.pexels.com/photos/4553036/pexels-photo-4553036.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+        "title": "Selamat Datang di Platform Kami",
+        "description": "Temukan solusi terbaik untuk kebutuhan bisnis Anda",
+        "buttonLink": "/register",
+        "buttonText": "Daftar Sekarang"
+    },
+    {
+        "image": "http://images.pexels.com/photos/4553036/pexels-photo-4553036.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+        "title": "Fitur Terbaru Tersedia",
+        "description": "Eksplor fitur-fitur inovatif yang akan membantu produktivitas Anda",
+        "buttonLink": "/features",
+        "buttonText": "Lihat Fitur"
+    },
+    {
+        "image": "http://images.pexels.com/photos/4553036/pexels-photo-4553036.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+        "title": "Komunitas Profesional",
+        "description": "Bergabunglah dengan ribuan profesional lainnya",
+        "buttonLink": "/community",
+        "buttonText": "Bergabung"
+    }
+]

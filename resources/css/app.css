@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 1s ease-out;
+}
+
+.delay-200 {
+    animation-delay: 0.2s;
+}
+
+/* Tambahkan ke file CSS global atau inline */
+.modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background-color: #cbd5e0; /* Warna thumb scrollbar */
+    border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background-color: #f1f5f9; /* Warna track scrollbar */
+}
+
+/* Tambahkan ke file CSS global atau inline */
+.village-card {
+    border: 1px solid #e2e8f0; /* Border warna abu-abu */
+}
+
+.village-card:hover {
+    transform: translateY(-5px); /* Efek hover: card bergerak ke atas */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Shadow lebih tebal saat hover */
+}

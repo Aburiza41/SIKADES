@@ -1,0 +1,285 @@
+<?php
+
+use App\Http\Controllers\ProfileController;
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Http;
+use Inertia\Inertia;
+
+
+// Guest
+use App\Http\Controllers\Web\Guest\BerandaController as GuestBerandaController;
+use App\Http\Controllers\Web\Guest\ProfileController as GuestProfileController;
+use App\Http\Controllers\Web\Guest\MemberController as GuestMemberController;
+
+// Admin
+use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Web\Admin\OfficialController as AdminOfficialController;
+use App\Http\Controllers\Web\Admin\AparatusController as AdminAparatusController;
+use App\Http\Controllers\Web\Admin\OrganizationController as AdminOrganizationController;
+use App\Http\Controllers\Web\Admin\TrainingController as AdminTrainingController;
+use App\Http\Controllers\Web\Admin\UserController as AdminUserController;
+
+// Regency
+use App\Http\Controllers\Web\Regency\DashboardController as RegencyDashboardController;
+use App\Http\Controllers\Web\Regency\OfficialController as RegencyOfficialController;
+use App\Http\Controllers\Web\Regency\AparatusController as RegencyAparatusController;
+use App\Http\Controllers\Web\Regency\UserController as RegencyUserController;
+
+// Village
+use App\Http\Controllers\Web\Village\DashboardController as VillageDashboardController;
+use App\Http\Controllers\Web\Village\OfficialController as VillageOfficialController;
+use App\Http\Controllers\Web\Village\ProfileController as VillageProfileController;
+use App\Http\Controllers\Web\Village\ProfileDescriptionController as VillageProfileDescriptionController;
+use App\Http\Controllers\Web\Village\OfficialPositionController as VillageOfficialPositionController;
+use App\Http\Controllers\Web\Village\OfficialTrainingController as VillageOfficialTrainingController;
+use App\Http\Controllers\Web\Village\OfficialOrganizationController as VillageOfficialOrganizationController;
+
+Route::name('guest.')->group(function () {
+
+    // Beranda
+    Route::name('beranda.')->controller(GuestBerandaController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+    });
+
+    // Profile
+    Route::prefix('/profile-village')->name('profile.')->controller(GuestProfileController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+
+        Route::get('/kabupaten', [GuestProfileController::class, 'getRegencies']);
+        Route::get('/kecamatan/{regencyCode}', [GuestProfileController::class, 'getDistricts']);
+        Route::get('/desa/{districtCode}', [GuestProfileController::class, 'getVillages']);
+    });
+
+    // Member
+    Route::prefix('/member-list')->name('member.')->controller(GuestMemberController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+
+        Route::get('/kabupaten', [GuestMemberController::class, 'getRegencies']);
+        Route::get('/kecamatan/{regencyCode}', [GuestMemberController::class, 'getDistricts']);
+        Route::get('/desa/{districtCode}', [GuestMemberController::class, 'getVillages']);
+    });
+});
+
+// Profile
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Admin
+Route::prefix('/admin')->name('admin.')->group(function () {
+    // Dashboard
+    Route::prefix('/dashboard')->name('dashboard.')->controller(AdminDashboardController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+    });
+
+    // Official
+    Route::prefix('/official')->name('official.')->controller(AdminOfficialController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+    });
+
+    // Aparatus
+    Route::prefix('/aparatus')->name('aparatus.')->controller(AdminAparatusController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+
+        Route::get('/regency/{id}', [AdminAparatusController::class, 'regency'])->name('regency');
+    });
+
+    // Organization
+    Route::prefix('/organization')->name('organization.')->controller(AdminOrganizationController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+    });
+
+    // Training
+    Route::prefix('/training')->name('training.')->controller(AdminTrainingController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+    });
+
+    // User
+    Route::prefix('/user')->name('user.')->controller(AdminUserController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+    });
+});
+
+// Regency
+Route::prefix('/regency')->name('regency.')->group(function () {
+    // Dashboard
+    Route::prefix('/dashboard')->name('dashboard.')->controller(RegencyDashboardController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+    });
+
+    // Official
+    Route::prefix('/official')->name('official.')->controller(RegencyOfficialController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
+        Route::put('/{id}/{action}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+    });
+
+    // Aparatus
+    Route::prefix('/aparatus')->name('aparatus.')->controller(RegencyAparatusController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+
+        // Ambil data Desa berdasarkan Kecamatan
+        Route::get('/district/{district}', 'district')->name('district');
+    });
+
+    // User
+    Route::prefix('/user')->name('user.')->controller(RegencyUserController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+    });
+});
+
+// // District
+// Route::prefix('/district')->name('district.')->group(function () {
+//     // Dashboard
+//     Route::prefix('/dashboard')->name('dashboard.')->controller(AdminDashboardController::class)->group(function () {
+//         Route::get('/', 'index')->name('index');
+//     });
+
+//     // Official
+//     Route::prefix('/official')->name('official.')->controller(AdminOfficialController::class)->group(function () {
+//         Route::get('/', 'index')->name('index');
+//         Route::post('/', 'store')->name('store');
+//         Route::get('/{id}', 'show')->name('show');
+//         Route::put('/{id}', 'update')->name('update');
+//         Route::delete('/{id}', 'destroy')->name('destroy');
+//     });
+
+//     // Aparatus
+//     Route::prefix('/aparatus')->name('aparatus.')->controller(AdminAparatusController::class)->group(function () {
+//         Route::get('/', 'index')->name('index');
+//     });
+
+//     // Organization
+//     Route::prefix('/organization')->name('organization.')->controller(AdminOrganizationController::class)->group(function () {
+//         Route::get('/', 'index')->name('index');
+//         Route::post('/', 'store')->name('store');
+//         Route::get('/{id}', 'show')->name('show');
+//         Route::put('/{id}', 'update')->name('update');
+//         Route::delete('/{id}', 'destroy')->name('destroy');
+//     });
+
+//     // Training
+//     Route::prefix('/training')->name('training.')->controller(AdminTrainingController::class)->group(function () {
+//         Route::get('/', 'index')->name('index');
+//         Route::post('/', 'store')->name('store');
+//         Route::get('/{id}', 'show')->name('show');
+//         Route::put('/{id}', 'update')->name('update');
+//         Route::delete('/{id}', 'destroy')->name('destroy');
+//     });
+
+//     // User
+//     Route::prefix('/user')->name('user.')->controller(AdminUserController::class)->group(function () {
+//         Route::get('/', 'index')->name('index');
+//         Route::post('/', 'store')->name('store');
+//         Route::get('/{id}', 'show')->name('show');
+//         Route::put('/{id}', 'update')->name('update');
+//         Route::delete('/{id}', 'destroy')->name('destroy');
+//     });
+// });
+
+// Village
+Route::prefix('/village')->name('village.')->group(function () {
+    // Dashboard
+    Route::prefix('/dashboard')->name('dashboard.')->controller(VillageDashboardController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+    });
+
+    // Official
+    Route::prefix('/official')->name('official.')->controller(VillageOfficialController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/store', 'store')->name('store');
+        Route::get('/{id}/show', 'show')->name('show');
+        Route::get('/{id}/edit', 'edit')->name('edit');
+        Route::post('/{id}/update', 'update')->name('update');
+        Route::delete('/{id}/delete', 'destroy')->name('destroy');
+
+        // Children Position Official
+        Route::prefix('/position')->name('position.')->controller(VillageOfficialPositionController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/store', 'store')->name('store');
+        });
+
+        // Children Training Official
+        Route::prefix('/training')->name('training.')->controller(VillageOfficialTrainingController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/store', 'store')->name('store');
+        });
+
+        // Children Organization Official
+        Route::prefix('/organization')->name('organization.')->controller(VillageOfficialOrganizationController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/store', 'store')->name('store');
+        });
+    });
+
+    // Profile
+    Route::prefix('/profile')->name('profile.')->group(function () {
+        // Base Profile
+        Route::controller(VillageProfileController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{profileId}', 'show')->name('show');
+            Route::post('/{profileId}', 'update')->name('update');
+        });
+
+        // Children Profile Description
+        Route::prefix('/description')->name('description.')->controller(VillageProfileDescriptionController::class)->group(function () {
+            Route::post('/store', 'store')->name('store');
+            Route::post('/update/{descriptionId}', 'update')->name('update');
+            Route::delete('/delete/{descriptionId}', 'destroy')->name('destroy');
+        });
+    });
+
+
+    // Endpoint untuk mengambil data provinsi
+    Route::get('/bps/wilayah', function () {
+        $response = Http::get('https://sig.bps.go.id/rest-bridging/getwilayah');
+        return $response->json();
+    });
+
+    // Endpoint untuk mengambil data kabupaten berdasarkan kode provinsi
+    Route::get('/bps/wilayah/kabupaten/{provinceCode}', function ($provinceCode) {
+        $response = Http::get("https://sig.bps.go.id/rest-bridging/getwilayah?level=kabupaten&parent={$provinceCode}");
+        return $response->json();
+    });
+
+    // Endpoint untuk mengambil data kecamatan berdasarkan kode kabupaten
+    Route::get('/bps/wilayah/kecamatan/{regencyCode}', function ($regencyCode) {
+        $response = Http::get("https://sig.bps.go.id/rest-bridging/getwilayah?level=kecamatan&parent={$regencyCode}");
+        return $response->json();
+    });
+
+    // Endpoint untuk mengambil data desa berdasarkan kode kecamatan
+    Route::get('/bps/wilayah/desa/{districtCode}', function ($districtCode) {
+        $response = Http::get("https://sig.bps.go.id/rest-bridging/getwilayah?level=desa&parent={$districtCode}");
+        return $response->json();
+    });
+
+});
+
+require __DIR__.'/auth.php';
