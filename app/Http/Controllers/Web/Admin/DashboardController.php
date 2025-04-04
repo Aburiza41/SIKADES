@@ -28,10 +28,10 @@ class DashboardController extends Controller
         $village = Village::count();
         // $official = Official::count();
 
-// Ambil data pendidikan dari tabel studies
-$educationLevels = Study::pluck('name', 'id')->toArray();
+        // Ambil data pendidikan dari tabel studies
+        $educationLevels = Study::pluck('name', 'id')->toArray();
 
-// Hitung total pejabat dengan status "validasi"
+        // Hitung total pejabat dengan status "validasi"
         $official = Official::where('status', 'validasi')
         ->count();
 
@@ -49,13 +49,13 @@ $educationLevels = Study::pluck('name', 'id')->toArray();
 
         // Hitung total pejabat berdasarkan pendidikan dengan status "validasi"
         $pendidikan = [];
-        foreach ($educationLevels as $id => $education) {
-            $pendidikan[$education] = Official::where('status', 'validasi')
-                ->whereHas('identities', function ($q) use ($id) {
-                    $q->where('pendidikan', $id);
-                })
-                ->count();
-        }
+        // foreach ($educationLevels as $id => $education) {
+        //     $pendidikan[$education] = Official::where('status', 'validasi')
+        //         ->whereHas('identities', function ($q) use ($id) {
+        //             $q->where('pendidikan', $id);
+        //         })
+        //         ->count();
+        // }
 
         // Kirim data ke view
         return Inertia::render('Admin/Dashboard/Page', [

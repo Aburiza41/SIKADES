@@ -96,7 +96,7 @@ class OfficialSeeder extends Seeder
                 DB::table('official_identities')->insert([
                     'official_id' => $official_id,
                     'gol_darah' => $faker->randomElement($blood_types),
-                    'pendidikan' => $faker->randomElement($educations),
+                    // 'pendidikan' => $faker->randomElement($educations),
                     'bpjs_kesehatan' => $faker->unique()->numerify('################'), // 16 digit BPJS Kesehatan
                     'bpjs_ketenagakerjaan' => $faker->unique()->numerify('################'), // 16 digit BPJS Ketenagakerjaan
                     'npwp' => $faker->unique()->numerify('############'), // 12 digit NPWP

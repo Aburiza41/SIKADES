@@ -14,56 +14,88 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Membuat Admin
-        User::factory()->create([
-            'name' => 'Admin',
-            'username' => 'admin',
-            'email' => 'admin@sikades.kalbarprov.app',
-            'role' => 'admin',
-        ]);
-
-        // Menjalankan command SyncBpsData
-        $this->info('Menjalankan command sinkronisasi data BPS...');
-        try {
-            Artisan::call('bps:sync');
-            $this->info('Sinkronisasi data BPS berhasil.');
-        } catch (\Exception $e) {
-            $this->error('Gagal menjalankan sinkronisasi data BPS: ' . $e->getMessage());
-            Log::error('Gagal menjalankan sinkronisasi data BPS: ' . $e->getMessage());
-        }
-
-        // Memanggil seeder lainnya
-        $this->call([
-            // Tambahkan seeder lain di sini
-            UserRegencySeeder::class,
-            // UserDistrictSeeder::class,
-            UserVillageSeeder::class,
-
-            // PositionSeeder::class, // Tidak perlu dijalankan karena sudah dijalankan di Migration
-            OfficialSeeder::class,
-
-            // OrganizationSeeder::class,
-            // TrainingSeeder::class,
-        ]);
+        $this->createAdminUser();
+        $this->runBpsSyncCommand();
+        $this->runOtherSeeders();
     }
 
-    /**
-     * Menampilkan pesan informasi.
-     *
-     * @param string $message
-     */
+    protected function createAdminUser(): void
+    {
+        try {
+            User::factory()->create([
+                'name' => 'Admin',
+                'username' => 'admin',
+                'email' => 'admin@sikades.kalbarprov.app',
+                'role' => 'admin',
+            ]);
+            $this->info('✅ User admin berhasil dibuat');
+        } catch (\Exception $e) {
+            $this->error('❌ Gagal membuat user admin: ' . $e->getMessage());
+            Log::error('Admin user creation failed', ['error' => $e]);
+        }
+    }
+
+    protected function runBpsSyncCommand(): void
+    {
+        $this->info("\n🔄 Memulai sinkronisasi data BPS...");
+
+        try {
+            $exitCode = Artisan::call('bps:sync', [], $this->command->getOutput());
+
+            if ($exitCode === 0) {
+                $this->info('🎉 Sinkronisasi BPS berhasil!');
+            } else {
+                $this->error("⚠ Sinkronisasi BPS gagal dengan kode error: $exitCode");
+                $this->warn('➡ Lihat log terakhir untuk detail error:');
+                $this->line('   tail -f storage/logs/laravel.log');
+            }
+        } catch (\Exception $e) {
+            $this->error('❌ Exception saat menjalankan sync: ' . $e->getMessage());
+            Log::error('BPS Sync Command Exception', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    protected function runOtherSeeders(): void
+    {
+        $this->info("\n🌱 Menjalankan seeder tambahan...");
+
+        $seeders = [
+            UserRegencySeeder::class,
+            UserVillageSeeder::class,
+            OfficialSeeder::class,
+        ];
+
+        foreach ($seeders as $seeder) {
+            try {
+                $this->call($seeder);
+                $this->info("✅ $seeder berhasil dijalankan");
+            } catch (\Exception $e) {
+                $this->error("❌ Gagal menjalankan $seeder: " . $e->getMessage());
+            }
+        }
+    }
+
+    // Helper methods untuk output konsisten
     protected function info(string $message): void
     {
-        $this->command->info($message); // Menggunakan $this->command untuk mengakses metode info
+        $this->command->getOutput()->writeln("<info>$message</info>");
     }
 
-    /**
-     * Menampilkan pesan error.
-     *
-     * @param string $message
-     */
     protected function error(string $message): void
     {
-        $this->command->error($message); // Menggunakan $this->command untuk mengakses metode error
+        $this->command->getOutput()->writeln("<error>$message</error>");
+    }
+
+    protected function warn(string $message): void
+    {
+        $this->command->getOutput()->writeln("<comment>$message</comment>");
+    }
+
+    protected function line(string $message): void
+    {
+        $this->command->getOutput()->writeln($message);
     }
 }
