@@ -18,68 +18,69 @@ import OrganizationsForm from "./Partials/Form/OrganizationsForm";
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
 export default function UpdateOfficial({
-    official: initialOfficial,
+    // official: initialOfficial,
     positions: initialPositions,
     trainings: initialTrainings,
     organizations: initialOrganizations,
     studies: initialStudies,
 }) {
+    // console.log(official);
     // State untuk data utama (Official Form)
     const [official, setOfficial] = useState({
-        village_id: initialOfficial.village_id || "",
-        nik: initialOfficial.nik || "",
-        niad: initialOfficial.niad || "",
-        nama_lengkap: initialOfficial.nama_lengkap || "",
-        gelar_depan: initialOfficial.gelar_depan || "",
-        gelar_belakang: initialOfficial.gelar_belakang || "",
-        tempat_lahir: initialOfficial.tempat_lahir || "",
-        tanggal_lahir: initialOfficial.tanggal_lahir || "",
-        jenis_kelamin: initialOfficial.jenis_kelamin || "",
-        status_perkawinan: initialOfficial.status_perkawinan || "Menikah",
-        agama: initialOfficial.agama || "",
+        village_id: "",
+        nik: "",
+        niad: "",
+        nama_lengkap: "",
+        gelar_depan: "",
+        gelar_belakang: "",
+        tempat_lahir: "",
+        tanggal_lahir: "",
+        jenis_kelamin: "",
+        status_perkawinan: "Menikah",
+        agama: "",
     });
 
     // State untuk data alamat (Address Form)
     const [address, setAddress] = useState({
-        alamat: initialOfficial.addresses?.alamat || "",
-        rt: initialOfficial.addresses?.rt || "",
-        rw: initialOfficial.addresses?.rw || "",
-        province_code: initialOfficial.addresses?.province_code || "",
-        province_name: initialOfficial.addresses?.province_name || "",
-        regency_code: initialOfficial.addresses?.regency_code || "",
-        regency_name: initialOfficial.addresses?.regency_name || "",
-        district_code: initialOfficial.addresses?.district_code || "",
-        district_name: initialOfficial.addresses?.district_name || "",
-        village_code: initialOfficial.addresses?.village_code || "",
-        village_name: initialOfficial.addresses?.village_name || "",
+        alamat: "",
+        rt: "",
+        rw: "",
+        province_code: "",
+        province_name: "",
+        regency_code: "",
+        regency_name: "",
+        district_code: "",
+        district_name: "",
+        village_code: "",
+        village_name: "",
     });
 
     // State untuk data kontak (Contact Form)
     const [contact, setContact] = useState({
-        handphone: initialOfficial.contacts?.handphone || "",
-        email: initialOfficial.contacts?.email || "",
+        handphone:  "",
+        email:  "",
     });
 
     // State untuk data identitas (Identity Form)
     const [identity, setIdentity] = useState({
-        gol_darah: initialOfficial.identities?.gol_darah || "",
-        pendidikan: initialOfficial.identities?.pendidikan || "",
-        bpjs_kesehatan: initialOfficial.identities?.bpjs_kesehatan || "",
-        bpjs_ketenagakerjaan: initialOfficial.identities?.bpjs_ketenagakerjaan || "",
-        npwp: initialOfficial.identities?.npwp || "",
+        gol_darah:  "",
+        pendidikan:  "",
+        bpjs_kesehatan:  "",
+        bpjs_ketenagakerjaan:  "",
+        npwp:  "",
     });
 
     // State untuk data studies (dinamis)
-    const [officialStudies, setOfficialStudies] = useState(initialOfficial.studies || []);
+    const [officialStudies, setOfficialStudies] = useState([]);
 
     // State untuk data positions (dinamis)
-    const [officialPositions, setOfficialPositions] = useState(initialOfficial.position_official || []);
+    const [officialPositions, setOfficialPositions] = useState([]);
 
     // State untuk data trainings (dinamis)
-    const [officialTrainings, setOfficialTrainings] = useState(initialOfficial.official_trainings || []);
+    const [officialTrainings, setOfficialTrainings] = useState([]);
 
     // State untuk data organizations (dinamis)
-    const [officialOrganizations, setOfficialOrganizations] = useState(initialOfficial.official_organizations || []);
+    const [officialOrganizations, setOfficialOrganizations] = useState([]);
 
     // State untuk data wilayah
     const [provinces, setProvinces] = useState([]);

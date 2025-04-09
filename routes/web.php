@@ -35,6 +35,9 @@ use App\Http\Controllers\Web\Village\OfficialPositionController as VillageOffici
 use App\Http\Controllers\Web\Village\OfficialTrainingController as VillageOfficialTrainingController;
 use App\Http\Controllers\Web\Village\OfficialOrganizationController as VillageOfficialOrganizationController;
 
+// Middleware
+use App\Http\Middleware\Custom\AdminMiddleware;
+
 Route::name('guest.')->group(function () {
 
     // Beranda
@@ -69,7 +72,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Admin
-Route::prefix('/admin')->name('admin.')->group(function () {
+Route::prefix('/admin')->name('admin.')->middleware(AdminMiddleware::class)->group(function () {
     // Dashboard
     Route::prefix('/dashboard')->name('dashboard.')->controller(AdminDashboardController::class)->group(function () {
         Route::get('/', 'index')->name('index');
@@ -87,7 +90,6 @@ Route::prefix('/admin')->name('admin.')->group(function () {
     // Aparatus
     Route::prefix('/aparatus')->name('aparatus.')->controller(AdminAparatusController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-
         Route::get('/regency/{id}', [AdminAparatusController::class, 'regency'])->name('regency');
     });
 

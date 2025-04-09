@@ -16,47 +16,47 @@ class OfficialController extends Controller
      */
 
 
-public function index(Request $request)
-{
-    // Debug request
-    Log::info('Request parameters:', $request->all());
+    public function index(Request $request)
+    {
+        // Debug request
+        Log::info('Request parameters:', $request->all());
 
-    // Query utama untuk officials dengan filter dan sorting
-    $officials = Official::with(['village.district.regency'])
-        ->when($request->has('search') && $request->search !== '', function ($query) use ($request) {
-            $query->where(function ($q) use ($request) {
-                $q->where('nama_lengkap', 'like', '%' . $request->search . '%')
-                ->orWhere('nik', 'like', '%' . $request->search . '%')
-                ->orWhere('niad', 'like', '%' . $request->search . '%');
-            });
-        })
-        ->when($request->filled('filters'), function ($query) use ($request) {
-            $query->whereHas('village', function ($q) use ($request) {
-                $q->where('pendidikan', $request->filters); // Filter berdasarkan ID village
-            });
-        })
-        ->orderBy(
-            in_array($request->sort_field, ['id', 'nama_lengkap', 'nik', 'niad', 'created_at', 'updated_at']) ? $request->sort_field : 'id',
-            in_array(strtolower($request->sort_direction), ['asc', 'desc']) ? strtolower($request->sort_direction) : 'asc'
-        )
-        ->paginate($request->per_page ?? 10);
+        // Query utama untuk officials dengan filter dan sorting
+        $officials = Official::with(['village.district.regency'])
+            ->when($request->has('search') && $request->search !== '', function ($query) use ($request) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('nama_lengkap', 'like', '%' . $request->search . '%')
+                    ->orWhere('nik', 'like', '%' . $request->search . '%')
+                    ->orWhere('niad', 'like', '%' . $request->search . '%');
+                });
+            })
+            ->when($request->filled('filters'), function ($query) use ($request) {
+                $query->whereHas('village', function ($q) use ($request) {
+                    $q->where('pendidikan', $request->filters); // Filter berdasarkan ID village
+                });
+            })
+            ->orderBy(
+                in_array($request->sort_field, ['id', 'nama_lengkap', 'nik', 'niad', 'created_at', 'updated_at']) ? $request->sort_field : 'id',
+                in_array(strtolower($request->sort_direction), ['asc', 'desc']) ? strtolower($request->sort_direction) : 'asc'
+            )
+            ->paginate($request->per_page ?? 10);
 
-    // Kembalikan data menggunakan Inertia
-    return Inertia::render('Admin/Official/Page', [
-        'officials' => [
-            'current_page' => $officials->currentPage(),
-            'data' => $officials->items(),
-            'total' => $officials->total(),
-            'per_page' => $officials->perPage(),
-            'last_page' => $officials->lastPage(),
-            'from' => $officials->firstItem(),
-            'to' => $officials->lastItem(),
-        ],
-        'filters' => $request->filters, // Kirim filter yang aktif
-        'sort' => $request->only(['sort_field', 'sort_direction']), // Kirim sorting yang aktif
-        'search' => $request->search, // Kirim pencarian yang aktif
-    ]);
-}
+        // Kembalikan data menggunakan Inertia
+        return Inertia::render('Admin/Official/Page', [
+            'officials' => [
+                'current_page' => $officials->currentPage(),
+                'data' => $officials->items(),
+                'total' => $officials->total(),
+                'per_page' => $officials->perPage(),
+                'last_page' => $officials->lastPage(),
+                'from' => $officials->firstItem(),
+                'to' => $officials->lastItem(),
+            ],
+            'filters' => $request->filters, // Kirim filter yang aktif
+            'sort' => $request->only(['sort_field', 'sort_direction']), // Kirim sorting yang aktif
+            'search' => $request->search, // Kirim pencarian yang aktif
+        ]);
+    }
 
     /**
      * Show the form for creating a new resource.

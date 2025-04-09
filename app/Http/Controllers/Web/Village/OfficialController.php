@@ -103,12 +103,24 @@ class OfficialController extends Controller
      */
     public function create()
     {
-        // dd("create");
+        // dd(
+        //     'positions', \App\Models\Position::all(),
+        //     'trainings', Training::all(),
+        //     'organizations', Organization::all(),
+        //     'studies', \App\Models\Study::all(),
+        // );
+        // // dd("create");
+        // return Inertia::render('Village/Official/Create', [
+        //     'positions' => \App\Models\Position::all(),
+        //     'trainings' => Training::all(),
+        //     'organizations' => Organization::all(),
+        //     'studies' => \App\Models\Study::all(),
+        // ]);
         return Inertia::render('Village/Official/Create', [
-            'positions' => \App\Models\Position::all(),
-            'trainings' => Training::all(),
-            'organizations' => Organization::all(),
-            'studies' => \App\Models\Study::all(),
+            'positions' => \App\Models\Position::all()->toArray(),
+            'trainings' => Training::all()->toArray(),
+            'organizations' => Organization::all()->toArray(),
+            'studies' => \App\Models\Study::all()->toArray(),
         ]);
     }
 

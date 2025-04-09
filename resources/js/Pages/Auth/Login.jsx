@@ -13,7 +13,7 @@ import { motion } from "framer-motion"; // Import framer-motion
 export default function Login({ status, canResetPassword }) {
     const [showPassword, setShowPassword] = useState(false); // State untuk toggle password visibility
     const { data, setData, post, processing, errors, reset } = useForm({
-        email: "",
+        username: "",
         password: "",
         remember: false,
     });
@@ -76,25 +76,25 @@ export default function Login({ status, canResetPassword }) {
                     >
                         {/* Email Input */}
                         <div>
-                            <InputLabel htmlFor="email" value="Email" />
+                            <InputLabel htmlFor="username" value="username" />
                             <div className="relative">
                                 <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                                 <TextInput
-                                    id="email"
-                                    type="email"
-                                    name="email"
-                                    value={data.email}
+                                    id="username"
+                                    type="text"
+                                    name="username"
+                                    value={data.username}
                                     className="mt-1 block w-full pl-10"
-                                    placeholder="Masukkan email Anda"
+                                    placeholder="Masukkan username Anda"
                                     autoComplete="username"
                                     isFocused={true}
                                     onChange={(e) =>
-                                        setData("email", e.target.value)
+                                        setData("username", e.target.value)
                                     }
                                 />
                             </div>
                             <InputError
-                                message={errors.email}
+                                message={errors.username}
                                 className="mt-2"
                             />
                         </div>

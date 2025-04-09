@@ -64,7 +64,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('official_id')->constrained('officials')->onDelete('cascade'); // Relasi ke tabel officials
             $table->enum('gol_darah', ['A', 'B', 'AB', 'O'])->nullable(); // Golongan darah
-            // $table->enum('pendidikan', ['SD/MI', 'SMP/MTS', 'SMA/SMK/MA', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3'])->nullable(); // Pendidikan terakhir
+            $table->enum('pendidikan', ['SD/MI', 'SMP/MTS', 'SMA/SMK/MA', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3'])->nullable(); // Pendidikan terakhir
             $table->string('bpjs_kesehatan', 20)->unique(); // Nomor BPJS Kesehatan
             $table->string('bpjs_ketenagakerjaan', 20)->unique(); // Nomor BPJS Ketenagakerjaan
             $table->string('npwp', 20)->unique(); // Nomor NPWP

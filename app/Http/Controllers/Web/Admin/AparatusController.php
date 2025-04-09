@@ -15,32 +15,44 @@ class AparatusController extends Controller
      */
     public function index()
     {
-        // Get Data Kecamatan
-        $regencies = Regency::all();
-        // dd($regencies);
-        // dd(Auth::user()->hasAdmin());
+        // Gunakan eager loading untuk semua relasi
+        $regencies = Regency::with(['districts.villages.officials'])->get();
 
-        // Hitung Jumlah Kecamatan/District, Desa/Village, dan Pejabat/Offical dari setiap Kabupaten/Regency
         foreach ($regencies as $regency) {
-            $districts = $regency->districts; // Ambil semua district dalam regency
-            $villages = $districts->flatMap->villages; // Ambil semua villages dalam districts
-            $officials = $villages->flatMap->officials; // Ambil semua officials dalam villages
+            $districts = $regency->districts;
+            $villages = $districts->flatMap->villages;
+            $officials = $villages->flatMap->officials;
+
             $statusOptions = ['daftar', 'proses', 'validasi', 'tolak'];
             $statuses = array_map(function ($status) use ($officials) {
                 return $officials->where('status', $status)->count();
             }, $statusOptions);
 
-            // Push atau merge ke dalam array $regency
             $regency->districts_count = $districts->count();
             $regency->villages_count = $villages->count();
             $regency->officials_count = $officials->count();
             $regency->officials_statuses = $statuses;
-
         }
-            // dd($regencies);
+        // dd(($regencies));
+        // dd($regencies->makeHidden(['districts', 'villages'])->toArray());
+        // try {
+        //     \Log::debug('Regencies Data:', $regencies->toArray());
+        //     dd($regencies->first()); // Coba satu item saja
+        // } catch (\Exception $e) {
+        //     dd([
+        //         'error' => $e->getMessage(),
+        //         'trace' => $e->getTraceAsString()
+        //     ]);
+        // }
 
+        // dd(\Log::debug($regencies->toArray()));
+        // dd();
+        // return Inertia::render('Admin/Aparatus/Page', [
+        //     'regencies' => $regencies
+        // ]);
+        // Di controller
         return Inertia::render('Admin/Aparatus/Page', [
-            'regencies' => $regencies
+            'regencies' => $regencies->makeHidden(['districts', 'villages'])->toArray() // Konversi eksplisit
         ]);
     }
 

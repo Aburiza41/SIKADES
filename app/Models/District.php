@@ -20,9 +20,9 @@ class District extends Model
         'name_bps',
         'code_dagri',
         'name_dagri',
-        'logo',
-        'description',
-        'website',
+        // 'logo',
+        // 'description',
+        // 'website',
     ];
 
     /**
