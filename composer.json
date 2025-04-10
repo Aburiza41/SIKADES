@@ -72,7 +72,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
-        }
+        },
+        "cafile": "C:\\xampp\\php\\extras\\ssl\\cacert.pem",
+        "secure-http": true
     },
     "minimum-stability": "stable",
     "prefer-stable": true
