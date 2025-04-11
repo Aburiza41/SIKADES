@@ -10,7 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 // import FooterSection from "@/Layouts/Partials/Guest/FooterSection";
 
 export default function AuthLayout({ children }) {
-    const loadingTime = 2500;
+    const loadingTime = 0;
     const [isLoading, setIsLoading] = useState(true);
 
     // Set loading selama 5 detik saat mount halaman

@@ -2,8 +2,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { HiTrash, HiPlus, HiPencil } from "react-icons/hi";
 import { useState } from "react";
 import Select from "react-select";
-import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
+import axios from "axios";
 
 export default function TrainingsForm({
     trainings = [],
@@ -11,40 +11,32 @@ export default function TrainingsForm({
     officialTrainings = [],
     setOfficialTrainings = () => {},
 }) {
-    const [isAddOptionModalOpen, setIsAddOptionModalOpen] = useState(false); // State untuk modal tambah opsi
-    const [isAddDataModalOpen, setIsAddDataModalOpen] = useState(false); // State untuk modal tambah data
-    const [newTrainingTitle, setNewTrainingTitle] = useState(""); // State untuk judul pelatihan baru
-    const [newTrainingDescription, setNewTrainingDescription] = useState(""); // State untuk deskripsi pelatihan baru
-    const [selectedTraining, setSelectedTraining] = useState(null); // State untuk pelatihan yang dipilih
-    const [nama, setNama] = useState(""); // State untuk nama
-    const [mulai, setMulai] = useState(""); // State untuk tanggal mulai
-    const [selesai, setSelesai] = useState(""); // State untuk tanggal selesai
-    const [docScan, setDocScan] = useState(null); // State untuk dokumen scan
-    const [keterangan, setKeterangan] = useState(""); // State untuk keterangan
-    const [editIndex, setEditIndex] = useState(null); // State untuk indeks data yang sedang diedit
+    const [isAddOptionModalOpen, setIsAddOptionModalOpen] = useState(false);
+    const [isAddDataModalOpen, setIsAddDataModalOpen] = useState(false);
+    const [newTrainingTitle, setNewTrainingTitle] = useState("");
+    const [newTrainingDescription, setNewTrainingDescription] = useState("");
+    const [selectedTraining, setSelectedTraining] = useState(null);
+    const [nama, setNama] = useState("");
+    const [mulai, setMulai] = useState("");
+    const [selesai, setSelesai] = useState("");
+    const [docScan, setDocScan] = useState(null);
+    const [keterangan, setKeterangan] = useState("");
+    const [editIndex, setEditIndex] = useState(null);
 
-    // Format trainings untuk React Select
     const trainingOptions = trainings.map((training) => ({
         value: training.id,
         label: training.title,
     }));
 
-    // Fungsi untuk membuka modal tambah opsi
-    const openAddOptionModal = () => {
-        setIsAddOptionModalOpen(true);
-    };
-
-    // Fungsi untuk menutup modal tambah opsi
+    const openAddOptionModal = () => setIsAddOptionModalOpen(true);
     const closeAddOptionModal = () => {
         setIsAddOptionModalOpen(false);
         setNewTrainingTitle("");
         setNewTrainingDescription("");
     };
 
-    // Fungsi untuk membuka modal tambah data
     const openAddDataModal = (index = null) => {
         if (index !== null) {
-            // Jika sedang edit, isi form dengan data yang ada
             const training = officialTrainings[index];
             setSelectedTraining({
                 value: training.training_id,
@@ -57,7 +49,6 @@ export default function TrainingsForm({
             setKeterangan(training.keterangan || "");
             setEditIndex(index);
         } else {
-            // Jika sedang tambah, reset form
             setSelectedTraining(null);
             setNama("");
             setMulai("");
@@ -69,7 +60,6 @@ export default function TrainingsForm({
         setIsAddDataModalOpen(true);
     };
 
-    // Fungsi untuk menutup modal tambah data
     const closeAddDataModal = () => {
         setIsAddDataModalOpen(false);
         setSelectedTraining(null);
@@ -81,7 +71,6 @@ export default function TrainingsForm({
         setEditIndex(null);
     };
 
-    // Fungsi untuk menambahkan opsi pelatihan baru
     const addTrainingOption = async () => {
         if (!newTrainingTitle.trim()) {
             Swal.fire({
@@ -93,24 +82,19 @@ export default function TrainingsForm({
         }
 
         try {
-            // Kirim data ke API
             const response = await axios.post("/village/official/training/store", {
                 title: newTrainingTitle,
                 description: newTrainingDescription,
             });
 
-            // Pastikan response.data memiliki struktur yang benar
             if (response.data.success) {
                 const newTraining = {
-                    id: response.data.data.id, // Ambil ID dari response
-                    title: response.data.data.title, // Ambil judul dari response
-                    description: response.data.data.description, // Ambil deskripsi dari response
+                    id: response.data.data.id,
+                    title: response.data.data.title,
+                    description: response.data.data.description,
                 };
 
-                // Perbarui state `trainings` dengan data baru dari API
                 setTrainings((prevTrainings) => [...prevTrainings, newTraining]);
-
-                // Tutup modal
                 closeAddOptionModal();
             } else {
                 Swal.fire({
@@ -130,7 +114,6 @@ export default function TrainingsForm({
         }
     };
 
-    // Fungsi untuk menambahkan atau mengedit riwayat pelatihan
     const saveTrainingData = () => {
         if (!selectedTraining || !nama || !mulai) {
             Swal.fire({
@@ -152,19 +135,16 @@ export default function TrainingsForm({
         };
 
         if (editIndex !== null) {
-            // Jika sedang edit, update data yang ada
             const updatedTrainings = [...officialTrainings];
             updatedTrainings[editIndex] = newTrainingData;
             setOfficialTrainings(updatedTrainings);
         } else {
-            // Jika sedang tambah, tambahkan data baru
             setOfficialTrainings([...officialTrainings, newTrainingData]);
         }
 
         closeAddDataModal();
     };
 
-    // Fungsi untuk menghapus riwayat pelatihan dengan konfirmasi
     const removeTraining = (index) => {
         Swal.fire({
             title: "Apakah Anda yakin?",
@@ -184,297 +164,298 @@ export default function TrainingsForm({
         });
     };
 
-    // Kolom untuk DataTable
-    const columns = [
-        {
-            name: "Pelatihan",
-            selector: (row) => row.training_title,
-            sortable: true,
-        },
-        {
-            name: "Nama",
-            selector: (row) => row.nama,
-            sortable: true,
-        },
-        {
-            name: "Mulai",
-            selector: (row) => row.mulai,
-            sortable: true,
-        },
-        {
-            name: "Selesai",
-            selector: (row) => row.selesai,
-            sortable: true,
-        },
-        {
-            name: "Keterangan",
-            selector: (row) => row.keterangan,
-            sortable: true,
-        },
-        {
-            name: "Aksi",
-            cell: (row, index) => (
-                <div className="flex space-x-2">
-                    <button
-                        type="button"
-                        onClick={() => openAddDataModal(index)}
-                        className="px-2 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 flex items-center"
-                    >
-                        <HiPencil className="mr-1" /> Edit
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => removeTraining(index)}
-                        className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center"
-                    >
-                        <HiTrash className="mr-1" /> Hapus
-                    </button>
-                </div>
-            ),
-            ignoreRowClick: true,
-            allowOverflow: true,
-            button: true,
-        },
-    ];
-
     return (
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="bg-white w-full p-4 shadow rounded-lg mt-8"
+            className="bg-white w-full p-6 shadow rounded-lg mt-8"
         >
-            <div className="space-y-8">
-                <div className="flex justify-between items-center border-b">
-                    <div className="space-y-0">
-                        {/* Judul Form */}
-                        <h1 className="text-2xl font-semibold text-gray-700">
+            <div className="space-y-6">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 pb-4 border-b">
+                    <div>
+                        <h1 className="text-2xl font-semibold text-gray-800">
                             G. Formulir Riwayat Pelatihan
                         </h1>
-                        {/* Keterangan Formulir */}
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-600 mt-1">
                             Formulir ini digunakan untuk mengisi riwayat pelatihan pejabat desa.
                         </p>
                     </div>
 
-                    <div className="flex gap-2 items-center">
-                        {/* Tombol Tambah Jenis Pelatihan */}
+                    <div className="flex flex-wrap gap-2">
                         <motion.button
                             type="button"
                             onClick={openAddOptionModal}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center"
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center text-sm"
                         >
                             <HiPlus className="mr-2" /> Jenis Pelatihan
                         </motion.button>
 
-                        {/* Tombol Tambah Riwayat Pelatihan */}
                         <motion.button
                             type="button"
                             onClick={() => openAddDataModal()}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center"
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center text-sm"
                         >
-                            <HiPlus className="mr-2" /> Tambah
+                            <HiPlus className="mr-2" /> Tambah Riwayat
                         </motion.button>
                     </div>
                 </div>
-                {/* Tabel Riwayat Pelatihan */}
-                <DataTable
-                    columns={columns}
-                    data={officialTrainings}
-                    pagination
-                    highlightOnHover
-                    responsive
-                    noDataComponent="Tidak ada data riwayat pelatihan."
-                />
+
+                {/* Regular HTML Table */}
+                <div className="overflow-x-auto rounded-lg border border-gray-200">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Pelatihan
+                                </th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Nama
+                                </th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Mulai
+                                </th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Selesai
+                                </th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Keterangan
+                                </th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Aksi
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {officialTrainings.length > 0 ? (
+                                officialTrainings.map((row, index) => (
+                                    <tr key={index} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                            {row.training_title}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                            {row.nama}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                            {row.mulai}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                            {row.selesai || '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-800 max-w-xs truncate">
+                                            {row.keterangan || '-'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openAddDataModal(index)}
+                                                    className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 flex items-center text-xs"
+                                                >
+                                                    <HiPencil className="mr-1" /> Edit
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeTraining(index)}
+                                                    className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center text-xs"
+                                                >
+                                                    <HiTrash className="mr-1" /> Hapus
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
+                                        Tidak ada data riwayat pelatihan.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            {/* Modal Tambah Jenis Pelatihan */}
+            {/* Add Training Type Modal */}
             <AnimatePresence>
                 {isAddOptionModalOpen && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+                        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
                     >
                         <motion.div
-                            initial={{ y: -50, opacity: 0 }}
+                            initial={{ y: -20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: -50, opacity: 0 }}
-                            className="bg-white p-6 rounded-lg w-1/3"
+                            exit={{ y: -20, opacity: 0 }}
+                            className="bg-white rounded-lg shadow-xl w-full max-w-md"
                         >
-                            <h2 className="text-lg font-semibold mb-4">
-                                Tambah Jenis Pelatihan Baru
-                            </h2>
-                            {/* Input Judul Pelatihan */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Judul Pelatihan
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newTrainingTitle}
-                                    onChange={(e) => setNewTrainingTitle(e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                                    placeholder="Judul Pelatihan"
-                                />
-                            </div>
-                            {/* Input Deskripsi */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Deskripsi
-                                </label>
-                                <textarea
-                                    value={newTrainingDescription}
-                                    onChange={(e) => setNewTrainingDescription(e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                                    placeholder="Deskripsi Pelatihan"
-                                    rows="3"
-                                />
-                            </div>
-                            {/* Tombol Aksi */}
-                            <div className="mt-4 flex justify-end">
-                                <button
-                                    type="button"
-                                    onClick={closeAddOptionModal}
-                                    className="mr-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={addTrainingOption}
-                                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                                >
-                                    Simpan
-                                </button>
+                            <div className="p-6">
+                                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                                    Tambah Jenis Pelatihan Baru
+                                </h2>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Judul Pelatihan
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={newTrainingTitle}
+                                            onChange={(e) => setNewTrainingTitle(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Judul Pelatihan"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Deskripsi
+                                        </label>
+                                        <textarea
+                                            value={newTrainingDescription}
+                                            onChange={(e) => setNewTrainingDescription(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Deskripsi Pelatihan"
+                                            rows="3"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="mt-6 flex justify-end space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={closeAddOptionModal}
+                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={addTrainingOption}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                    >
+                                        Simpan
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Modal Tambah/Edit Riwayat Pelatihan */}
+            {/* Add/Edit Training Data Modal */}
             <AnimatePresence>
                 {isAddDataModalOpen && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+                        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
                     >
                         <motion.div
-                            initial={{ y: -50, opacity: 0 }}
+                            initial={{ y: -20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: -50, opacity: 0 }}
-                            className="bg-white p-6 rounded-lg w-1/2 max-h-[90vh] overflow-y-auto"
+                            exit={{ y: -20, opacity: 0 }}
+                            className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
                         >
-                            <h2 className="text-lg font-semibold mb-4">
-                                {editIndex !== null ? "Edit Riwayat Pelatihan" : "Tambah Riwayat Pelatihan"}
-                            </h2>
-
-                            {/* Field Pelatihan */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Pelatihan
-                                </label>
-                                <Select
-                                    options={trainingOptions}
-                                    value={selectedTraining}
-                                    onChange={setSelectedTraining}
-                                    placeholder="Pilih Pelatihan"
-                                    isClearable
-                                    isSearchable
-                                    className="mt-1"
-                                />
-                            </div>
-
-                            {/* Field Nama */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Nama
-                                </label>
-                                <input
-                                    type="text"
-                                    value={nama}
-                                    onChange={(e) => setNama(e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                                    placeholder="Nama"
-                                />
-                            </div>
-
-                            {/* Field Mulai */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Mulai
-                                </label>
-                                <input
-                                    type="date"
-                                    value={mulai}
-                                    onChange={(e) => setMulai(e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                                />
-                            </div>
-
-                            {/* Field Selesai */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Selesai
-                                </label>
-                                <input
-                                    type="date"
-                                    value={selesai}
-                                    onChange={(e) => setSelesai(e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                                />
-                            </div>
-
-                            {/* Field Dokumen */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Dokumen
-                                </label>
-                                <input
-                                    type="file"
-                                    onChange={(e) => setDocScan(e.target.files[0])}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                                />
-                            </div>
-
-                            {/* Field Keterangan */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Keterangan
-                                </label>
-                                <textarea
-                                    value={keterangan}
-                                    onChange={(e) => setKeterangan(e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                                    placeholder="Keterangan"
-                                    rows="3"
-                                />
-                            </div>
-
-                            {/* Tombol Aksi */}
-                            <div className="mt-4 flex justify-end">
-                                <button
-                                    type="button"
-                                    onClick={closeAddDataModal}
-                                    className="mr-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={saveTrainingData}
-                                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                                >
-                                    {editIndex !== null ? "Simpan Perubahan" : "Simpan"}
-                                </button>
+                            <div className="p-6">
+                                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                                    {editIndex !== null ? "Edit Riwayat Pelatihan" : "Tambah Riwayat Pelatihan"}
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Pelatihan
+                                        </label>
+                                        <Select
+                                            options={trainingOptions}
+                                            value={selectedTraining}
+                                            onChange={setSelectedTraining}
+                                            placeholder="Pilih Pelatihan"
+                                            isClearable
+                                            isSearchable
+                                            className="basic-single"
+                                            classNamePrefix="select"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Nama
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={nama}
+                                            onChange={(e) => setNama(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Nama"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Mulai
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={mulai}
+                                            onChange={(e) => setMulai(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Selesai
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={selesai}
+                                            onChange={(e) => setSelesai(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Dokumen
+                                        </label>
+                                        <input
+                                            type="file"
+                                            onChange={(e) => setDocScan(e.target.files[0])}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Keterangan
+                                        </label>
+                                        <textarea
+                                            value={keterangan}
+                                            onChange={(e) => setKeterangan(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Keterangan"
+                                            rows="3"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="mt-6 flex justify-end space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={closeAddDataModal}
+                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={saveTrainingData}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                    >
+                                        {editIndex !== null ? "Simpan Perubahan" : "Simpan"}
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>

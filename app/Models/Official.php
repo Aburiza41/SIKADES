@@ -10,8 +10,6 @@ class Official extends Model
     //
     use HasFactory;
 
-    use HasFactory;
-
     protected $fillable = [
         'village_id',
         'nik',

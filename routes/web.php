@@ -259,29 +259,142 @@ Route::prefix('/village')->name('village.')->group(function () {
 
 
     // Endpoint untuk mengambil data provinsi
+    // Route::get('/bps/wilayah', function () {
+    //     $response = Http::get('https://sig.bps.go.id/rest-bridging/getwilayah');
+    //     return $response->json();
+    // });
     Route::get('/bps/wilayah', function () {
-        $response = Http::get('https://sig.bps.go.id/rest-bridging/getwilayah');
-        return $response->json();
+        $client = new \GuzzleHttp\Client([
+            'verify' => false, // Nonaktifkan SSL verification
+            'timeout' => 30,
+        ]);
+
+        $response = $client->get('https://sig.bps.go.id/rest-bridging/getwilayah');
+
+        return json_decode($response->getBody(), true);
     });
 
     // Endpoint untuk mengambil data kabupaten berdasarkan kode provinsi
+    // Route::get('/bps/wilayah/kabupaten/{provinceCode}', function ($provinceCode) {
+    //     $response = Http::get("https://sig.bps.go.id/rest-bridging/getwilayah?level=kabupaten&parent={$provinceCode}");
+    //     return $response->json();
+    // });
     Route::get('/bps/wilayah/kabupaten/{provinceCode}', function ($provinceCode) {
-        $response = Http::get("https://sig.bps.go.id/rest-bridging/getwilayah?level=kabupaten&parent={$provinceCode}");
-        return $response->json();
+        // Buat instance Guzzle Client
+        $client = new \GuzzleHttp\Client([
+            'base_uri' => 'https://sig.bps.go.id',
+            'timeout'  => 30, // Timeout 30 detik
+            'verify' => false, // Nonaktifkan SSL verification (hati-hati di production)
+        ]);
+
+        try {
+            // Lakukan request ke API BPS
+            $response = $client->get('/rest-bridging/getwilayah', [
+                'query' => [
+                    'level' => 'kabupaten',
+                    'parent' => $provinceCode
+                ]
+            ]);
+
+            // Decode response JSON
+            $data = json_decode($response->getBody(), true);
+
+            return response()->json($data);
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            // Handle error
+            return response()->json([
+                'error' => 'Gagal mengambil data kabupaten',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     });
 
     // Endpoint untuk mengambil data kecamatan berdasarkan kode kabupaten
+    // Route::get('/bps/wilayah/kecamatan/{regencyCode}', function ($regencyCode) {
+    //     $response = Http::get("https://sig.bps.go.id/rest-bridging/getwilayah?level=kecamatan&parent={$regencyCode}");
+    //     return $response->json();
+    // });
     Route::get('/bps/wilayah/kecamatan/{regencyCode}', function ($regencyCode) {
-        $response = Http::get("https://sig.bps.go.id/rest-bridging/getwilayah?level=kecamatan&parent={$regencyCode}");
-        return $response->json();
+        $client = new \GuzzleHttp\Client([
+            'base_uri' => 'https://sig.bps.go.id',
+            'timeout'  => 30,
+            'verify' => false, // Nonaktifkan SSL verification (dev only)
+        ]);
+
+        try {
+            $response = $client->get('/rest-bridging/getwilayah', [
+                'query' => [
+                    'level' => 'kecamatan',
+                    'parent' => $regencyCode
+                ]
+            ]);
+
+            return response()->json(
+                json_decode($response->getBody(), true)
+            );
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            $statusCode = $e->getResponse() ? $e->getResponse()->getStatusCode() : 500;
+
+            return response()->json([
+                'error' => 'Gagal mengambil data kecamatan',
+                'message' => $e->getMessage(),
+                'code' => $statusCode
+            ], $statusCode);
+        }
     });
 
     // Endpoint untuk mengambil data desa berdasarkan kode kecamatan
-    Route::get('/bps/wilayah/desa/{districtCode}', function ($districtCode) {
-        $response = Http::get("https://sig.bps.go.id/rest-bridging/getwilayah?level=desa&parent={$districtCode}");
-        return $response->json();
-    });
+    // Route::get('/bps/wilayah/desa/{districtCode}', function ($districtCode) {
+    //     $response = Http::get("https://sig.bps.go.id/rest-bridging/getwilayah?level=desa&parent={$districtCode}");
+    //     return $response->json();
+    // });
+    //     use GuzzleHttp\Client;
+    // use GuzzleHttp\Exception\RequestException;
 
+    Route::get('/bps/wilayah/desa/{districtCode}', function ($districtCode) {
+        $client = new \GuzzleHttp\Client([
+            'base_uri' => 'https://sig.bps.go.id',
+            'timeout'  => 30,
+            'verify' => false, // Nonaktifkan SSL verification (hanya untuk development)
+        ]);
+
+        try {
+            $response = $client->get('/rest-bridging/getwilayah', [
+                'query' => [
+                    'level' => 'desa',
+                    'parent' => $districtCode
+                ],
+                'headers' => [
+                    'Accept' => 'application/json',
+                ]
+            ]);
+
+            $data = json_decode($response->getBody(), true);
+
+            // Validasi response
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception('Invalid JSON response');
+            }
+
+            return response()->json($data);
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            $statusCode = $e->hasResponse() ? $e->getResponse()->getStatusCode() : 500;
+
+            return response()->json([
+                'error' => true,
+                'message' => 'Gagal mengambil data desa',
+                'detail' => $e->getMessage(),
+                'code' => $statusCode
+            ], $statusCode);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Terjadi kesalahan pemrosesan data',
+                'detail' => $e->getMessage(),
+                'code' => 500
+            ], 500);
+        }
+    });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

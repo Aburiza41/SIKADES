@@ -26,7 +26,7 @@ export default function AuthenticatedLayout({ header, children, breadcrumb }) {
     const [sidebarLocked, setSidebarLocked] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false); // State untuk mode fullscreen
-    const loadingTime = 2500;
+    const loadingTime = 0;
     const [isLoading, setIsLoading] = useState(true);
 
     // Set loading selama 5 detik saat mount halaman

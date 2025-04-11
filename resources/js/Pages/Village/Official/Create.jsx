@@ -236,7 +236,7 @@ export default function UpdateOfficial({
         });
 
         // Kirim data ke backend menggunakan metode PUT
-        router.post(`/village/official/${official.nik}/update`, formData, {
+        router.post(`/village/official/store`, formData, {
             headers: {
                 "Content-Type": "multipart/form-data", // Penting untuk upload file
             },
@@ -264,8 +264,8 @@ export default function UpdateOfficial({
             }
             breadcrumb={[
                 {
-                    name: "Update Official",
-                    path: `/village/official/update/${official.id}`,
+                    name: "Tambah Official",
+                    path: `/village/official/create`,
                     active: true,
                     icon: <HiUsers className="w-5 h-5 mr-3" />,
                 },

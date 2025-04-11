@@ -339,7 +339,7 @@ export default function Official({ initialOfficials, officials }) {
                 </button> */}
 
                 {/* Link Button */}
-                <div className="mb-4 py-2">
+                {/* <div className="mb-4 py-2">
                     <Link
                         href={route("village.official.create")} // Ganti dengan route yang sesuai
                         className={
@@ -347,7 +347,7 @@ export default function Official({ initialOfficials, officials }) {
                     >
                         Tambah
                     </Link>
-                </div>
+                </div> */}
 
                 <OfficialList
                     officials={officialsData}

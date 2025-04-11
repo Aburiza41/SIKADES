@@ -40,7 +40,7 @@ class OfficialController extends Controller
             'contacts',
             'identities',
             'studies.study', // Relasi studies dengan study
-            'positions',
+            'positions.position',
             'officialTrainings',
             'officialOrganizations'
         ])
@@ -53,7 +53,7 @@ class OfficialController extends Controller
                 });
             })
             ->when($request->filled('filters'), function ($query) use ($request) {
-                $query->whereHas('village', function ($q) use ($request) {
+                $query->whereHas('identities', function ($q) use ($request) {
                     $q->where('pendidikan', $request->filters); // Filter berdasarkan ID village
                 });
             })
@@ -149,8 +149,8 @@ class OfficialController extends Controller
 
             // Validasi untuk alamat
             'address.alamat' => 'required|string|max:255',
-            'address.rt' => 'nullable|integer',
-            'address.rw' => 'nullable|integer',
+            'address.rt' => 'nullable',
+            'address.rw' => 'nullable',
             'address.province_code' => 'required|string|max:10',
             'address.province_name' => 'required|string|max:100',
             'address.regency_code' => 'required|string|max:10',
@@ -377,8 +377,8 @@ class OfficialController extends Controller
                 'addresses', // Relasi alamat
                 'contacts', // Relasi kontak
                 'identities', // Relasi identitas
-                'studies', // Relasi studi
-                'positionOfficial', // Relasi posisi
+                'studies.study', // Relasi studi
+                'positionOfficial.position', // Relasi posisi
                 'officialTrainings', // Relasi pelatihan
                 'officialOrganizations', // Relasi organisasi
             ])
@@ -438,8 +438,8 @@ class OfficialController extends Controller
 
             // Validasi untuk alamat
             'address.alamat' => 'required|string|max:255',
-            'address.rt' => 'nullable|integer',
-            'address.rw' => 'nullable|integer',
+            'address.rt' => 'nullable|string',
+            'address.rw' => 'nullable|string',
             'address.province_code' => 'required|string|max:10',
             'address.province_name' => 'required|string|max:100',
             'address.regency_code' => 'required|string|max:10',

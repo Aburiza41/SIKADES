@@ -33,7 +33,7 @@ class ProfileController extends Controller
     $regencies = Regency::with(['districts.villages.officials' => function ($query) {
         $query->where('status', 'validasi'); // Filter status "validasi"
     }])->get();
-
+    // dd($regencies);
     // Ambil data pendidikan dari tabel studies
     $educationLevels = Study::pluck('name', 'id')->toArray();
 
@@ -56,42 +56,42 @@ class ProfileController extends Controller
 
         // Hitung total Perangkat berdasarkan Pendidikan Terakhir dengan status "validasi"
         $educationTotals = [];
-        foreach ($educationLevels as $id => $education) {
-            // Ambil pendidikan terakhir untuk setiap official
-            $latestStudies = DB::table('study_officials as so')
-                ->select('so.official_id', 'so.study_id')
-                ->join('studies as s', 'so.study_id', '=', 's.id') // Join dengan tabel studies untuk mendapatkan level
-                ->join(DB::raw('(SELECT so2.official_id, MAX(s2.level) as max_level
-                             FROM study_officials as so2
-                             JOIN studies as s2 ON so2.study_id = s2.id
-                             GROUP BY so2.official_id) as latest'), function ($join) {
-                    $join->on('so.official_id', '=', 'latest.official_id')
-                        ->on('s.level', '=', 'latest.max_level');
-                })
-                ->where('so.study_id', $id) // Filter berdasarkan study_id
-                ->whereExists(function ($query) {
-                    $query->select(DB::raw(1))
-                        ->from('officials as o')
-                        ->whereColumn('o.id', 'so.official_id')
-                        ->where('o.status', 'validasi'); // Filter status "validasi"
-                })
-                ->get();
+        // foreach ($educationLevels as $id => $education) {
+        //     // Ambil pendidikan terakhir untuk setiap official
+        //     $latestStudies = DB::table('study_officials as so')
+        //         ->select('so.official_id', 'so.study_id')
+        //         ->join('studies as s', 'so.study_id', '=', 's.id') // Join dengan tabel studies untuk mendapatkan level
+        //         ->join(DB::raw('(SELECT so2.official_id, MAX(s2.level) as max_level
+        //                      FROM study_officials as so2
+        //                      JOIN studies as s2 ON so2.study_id = s2.id
+        //                      GROUP BY so2.official_id) as latest'), function ($join) {
+        //             $join->on('so.official_id', '=', 'latest.official_id')
+        //                 ->on('s.level', '=', 'latest.max_level');
+        //         })
+        //         ->where('so.study_id', $id) // Filter berdasarkan study_id
+        //         ->whereExists(function ($query) {
+        //             $query->select(DB::raw(1))
+        //                 ->from('officials as o')
+        //                 ->whereColumn('o.id', 'so.official_id')
+        //                 ->where('o.status', 'validasi'); // Filter status "validasi"
+        //         })
+        //         ->get();
 
-            // Ambil official_id dari hasil query di atas
-            $officialIds = $latestStudies->pluck('official_id')->toArray();
+        //     // Ambil official_id dari hasil query di atas
+        //     $officialIds = $latestStudies->pluck('official_id')->toArray();
 
-            // Hitung jumlah officials yang memiliki pendidikan terakhir dengan study_id = $id
-            $educationTotals[$education] = $regency->districts()
-                ->with(['villages.officials' => function ($query) use ($officialIds) {
-                    $query->whereIn('id', $officialIds); // Filter berdasarkan official_id
-                }])
-                ->get()
-                ->sum(function ($district) {
-                    return $district->villages->sum(function ($village) {
-                        return $village->officials->count();
-                    });
-                });
-        }
+        //     // Hitung jumlah officials yang memiliki pendidikan terakhir dengan study_id = $id
+        //     $educationTotals[$education] = $regency->districts()
+        //         ->with(['villages.officials' => function ($query) use ($officialIds) {
+        //             $query->whereIn('id', $officialIds); // Filter berdasarkan official_id
+        //         }])
+        //         ->get()
+        //         ->sum(function ($district) {
+        //             return $district->villages->sum(function ($village) {
+        //                 return $village->officials->count();
+        //             });
+        //         });
+        // }
         $regency->education_totals = $educationTotals;
 
         // Hitung total Perangkat berdasarkan Jenis Kelamin dengan status "validasi"

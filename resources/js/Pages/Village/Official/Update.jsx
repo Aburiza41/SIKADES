@@ -36,7 +36,7 @@ export default function UpdateOfficial({
     opsStudies: initialOpsStudies,
 }) {
     // Debugging all props
-    console.log('official',initialOfficial);
+    // console.log('official',initialOfficial);
     // console.log('addresses',initialAddresses);
     // console.log('contacts',initialContacts);
     // console.log('identities',initialIdentities);

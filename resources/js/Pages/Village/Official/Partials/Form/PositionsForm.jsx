@@ -2,8 +2,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { HiTrash, HiPlus, HiPencil } from "react-icons/hi";
 import { useState } from "react";
 import Select from "react-select";
-import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
+import axios from "axios";
 
 export default function PositionsForm({
     positions = [],
@@ -11,46 +11,43 @@ export default function PositionsForm({
     officialPositions = [],
     setOfficialPositions = () => {},
 }) {
-    const [isAddOptionModalOpen, setIsAddOptionModalOpen] = useState(false); // State untuk modal tambah opsi
-    const [isAddDataModalOpen, setIsAddDataModalOpen] = useState(false); // State untuk modal tambah data
-    const [newPositionName, setNewPositionName] = useState(""); // State untuk nama posisi baru
-    const [newPositionDescription, setNewPositionDescription] = useState(""); // State untuk deskripsi posisi baru
-    const [selectedPosition, setSelectedPosition] = useState(null); // State untuk posisi yang dipilih
-    const [penetap, setPenetap] = useState(""); // State untuk penetap
-    const [nomorSk, setNomorSk] = useState(""); // State untuk nomor SK
-    const [tanggalSk, setTanggalSk] = useState(""); // State untuk tanggal SK
-    const [fileSk, setFileSk] = useState(null); // State untuk file SK
-    const [mulaiJabatan, setMulaiJabatan] = useState(""); // State untuk mulai jabatan
-    const [selesaiJabatan, setSelesaiJabatan] = useState(""); // State untuk selesai jabatan
-    const [keterangan, setKeterangan] = useState(""); // State untuk keterangan
-    const [editIndex, setEditIndex] = useState(null); // State untuk indeks data yang sedang diedit
+    const [isAddOptionModalOpen, setIsAddOptionModalOpen] = useState(false);
+    const [isAddDataModalOpen, setIsAddDataModalOpen] = useState(false);
+    const [newPositionName, setNewPositionName] = useState("");
+    const [newPositionDescription, setNewPositionDescription] = useState("");
+    const [selectedPosition, setSelectedPosition] = useState(null);
+    const [penetap, setPenetap] = useState("");
+    const [nomorSk, setNomorSk] = useState("");
+    const [tanggalSk, setTanggalSk] = useState("");
+    const [fileSk, setFileSk] = useState(null);
+    const [mulaiJabatan, setMulaiJabatan] = useState("");
+    const [selesaiJabatan, setSelesaiJabatan] = useState("");
+    const [keterangan, setKeterangan] = useState("");
+    const [editIndex, setEditIndex] = useState(null);
 
-    // Format positions untuk React Select
+    console.log(officialPositions);
+
     const positionOptions = positions.map((pos) => ({
         value: pos.id,
         label: pos.name,
     }));
 
-    // Fungsi untuk membuka modal tambah opsi
     const openAddOptionModal = () => {
         setIsAddOptionModalOpen(true);
     };
 
-    // Fungsi untuk menutup modal tambah opsi
     const closeAddOptionModal = () => {
         setIsAddOptionModalOpen(false);
         setNewPositionName("");
         setNewPositionDescription("");
     };
 
-    // Fungsi untuk membuka modal tambah data
     const openAddDataModal = (index = null) => {
         if (index !== null) {
-            // Jika sedang edit, isi form dengan data yang ada
-            const position = officialPositions[index];
+            const position = officialPositions[index].position;
             setSelectedPosition({
-                value: position.position_id,
-                label: position.position_name,
+                value: position.id,
+                label: position.name,
             });
             setPenetap(position.penetap);
             setNomorSk(position.nomor_sk);
@@ -61,7 +58,6 @@ export default function PositionsForm({
             setKeterangan(position.keterangan || "");
             setEditIndex(index);
         } else {
-            // Jika sedang tambah, reset form
             setSelectedPosition(null);
             setPenetap("");
             setNomorSk("");
@@ -75,7 +71,6 @@ export default function PositionsForm({
         setIsAddDataModalOpen(true);
     };
 
-    // Fungsi untuk menutup modal tambah data
     const closeAddDataModal = () => {
         setIsAddDataModalOpen(false);
         setSelectedPosition(null);
@@ -89,7 +84,6 @@ export default function PositionsForm({
         setEditIndex(null);
     };
 
-    // Fungsi untuk menambahkan opsi posisi baru
     const addPositionOption = async () => {
         if (!newPositionName.trim()) {
             Swal.fire({
@@ -101,24 +95,19 @@ export default function PositionsForm({
         }
 
         try {
-            // Kirim data ke API
             const response = await axios.post("/village/official/position/store", {
                 name: newPositionName,
                 description: newPositionDescription,
             });
 
-            // Pastikan response.data memiliki struktur yang benar
             if (response.data.success) {
                 const newPosition = {
-                    id: response.data.data.id, // Ambil ID dari response
-                    name: response.data.data.name, // Ambil nama dari response
-                    description: response.data.data.description, // Ambil deskripsi dari response
+                    id: response.data.data.id,
+                    name: response.data.data.name,
+                    description: response.data.data.description,
                 };
 
-                // Perbarui state `positions` dengan data baru dari API
                 setPositions((prevPositions) => [...prevPositions, newPosition]);
-
-                // Tutup modal
                 closeAddOptionModal();
             } else {
                 Swal.fire({
@@ -138,7 +127,6 @@ export default function PositionsForm({
         }
     };
 
-    // Fungsi untuk menambahkan atau mengedit riwayat jabatan
     const savePositionData = () => {
         if (!selectedPosition || !penetap || !nomorSk || !tanggalSk || !mulaiJabatan) {
             Swal.fire({
@@ -162,19 +150,16 @@ export default function PositionsForm({
         };
 
         if (editIndex !== null) {
-            // Jika sedang edit, update data yang ada
             const updatedPositions = [...officialPositions];
             updatedPositions[editIndex] = newPositionData;
             setOfficialPositions(updatedPositions);
         } else {
-            // Jika sedang tambah, tambahkan data baru
             setOfficialPositions([...officialPositions, newPositionData]);
         }
 
         closeAddDataModal();
     };
 
-    // Fungsi untuk menghapus riwayat jabatan dengan konfirmasi
     const removePosition = (index) => {
         Swal.fire({
             title: "Apakah Anda yakin?",
@@ -194,69 +179,6 @@ export default function PositionsForm({
         });
     };
 
-    // Kolom untuk DataTable
-    const columns = [
-        {
-            name: "Posisi",
-            selector: (row) => row.position_name,
-            sortable: true,
-        },
-        {
-            name: "Penetap",
-            selector: (row) => row.penetap,
-            sortable: true,
-        },
-        {
-            name: "Nomor SK",
-            selector: (row) => row.nomor_sk,
-            sortable: true,
-        },
-        {
-            name: "Tanggal SK",
-            selector: (row) => row.tanggal_sk,
-            sortable: true,
-        },
-        {
-            name: "Mulai Jabatan",
-            selector: (row) => row.mulai,
-            sortable: true,
-        },
-        {
-            name: "Selesai Jabatan",
-            selector: (row) => row.selesai,
-            sortable: true,
-        },
-        {
-            name: "Keterangan",
-            selector: (row) => row.keterangan,
-            sortable: true,
-        },
-        {
-            name: "Aksi",
-            cell: (row, index) => (
-                <div className="flex space-x-2">
-                    <button
-                        type="button"
-                        onClick={() => openAddDataModal(index)}
-                        className="px-2 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 flex items-center"
-                    >
-                        <HiPencil className="mr-1" /> Edit
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => removePosition(index)}
-                        className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center"
-                    >
-                        <HiTrash className="mr-1" /> Hapus
-                    </button>
-                </div>
-            ),
-            ignoreRowClick: true,
-            allowOverflow: true,
-            button: true,
-        },
-    ];
-
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -267,18 +189,15 @@ export default function PositionsForm({
             <div className="space-y-8">
                 <div className="flex justify-between items-center border-b">
                     <div className="space-y-0">
-                        {/* Judul Form */}
                         <h1 className="text-2xl font-semibold text-gray-700">
                             F. Formulir Riwayat Jabatan
                         </h1>
-                        {/* Keterangan Formulir */}
                         <p className="text-sm text-gray-500">
                             Formulir ini digunakan untuk mengisi riwayat jabatan pejabat desa.
                         </p>
                     </div>
 
                     <div className="flex gap-2 items-center">
-                        {/* Tombol Tambah Jenis Posisi */}
                         <motion.button
                             type="button"
                             onClick={openAddOptionModal}
@@ -289,7 +208,6 @@ export default function PositionsForm({
                             <HiPlus className="mr-2" />Jenis Posisi
                         </motion.button>
 
-                        {/* Tombol Tambah Riwayat Jabatan */}
                         <motion.button
                             type="button"
                             onClick={() => openAddDataModal()}
@@ -301,18 +219,66 @@ export default function PositionsForm({
                         </motion.button>
                     </div>
                 </div>
-                {/* Tabel Riwayat Jabatan */}
-                <DataTable
-                    columns={columns}
-                    data={officialPositions}
-                    pagination
-                    highlightOnHover
-                    responsive
-                    noDataComponent="Tidak ada data riwayat jabatan."
-                />
+
+                {/* Regular HTML Table */}
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Posisi</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Penetap</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nomor SK</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal SK</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mulai Jabatan</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selesai Jabatan</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keterangan</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {officialPositions.length > 0 ? (
+                                officialPositions.map((position, index) => (
+                                    <tr key={index}>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{position.position_name || position.position?.name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{position.penetap}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{position.nomor_sk}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{position.tanggal_sk}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{position.mulai}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{position.selesai || '-'}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{position.keterangan || '-'}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openAddDataModal(index)}
+                                                    className="px-2 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 flex items-center"
+                                                >
+                                                    <HiPencil className="mr-1" /> Edit
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removePosition(index)}
+                                                    className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center"
+                                                >
+                                                    <HiTrash className="mr-1" /> Hapus
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
+                                        Tidak ada data riwayat jabatan.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            {/* Modal Tambah Jenis Posisi */}
+            {/* Add Position Option Modal */}
             <AnimatePresence>
                 {isAddOptionModalOpen && (
                     <motion.div
@@ -330,7 +296,6 @@ export default function PositionsForm({
                             <h2 className="text-lg font-semibold mb-4">
                                 Tambah Jenis Posisi Baru
                             </h2>
-                            {/* Input Nama Posisi */}
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">
                                     Nama Posisi
@@ -343,7 +308,6 @@ export default function PositionsForm({
                                     placeholder="Nama Jenis Posisi"
                                 />
                             </div>
-                            {/* Input Deskripsi */}
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">
                                     Deskripsi
@@ -356,7 +320,6 @@ export default function PositionsForm({
                                     rows="3"
                                 />
                             </div>
-                            {/* Tombol Aksi */}
                             <div className="mt-4 flex justify-end">
                                 <button
                                     type="button"
@@ -378,7 +341,7 @@ export default function PositionsForm({
                 )}
             </AnimatePresence>
 
-            {/* Modal Tambah/Edit Riwayat Jabatan */}
+            {/* Add/Edit Position Data Modal */}
             <AnimatePresence>
                 {isAddDataModalOpen && (
                     <motion.div
@@ -397,7 +360,6 @@ export default function PositionsForm({
                                 {editIndex !== null ? "Edit Riwayat Jabatan" : "Tambah Riwayat Jabatan"}
                             </h2>
 
-                            {/* Field Posisi */}
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">
                                     Posisi
@@ -413,7 +375,6 @@ export default function PositionsForm({
                                 />
                             </div>
 
-                            {/* Field Penetap */}
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">
                                     Penetap
@@ -427,7 +388,6 @@ export default function PositionsForm({
                                 />
                             </div>
 
-                            {/* Field Nomor SK */}
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">
                                     Nomor SK
@@ -441,7 +401,6 @@ export default function PositionsForm({
                                 />
                             </div>
 
-                            {/* Field Tanggal SK */}
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">
                                     Tanggal SK
@@ -454,7 +413,6 @@ export default function PositionsForm({
                                 />
                             </div>
 
-                            {/* Field File SK */}
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">
                                     File SK
@@ -466,7 +424,6 @@ export default function PositionsForm({
                                 />
                             </div>
 
-                            {/* Field Mulai Jabatan */}
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">
                                     Mulai Jabatan
@@ -479,7 +436,6 @@ export default function PositionsForm({
                                 />
                             </div>
 
-                            {/* Field Selesai Jabatan */}
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">
                                     Selesai Jabatan
@@ -492,7 +448,6 @@ export default function PositionsForm({
                                 />
                             </div>
 
-                            {/* Field Keterangan */}
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">
                                     Keterangan
@@ -506,7 +461,6 @@ export default function PositionsForm({
                                 />
                             </div>
 
-                            {/* Tombol Aksi */}
                             <div className="mt-4 flex justify-end">
                                 <button
                                     type="button"

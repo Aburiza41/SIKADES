@@ -76,7 +76,7 @@ export default function Login({ status, canResetPassword }) {
                     >
                         {/* Email Input */}
                         <div>
-                            <InputLabel htmlFor="username" value="username" />
+                            <InputLabel htmlFor="username" value="Username" />
                             <div className="relative">
                                 <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                                 <TextInput

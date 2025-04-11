@@ -10,7 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 
 export default function GuestLayout({ children }) {
-    const loadingTime = 2500;
+    const loadingTime = 0;
     const [isLoading, setIsLoading] = useState(true);
 
     // Set loading selama 5 detik saat mount halaman
