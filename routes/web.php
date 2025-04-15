@@ -155,55 +155,6 @@ Route::prefix('/regency')->name('regency.')->group(function () {
     });
 });
 
-// // District
-// Route::prefix('/district')->name('district.')->group(function () {
-//     // Dashboard
-//     Route::prefix('/dashboard')->name('dashboard.')->controller(AdminDashboardController::class)->group(function () {
-//         Route::get('/', 'index')->name('index');
-//     });
-
-//     // Official
-//     Route::prefix('/official')->name('official.')->controller(AdminOfficialController::class)->group(function () {
-//         Route::get('/', 'index')->name('index');
-//         Route::post('/', 'store')->name('store');
-//         Route::get('/{id}', 'show')->name('show');
-//         Route::put('/{id}', 'update')->name('update');
-//         Route::delete('/{id}', 'destroy')->name('destroy');
-//     });
-
-//     // Aparatus
-//     Route::prefix('/aparatus')->name('aparatus.')->controller(AdminAparatusController::class)->group(function () {
-//         Route::get('/', 'index')->name('index');
-//     });
-
-//     // Organization
-//     Route::prefix('/organization')->name('organization.')->controller(AdminOrganizationController::class)->group(function () {
-//         Route::get('/', 'index')->name('index');
-//         Route::post('/', 'store')->name('store');
-//         Route::get('/{id}', 'show')->name('show');
-//         Route::put('/{id}', 'update')->name('update');
-//         Route::delete('/{id}', 'destroy')->name('destroy');
-//     });
-
-//     // Training
-//     Route::prefix('/training')->name('training.')->controller(AdminTrainingController::class)->group(function () {
-//         Route::get('/', 'index')->name('index');
-//         Route::post('/', 'store')->name('store');
-//         Route::get('/{id}', 'show')->name('show');
-//         Route::put('/{id}', 'update')->name('update');
-//         Route::delete('/{id}', 'destroy')->name('destroy');
-//     });
-
-//     // User
-//     Route::prefix('/user')->name('user.')->controller(AdminUserController::class)->group(function () {
-//         Route::get('/', 'index')->name('index');
-//         Route::post('/', 'store')->name('store');
-//         Route::get('/{id}', 'show')->name('show');
-//         Route::put('/{id}', 'update')->name('update');
-//         Route::delete('/{id}', 'destroy')->name('destroy');
-//     });
-// });
-
 // Village
 Route::prefix('/village')->name('village.')->group(function () {
     // Dashboard

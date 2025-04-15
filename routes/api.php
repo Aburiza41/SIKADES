@@ -163,77 +163,77 @@ Route::get('/kecamatan-stats', function (Request $request) {
 });
 
 // API Statistik Kabupaten
-// Route::get('/kabupaten-stats', function (Request $request) {
-//     $request->validate([
-//         'kodebps' => 'required|string|size:4',
-//     ]);
+Route::get('/kabupaten-stats', function (Request $request) {
+    $request->validate([
+        'kodebps' => 'required|string|size:4',
+    ]);
 
-//     $regency = Regency::where('code_bps', $request->kodebps)->first();
+    $regency = Regency::where('code_bps', $request->kodebps)->first();
 
-//     if (!$regency) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'Kabupaten tidak ditemukan',
-//         ], 404);
-//     }
+    if (!$regency) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Kabupaten tidak ditemukan',
+        ], 404);
+    }
 
-//     $districts = $regency->districts;
-//     $villages = $districts->flatMap->villages;
-//     $educationLevels = Study::pluck('name', 'id')->toArray();
+    $districts = $regency->districts;
+    $villages = $districts->flatMap->villages;
+    $educationLevels = Study::pluck('name', 'id')->toArray();
 
-//     $stats = [
-//         'total_valid_officials' => Official::whereIn('village_id', $villages->pluck('id'))
-//             ->where('status', 'validasi')
-//             ->count(),
-//         'by_status' => [
-//             'daftar' => Official::whereIn('village_id', $villages->pluck('id'))
-//                 ->where('status', 'daftar')
-//                 ->count(),
-//             'proses' => Official::whereIn('village_id', $villages->pluck('id'))
-//                 ->where('status', 'proses')
-//                 ->count(),
-//             'validasi' => Official::whereIn('village_id', $villages->pluck('id'))
-//                 ->where('status', 'validasi')
-//                 ->count(),
-//             'tolak' => Official::whereIn('village_id', $villages->pluck('id'))
-//                 ->where('status', 'tolak')
-//                 ->count(),
-//         ],
-//         'by_gender' => [
-//             'L' => Official::whereIn('village_id', $villages->pluck('id'))
-//                 ->where('status', 'validasi')
-//                 ->where('jenis_kelamin', 'L')
-//                 ->count(),
-//             'P' => Official::whereIn('village_id', $villages->pluck('id'))
-//                 ->where('status', 'validasi')
-//                 ->where('jenis_kelamin', 'P')
-//                 ->count(),
-//         ],
-//         'by_education' => collect($educationLevels)->mapWithKeys(function ($name, $id) use ($villages) {
-//             return [$name => Official::whereIn('village_id', $villages->pluck('id'))
-//                 ->where('status', 'validasi')
-//                 ->whereHas('identities', function ($q) use ($id) {
-//                     $q->where('pendidikan', $id);
-//                 })
-//                 ->count()];
-//         })->toArray(),
-//         'total_positions' => Position::count(),
-//         'total_districts' => $districts->count(),
-//         'total_villages' => $villages->count(),
-//     ];
+    $stats = [
+        'total_valid_officials' => Official::whereIn('village_id', $villages->pluck('id'))
+            ->where('status', 'validasi')
+            ->count(),
+        'by_status' => [
+            'daftar' => Official::whereIn('village_id', $villages->pluck('id'))
+                ->where('status', 'daftar')
+                ->count(),
+            'proses' => Official::whereIn('village_id', $villages->pluck('id'))
+                ->where('status', 'proses')
+                ->count(),
+            'validasi' => Official::whereIn('village_id', $villages->pluck('id'))
+                ->where('status', 'validasi')
+                ->count(),
+            'tolak' => Official::whereIn('village_id', $villages->pluck('id'))
+                ->where('status', 'tolak')
+                ->count(),
+        ],
+        'by_gender' => [
+            'L' => Official::whereIn('village_id', $villages->pluck('id'))
+                ->where('status', 'validasi')
+                ->where('jenis_kelamin', 'L')
+                ->count(),
+            'P' => Official::whereIn('village_id', $villages->pluck('id'))
+                ->where('status', 'validasi')
+                ->where('jenis_kelamin', 'P')
+                ->count(),
+        ],
+        'by_education' => collect($educationLevels)->mapWithKeys(function ($name, $id) use ($villages) {
+            return [$name => Official::whereIn('village_id', $villages->pluck('id'))
+                ->where('status', 'validasi')
+                ->whereHas('identities', function ($q) use ($id) {
+                    $q->where('pendidikan', $id);
+                })
+                ->count()];
+        })->toArray(),
+        'total_positions' => Position::count(),
+        'total_districts' => $districts->count(),
+        'total_villages' => $villages->count(),
+    ];
 
-//     return response()->json([
-//         'success' => true,
-//         'data' => [
-//             'kode_bps' => $regency->code_bps,
-//             'location' => [
-//                 'regency' => $regency->only(['id', 'name', 'code_bps']),
-//             ],
-//             'statistics' => $stats,
-//             'last_updated' => now()->toDateTimeString()
-//         ]
-//     ]);
-// });
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'kode_bps' => $regency->code_bps,
+            'location' => [
+                'regency' => $regency->only(['id', 'name', 'code_bps']),
+            ],
+            'statistics' => $stats,
+            'last_updated' => now()->toDateTimeString()
+        ]
+    ]);
+});
 
 // API Statistik Global
 Route::get('/global-stats', function () {

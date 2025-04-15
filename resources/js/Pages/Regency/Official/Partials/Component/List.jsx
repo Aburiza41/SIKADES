@@ -1,27 +1,22 @@
 import { useState, useEffect } from "react";
-import DataTable from "react-data-table-component";
-import { FaFileExport } from "react-icons/fa";
+import { FaFileExport, FaSearch, FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
 import Actions from "./Actions";
 import Procces from "./Procces";
+import { HiChevronLeft, HiChevronRight, HiEllipsisHorizontal } from "react-icons/hi2";
 
-export default function List({ officials, fetchData, loading, onEdit, onAccept, onReject, onPrint }) {
+export default function List({ officials, fetchData, loading, onEdit, onAccept, onReject, onPrint, onView }) {
+    console.log(officials);
+
     // State untuk pencarian
     const [filterText, setFilterText] = useState("");
-
-    // State untuk filter pendidikan
     const [educationFilter, setEducationFilter] = useState("");
-
-    // State untuk pagination
     const [currentPage, setCurrentPage] = useState(officials?.current_page || 1);
     const [rowsPerPage, setRowsPerPage] = useState(officials?.per_page || 10);
-
-    // State untuk sorting
     const [sortField, setSortField] = useState("id");
     const [sortDirection, setSortDirection] = useState("asc");
 
-    // Daftar pendidikan sesuai enum
     const educationOptions = [
         "SD/MI",
         "SMP/MTS",
@@ -35,46 +30,33 @@ export default function List({ officials, fetchData, loading, onEdit, onAccept, 
         "S3",
     ];
 
-    // Fetch data saat parameter berubah
     useEffect(() => {
-        const delayDebounceFn = setTimeout(() => {
-            fetchData({
-                page: currentPage,
-                perPage: rowsPerPage,
-                search: filterText,
-                filters: educationFilter, // Kirim filter pendidikan ke backend
-                sortField: sortField,
-                sortDirection: sortDirection,
-            });
-        }, 300); // Delay 300ms untuk menghindari terlalu banyak request
-
-        return () => clearTimeout(delayDebounceFn); // Clear timeout jika komponen unmount atau nilai berubah
+        fetchData({
+            page: currentPage,
+            perPage: rowsPerPage,
+            search: filterText,
+            filters: educationFilter,
+            sortField: sortField,
+            sortDirection: sortDirection,
+        });
     }, [currentPage, rowsPerPage, filterText, educationFilter, sortField, sortDirection]);
 
-    // Handle perubahan halaman
-    const handlePageChange = (page) => {
-        setCurrentPage(page);
+    const handlePageChange = (page) => setCurrentPage(page);
+
+    const handleRowsPerPageChange = (e) => {
+        setRowsPerPage(parseInt(e.target.value));
+        setCurrentPage(1);
     };
 
-    // Handle perubahan jumlah baris per halaman
-    const handleRowsPerPageChange = (newRowsPerPage, page) => {
-        setRowsPerPage(newRowsPerPage);
-        setCurrentPage(page);
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+        } else {
+            setSortField(field);
+            setSortDirection("asc");
+        }
     };
 
-    // Handle sorting
-    const handleSort = (column, sortDirection) => {
-        const validDirections = ["asc", "desc"];
-        const direction = validDirections.includes(sortDirection) ? sortDirection : "asc";
-
-        const validSortFields = ["id", "nama_lengkap", "nik", "niad", "pendidikan", "created_at", "updated_at"];
-        const field = validSortFields.includes(column.selector) ? column.selector : "id";
-
-        setSortField(field);
-        setSortDirection(direction);
-    };
-
-    // Handle ekspor data ke JSON
     const handleExportJSON = () => {
         const jsonData = JSON.stringify(officials?.data || [], null, 2);
         const blob = new Blob([jsonData], { type: "application/json" });
@@ -86,7 +68,6 @@ export default function List({ officials, fetchData, loading, onEdit, onAccept, 
         URL.revokeObjectURL(url);
     };
 
-    // Handle ekspor data ke Excel
     const handleExportExcel = () => {
         const worksheet = XLSX.utils.json_to_sheet(officials?.data || []);
         const workbook = XLSX.utils.book_new();
@@ -94,149 +75,261 @@ export default function List({ officials, fetchData, loading, onEdit, onAccept, 
         XLSX.writeFile(workbook, "officials.xlsx");
     };
 
-    // Kolom tabel
-    const columns = [
-        {
-            name: "No",
-            cell: (row, index) => (currentPage - 1) * rowsPerPage + index + 1, // Nomor berurutan
-            width: "70px",
-        },
-        { name: "Nama Lengkap", selector: (row) => row.nama_lengkap || "-", sortable: true, width: "200px" },
-        { name: "NIK", selector: (row) => row.nik || "-", sortable: true },
-        { name: "NIAD", selector: (row) => row.niad || "-", sortable: true },
-        { name: "Pendidikan", selector: (row) => row.pendidikan || "-", sortable: true },
-        {
-            name: "Status",
-            selector: (row) => row.status,
-            sortable: true,
-            cell: (row) => <CustomBadge role={row.status} />, // Menggunakan komponen CustomBadge
-        },
-        {
-            name: "Proses",
-            cell: (row) => <Procces row={row} onAccept={onAccept} onReject={onReject} />,
-            ignoreRowClick: true,
-            allowOverflow: true,
-            button: true,
-            width: "100px",
-        },
-
-        {
-            name: "Aksi",
-            cell: (row) => <Actions row={row} onEdit={onEdit} onPrint={onPrint} />,
-            ignoreRowClick: true,
-            allowOverflow: true,
-            button: true,
-            width: "100px",
-        },
-    ];
-
-    // Komponen Badge Kustom
     const CustomBadge = ({ role }) => {
-        let badgeColor = '';
-        let roleName = '';
+        let badgeColor = "";
+        let roleName = "";
 
-        // Mengubah warna badge dan nama role berdasarkan nilai role
         switch (role) {
-            case 'tolak':
-                badgeColor = 'bg-red-500';
-                roleName = 'Tolak';
-                break;
-            case 'daftar':
-                badgeColor = 'bg-blue-500';
-                roleName = 'Daftar';
-                break;
-            case 'validasi':
-                badgeColor = 'bg-green-500';
-                roleName = 'Terima';
-                break;
-            case 'proses':
-                badgeColor = 'bg-yellow-500';
-                roleName = 'Proses';
-                break;
-            default:
-                badgeColor = 'bg-gray-500';
-                roleName = 'Tidak Diketahui';
+            case "tolak": badgeColor = "bg-red-500"; roleName = "Tolak"; break;
+            case "daftar": badgeColor = "bg-blue-500"; roleName = "Daftar"; break;
+            case "validasi": badgeColor = "bg-green-500"; roleName = "Terima"; break;
+            case "proses": badgeColor = "bg-yellow-500"; roleName = "Proses"; break;
+            default: badgeColor = "bg-gray-500"; roleName = "Tidak Diketahui";
         }
 
         return (
-            <span className={`px-2 py-0 text-sm text-white rounded ${badgeColor}`}>
+            <span className={`px-2 py-1 text-xs text-white rounded-full ${badgeColor}`}>
                 {roleName}
             </span>
         );
     };
 
-    return (
-        <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-300">
-            {/* Header dengan pencarian dan filter */}
-            <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                {/* Input pencarian */}
-                <motion.input
-                    type="text"
-                    placeholder="Cari nama..."
-                    value={filterText}
-                    onChange={(e) => setFilterText(e.target.value)}
-                    className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto"
-                    whileHover={{ scale: 1.02 }}
-                    whileFocus={{ scale: 1.02 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                />
+    const renderSortableHeader = (field, label) => {
+        const isSorted = sortField === field;
+        return (
+            <th
+                className="border px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort(field)}
+            >
+                <div className="flex items-center">
+                    {label}
+                    {isSorted ? (
+                        sortDirection === "asc" ?
+                        <FaSortUp className="ml-1" /> :
+                        <FaSortDown className="ml-1" />
+                    ) : (
+                        <FaSort className="ml-1 text-gray-400" />
+                    )}
+                </div>
+            </th>
+        );
+    };
 
-                {/* Filter Pendidikan */}
-                <select
-                    name="education"
-                    value={educationFilter}
-                    onChange={(e) => setEducationFilter(e.target.value)}
-                    className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto"
-                >
-                    <option value="">Semua Pendidikan</option>
-                    {educationOptions.map((education, index) => (
-                        <option key={index} value={education}>
-                            {education}
-                        </option>
+    const Pagination = ({ currentPage, lastPage, handlePageChange }) => {
+        const getPageNumbers = () => {
+            const pages = [];
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(lastPage, currentPage + 2);
+
+            if (startPage > 1) {
+                pages.push(1);
+                if (startPage > 2) pages.push("...");
+            }
+
+            for (let i = startPage; i <= endPage; i++) pages.push(i);
+
+            if (endPage < lastPage) {
+                if (endPage < lastPage - 1) pages.push("...");
+                pages.push(lastPage);
+            }
+
+            return pages;
+        };
+
+        return (
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                    <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className={`p-2 rounded-md border ${
+                            currentPage === 1 ? "border-gray-200 text-gray-400 cursor-not-allowed" :
+                            "border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
+                    >
+                        <HiChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    {getPageNumbers().map((page, index) => (
+                        <button
+                            key={index}
+                            onClick={() => typeof page === "number" && handlePageChange(page)}
+                            className={`p-2 min-w-[36px] rounded-md border text-sm ${
+                                page === currentPage ?
+                                "border-green-500 bg-green-50 text-green-600 font-medium" :
+                                page === "..." ?
+                                "border-transparent text-gray-500 cursor-default" :
+                                "border-gray-300 text-gray-700 hover:bg-gray-50"
+                            }`}
+                            disabled={page === "..."}
+                        >
+                            {page === "..." ? <HiEllipsisHorizontal /> : page}
+                        </button>
                     ))}
-                </select>
 
-                {/* Tombol aksi (Export JSON, Export Excel) */}
+                    <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === lastPage}
+                        className={`p-2 rounded-md border ${
+                            currentPage === lastPage ?
+                            "border-gray-200 text-gray-400 cursor-not-allowed" :
+                            "border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
+                    >
+                        <HiChevronRight className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    return (
+        <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+            {/* Header dengan pencarian dan filter */}
+            <div className="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
+                    <div className="relative w-full md:w-64">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <FaSearch className="text-gray-400" />
+                        </div>
+                        <motion.input
+                            type="text"
+                            placeholder="Cari nama..."
+                            value={filterText}
+                            onChange={(e) => setFilterText(e.target.value)}
+                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            whileHover={{ scale: 1.01 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                        />
+                    </div>
+
+                    <select
+                        value={educationFilter}
+                        onChange={(e) => setEducationFilter(e.target.value)}
+                        className="block w-full md:w-auto pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                    >
+                        <option value="">Semua Pendidikan</option>
+                        {educationOptions.map((education, index) => (
+                            <option key={index} value={education}>{education}</option>
+                        ))}
+                    </select>
+                </div>
+
                 <div className="flex gap-2 w-full md:w-auto justify-end">
                     <motion.button
                         onClick={handleExportJSON}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center"
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 300 }}
                     >
-                        <FaFileExport className="mr-2" /> Export JSON
+                        <FaFileExport className="mr-2" /> JSON
                     </motion.button>
 
                     <motion.button
                         onClick={handleExportExcel}
-                        className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center"
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 300 }}
                     >
-                        <FaFileExport className="mr-2" /> Export Excel
+                        <FaFileExport className="mr-2" /> Excel
                     </motion.button>
                 </div>
             </div>
 
-            {/* Tabel data dengan navigasi horizontal */}
-            <div className="overflow-x-auto">
-                <DataTable
-                    columns={columns}
-                    data={officials?.data || []}
-                    pagination
-                    paginationServer
-                    paginationTotalRows={officials?.total || 0}
-                    paginationDefaultPage={currentPage}
-                    onChangePage={handlePageChange}
-                    onChangeRowsPerPage={handleRowsPerPageChange}
-                    onSort={handleSort}
-                    highlightOnHover
-                    pointerOnHover
-                    striped
-                    responsive
-                    progressPending={loading}
+            {/* Tabel data */}
+            <div className="overflow-x-auto w-full px-6 py-4">
+                <table className="w-full divide-x divide-gray-200 text-sm border">
+                    <thead className="bg-gray-50 border">
+                        <tr>
+                            <th className="border px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                            {renderSortableHeader("nama_lengkap", "Nama Lengkap")}
+                            {renderSortableHeader("nik", "NIK")}
+                            {renderSortableHeader("niad", "NIAD")}
+                            {renderSortableHeader("pendidikan", "Pendidikan")}
+                            <th className="border px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="border px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proses</th>
+                            <th className="border px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-x divide-gray-200 border">
+                        {loading ? (
+                            <tr>
+                                <td colSpan="7" className="border px-2 py-2 text-center text-sm text-gray-500">
+                                    Memuat data...
+                                </td>
+                            </tr>
+                        ) : officials?.data?.length > 0 ? (
+                            officials.data.map((row, index) => (
+                                <tr key={row.id} className="hover:bg-gray-50">
+                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        {(currentPage - 1) * rowsPerPage + index + 1}
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap">
+                                        <div className="text-sm font-medium text-gray-900">
+                                            {row.nama_lengkap || "-"}
+                                        </div>
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        {row.nik || "-"}
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        {row.niad || "-"}
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        {row.identities.pendidikan || "-"}
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        <CustomBadge role={row.status} />
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        <Procces row={row} onAccept={onAccept} onReject={onReject} />
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap text-right text-sm font-medium">
+                                        <Actions row={row} onEdit={onEdit} onPrint={onPrint} onView={onView} />
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="7" className="border px-2 py-2 text-center text-sm text-gray-500">
+                                    Tidak ada data yang ditemukan
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="px-6 py-3 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex items-center">
+                    <span className="text-sm text-gray-700 mr-2">Baris per halaman:</span>
+                    <select
+                        value={rowsPerPage}
+                        onChange={handleRowsPerPageChange}
+                        className="block w-20 pl-3 pr-10 py-1 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                    >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                    </select>
+                </div>
+
+                <div className="text-sm text-gray-700">
+                    Menampilkan <span className="font-medium">{(currentPage - 1) * rowsPerPage + 1}</span> sampai{' '}
+                    <span className="font-medium">
+                        {Math.min(currentPage * rowsPerPage, officials?.total || 0)}
+                    </span>{' '}
+                    dari <span className="font-medium">{officials?.total || 0}</span> data
+                </div>
+
+                <Pagination
+                    currentPage={currentPage}
+                    lastPage={officials?.last_page || 1}
+                    handlePageChange={handlePageChange}
                 />
             </div>
         </div>

@@ -1,15 +1,18 @@
-import { FiEdit, FiX, FiPrinter } from "react-icons/fi"; // Ikon dari Feather Icons
+import { FiEdit, FiX, FiPrinter, FiEye } from "react-icons/fi"; // Ikon dari Feather Icons
 import { FaCheck } from "react-icons/fa"; // Ikon dari FontAwesome
 
-export default function Actions({ row, onEdit, onPrint }) {
+export default function Actions({ row, onEdit, onPrint, onView }) {
     // Cek status row
 
     return (
         <div className="flex space-x-2">
             {/* Tombol Ubah */}
-            <button onClick={() => onEdit(row)} className="text-yellow-500 hover:text-yellow-700">
+            {/* <button onClick={() => onEdit(row)} className="text-yellow-500 hover:text-yellow-700">
                 <FiEdit size={16} />
-                {/* Ubah */}
+            </button> */}
+
+            <button onClick={() => onView(row)} className="text-yellow-500 hover:text-yellow-700">
+                <FiEye size={16} />
             </button>
 
 

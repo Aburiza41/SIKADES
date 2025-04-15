@@ -28,7 +28,7 @@ class OfficialController extends Controller
     Log::info('Request parameters:', $request->all());
 
     // Query utama untuk officials dengan filter dan sorting
-    $officials = Official::with(['village.district.regency'])
+    $officials = Official::with(['village.district.regency', 'addresses', 'contacts', 'identities', 'studies.study', 'positions.position', 'officialTrainings', 'officialOrganizations'])
         ->whereIn('village_id', $villageIds) // Filter berdasarkan village_id di bawah regency
         ->when($request->has('search') && $request->search !== '', function ($query) use ($request) {
             $query->where(function ($q) use ($request) {
@@ -47,6 +47,8 @@ class OfficialController extends Controller
             in_array(strtolower($request->sort_direction), ['asc', 'desc']) ? strtolower($request->sort_direction) : 'asc'
         )
         ->paginate($request->per_page ?? 10);
+
+    // dd($officials);
 
     // Kembalikan data menggunakan Inertia
     return Inertia::render('Regency/Official/Page', [
@@ -86,7 +88,13 @@ class OfficialController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $officials = Official::with(['village.district.regency', 'addresses', 'contacts', 'identities', 'studies.study', 'positions.position', 'officialTrainings', 'officialOrganizations'])
+            ->where('nik', $id)
+            ->firstOrFail();
+
+        return Inertia::render('Regency/Official/Show', [
+            'official' => $officials,
+        ]);
     }
 
     /**

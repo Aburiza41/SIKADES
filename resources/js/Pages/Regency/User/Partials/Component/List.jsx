@@ -1,63 +1,49 @@
 import { useState, useEffect } from "react";
-import DataTable from "react-data-table-component";
-import { FaFileExport } from "react-icons/fa";
+import { FaFileExport, FaSearch, FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
 import Actions from "./Actions";
+import { HiChevronLeft, HiChevronRight, HiEllipsisHorizontal } from "react-icons/hi2";
 
 export default function List({ users, fetchData, loading, onEdit, onDelete, onView, onPrint }) {
+    console.log(users);
     // State untuk pencarian
     const [filterText, setFilterText] = useState("");
-
-    // State untuk filter role
     const [roleFilter, setRoleFilter] = useState("");
-
-    // State untuk pagination
     const [currentPage, setCurrentPage] = useState(users?.current_page || 1);
     const [rowsPerPage, setRowsPerPage] = useState(users?.per_page || 10);
-
-    // State untuk sorting
     const [sortField, setSortField] = useState("id");
     const [sortDirection, setSortDirection] = useState("asc");
 
-    // Fetch data saat parameter berubah
     useEffect(() => {
         fetchData({
             page: currentPage,
             perPage: rowsPerPage,
             search: filterText,
-            filters: roleFilter, // Kirim filter role ke backend
+            filters: roleFilter,
             sortField: sortField,
             sortDirection: sortDirection,
         });
     }, [currentPage, rowsPerPage, filterText, roleFilter, sortField, sortDirection]);
 
-    // Handle perubahan halaman
-    const handlePageChange = (page) => {
-        setCurrentPage(page);
+    const handlePageChange = (page) => setCurrentPage(page);
+
+    const handleRowsPerPageChange = (e) => {
+        setRowsPerPage(parseInt(e.target.value));
+        setCurrentPage(1);
     };
 
-    // Handle perubahan jumlah baris per halaman
-    const handleRowsPerPageChange = (newRowsPerPage, page) => {
-        setRowsPerPage(newRowsPerPage);
-        setCurrentPage(page);
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+        } else {
+            setSortField(field);
+            setSortDirection("asc");
+        }
     };
 
-    // Handle sorting
-    const handleSort = (column, sortDirection) => {
-        const validDirections = ["asc", "desc"];
-        const direction = validDirections.includes(sortDirection) ? sortDirection : "asc";
-
-        const validSortFields = ["id", "name", "email", "role", "created_at", "updated_at"];
-        const field = validSortFields.includes(column.selector) ? column.selector : "id";
-
-        setSortField(field);
-        setSortDirection(direction);
-    };
-
-    // Handle ekspor data ke JSON
     const handleExportJSON = () => {
-        const jsonData = JSON.stringify(users.data, null, 2);
+        const jsonData = JSON.stringify(users?.data || [], null, 2);
         const blob = new Blob([jsonData], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -67,200 +53,281 @@ export default function List({ users, fetchData, loading, onEdit, onDelete, onVi
         URL.revokeObjectURL(url);
     };
 
-    // Handle ekspor data ke Excel
     const handleExportExcel = () => {
-        const worksheet = XLSX.utils.json_to_sheet(users.data);
+        const worksheet = XLSX.utils.json_to_sheet(users?.data || []);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "users");
         XLSX.writeFile(workbook, "users.xlsx");
     };
 
-    // Kolom tabel
-    const columns = [
-        { name: "ID", selector: (row) => row.id, sortable: true, width: "70px" },
-        { name: "Nama", selector: (row) => row.name, sortable: true },
-        { name: "Email", selector: (row) => row.email, sortable: true },
-        // {
-        //     name: "Kode Daerah",
-        //     selector: (row) => {
-        //         if (row.role === 'regency') {
-        //             return row.user_regency?.regency?.code_bps || 'N/A';
-        //         } else if (row.role === 'district') {
-        //             return row.user_district?.district?.code_bps || 'N/A';
-        //         } else if (row.role === 'village') {
-        //             return row.user_village?.village?.code_bps || 'N/A';
-        //         } else {
-        //             return 'Admin Pusat'; // Untuk role admin
-        //         }
-        //     },
-        //     sortable: true
-        // },
-        {
-            name: "Daerah",
-            selector: (row) => {
-                if (row.role === 'regency') {
-                    return row.user_regency?.regency?.name_bps || 'N/A';
-                } else if (row.role === 'district') {
-                    return row.user_district?.district?.name_bps || 'N/A';
-                } else if (row.role === 'village') {
-                    return row.user_village?.village?.name_bps || 'N/A';
-                } else {
-                    return 'Admin Pusat'; // Untuk role admin
-                }
-            },
-            sortable: true
-        },
-        {
-            name: "Role",
-            selector: (row) => row.role,
-            sortable: true,
-            cell: (row) => <CustomBadge role={row.role} />, // Menggunakan komponen CustomBadge
-        },
-        // { name: "Tanggal Dibuat", selector: (row) => new Date(row.created_at).toLocaleDateString(), sortable: true },
-        // { name: "Tanggal Diperbarui", selector: (row) => new Date(row.updated_at).toLocaleDateString(), sortable: true },
-        {
-            name: "Aksi",
-            cell: (row) => <Actions row={row} onEdit={onEdit} onDelete={onDelete} onView={onView} onPrint={onPrint} />,
-            ignoreRowClick: true,
-            allowOverflow: true,
-            button: true,
-        },
-    ];
-
-    // Komponen Badge Kustom
     const CustomBadge = ({ role }) => {
         let badgeColor = '';
         let roleName = '';
 
-        // Mengubah warna badge dan nama role berdasarkan nilai role
         switch (role) {
-            case 'admin':
-                badgeColor = 'bg-red-500';
-                roleName = 'Admin';
-                break;
-            case 'regency':
-                badgeColor = 'bg-blue-500';
-                roleName = 'Kabupaten';
-                break;
-            case 'district':
-                badgeColor = 'bg-green-500';
-                roleName = 'Kecamatan';
-                break;
-            case 'village':
-                badgeColor = 'bg-yellow-500';
-                roleName = 'Desa';
-                break;
-            default:
-                badgeColor = 'bg-gray-500';
-                roleName = 'Unknown';
+            case 'admin': badgeColor = 'bg-red-500'; roleName = 'Admin'; break;
+            case 'regency': badgeColor = 'bg-blue-500'; roleName = 'Kabupaten'; break;
+            case 'district': badgeColor = 'bg-green-500'; roleName = 'Kecamatan'; break;
+            case 'village': badgeColor = 'bg-yellow-500'; roleName = 'Desa'; break;
+            default: badgeColor = 'bg-gray-500'; roleName = 'Unknown';
         }
 
         return (
-            <span className={`px-2 py-0 text-sm text-white rounded ${badgeColor}`}>
+            <span className={`px-2 py-1 text-xs text-white rounded-full ${badgeColor}`}>
                 {roleName}
             </span>
         );
     };
 
-    const CustomDaerah = ({ row, role }) => {
-        let badgeColor = '';
-        let name = '';
-        console.log(row);
-
-        // Mengubah warna badge dan nama role berdasarkan nilai role
-        switch (role) {
-            case 'admin':
-                name = '';
-                break;
-            case 'regency':
-                name = row.user_regency?.regency?.name_bps;
-                break;
-            case 'district':
-                name = row.user_district?.district?.name_bps;
-                break;
-            case 'village':
-                name = row.user_village?.village?.name_bps;
-                break;
-            default:
-                name = 'Unknown';
-        }
-
+    const renderSortableHeader = (field, label) => {
+        const isSorted = sortField === field;
         return (
-            name
+            <th
+                className="border px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort(field)}
+            >
+                <div className="flex items-center">
+                    {label}
+                    {isSorted ? (
+                        sortDirection === "asc" ?
+                        <FaSortUp className="ml-1" /> :
+                        <FaSortDown className="ml-1" />
+                    ) : (
+                        <FaSort className="ml-1 text-gray-400" />
+                    )}
+                </div>
+            </th>
         );
     };
 
+    const Pagination = ({ currentPage, lastPage, handlePageChange }) => {
+        const getPageNumbers = () => {
+            const pages = [];
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(lastPage, currentPage + 2);
+
+            if (startPage > 1) {
+                pages.push(1);
+                if (startPage > 2) pages.push("...");
+            }
+
+            for (let i = startPage; i <= endPage; i++) pages.push(i);
+
+            if (endPage < lastPage) {
+                if (endPage < lastPage - 1) pages.push("...");
+                pages.push(lastPage);
+            }
+
+            return pages;
+        };
+
+        return (
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                    <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className={`p-2 rounded-md border ${
+                            currentPage === 1 ? "border-gray-200 text-gray-400 cursor-not-allowed" :
+                            "border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
+                    >
+                        <HiChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    {getPageNumbers().map((page, index) => (
+                        <button
+                            key={index}
+                            onClick={() => typeof page === "number" && handlePageChange(page)}
+                            className={`p-2 min-w-[36px] rounded-md border text-sm ${
+                                page === currentPage ?
+                                "border-green-500 bg-green-50 text-green-600 font-medium" :
+                                page === "..." ?
+                                "border-transparent text-gray-500 cursor-default" :
+                                "border-gray-300 text-gray-700 hover:bg-gray-50"
+                            }`}
+                            disabled={page === "..."}
+                        >
+                            {page === "..." ? <HiEllipsisHorizontal /> : page}
+                        </button>
+                    ))}
+
+                    <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === lastPage}
+                        className={`p-2 rounded-md border ${
+                            currentPage === lastPage ?
+                            "border-gray-200 text-gray-400 cursor-not-allowed" :
+                            "border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
+                    >
+                        <HiChevronRight className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    const getDaerahName = (row) => {
+        if (row.role === 'regency') {
+            return row.user_regency?.regency?.name_bps || 'N/A';
+        } else if (row.role === 'district') {
+            return row.user_district?.district?.name_bps || 'N/A';
+        } else if (row.role === 'village') {
+            return row.user_village?.village?.name_bps || 'N/A';
+        } else {
+            return 'Admin Pusat';
+        }
+    };
+
     return (
-        <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-300">
+        <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
             {/* Header dengan pencarian dan filter */}
-            <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                {/* Input pencarian */}
-                <motion.input
-                    type="text"
-                    placeholder="Cari nama..."
-                    value={filterText}
-                    onChange={(e) => setFilterText(e.target.value)}
-                    className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto"
-                    whileHover={{ scale: 1.02 }}
-                    whileFocus={{ scale: 1.02 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                />
+            <div className="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
+                    <div className="relative w-full md:w-64">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <FaSearch className="text-gray-400" />
+                        </div>
+                        <motion.input
+                            type="text"
+                            placeholder="Cari nama..."
+                            value={filterText}
+                            onChange={(e) => setFilterText(e.target.value)}
+                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            whileHover={{ scale: 1.01 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                        />
+                    </div>
 
-                {/* Filter Role */}
-                <select
-                    name="role"
-                    value={roleFilter}
-                    onChange={(e) => setRoleFilter(e.target.value)}
-                    className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto"
-                >
-                    <option value="">Semua Role</option>
-                    <option value="village">Village</option>
-                    <option value="district">District</option>
-                    <option value="regency">Regency</option>
-                    <option value="admin">Admin</option>
-                </select>
+                    <select
+                        value={roleFilter}
+                        onChange={(e) => setRoleFilter(e.target.value)}
+                        className="block w-full md:w-auto pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                    >
+                        <option value="">Semua Role</option>
+                        <option value="village">Desa</option>
+                        <option value="district">Kecamatan</option>
+                        <option value="regency">Kabupaten</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
 
-                {/* Tombol aksi (Export JSON, Export Excel) */}
                 <div className="flex gap-2 w-full md:w-auto justify-end">
                     <motion.button
                         onClick={handleExportJSON}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center"
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 300 }}
                     >
-                        <FaFileExport className="mr-2" /> Export JSON
+                        <FaFileExport className="mr-2" /> JSON
                     </motion.button>
 
                     <motion.button
                         onClick={handleExportExcel}
-                        className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center"
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 300 }}
                     >
-                        <FaFileExport className="mr-2" /> Export Excel
+                        <FaFileExport className="mr-2" /> Excel
                     </motion.button>
                 </div>
             </div>
 
             {/* Tabel data */}
-            <DataTable
-                columns={columns}
-                data={users?.data || []}
-                pagination
-                paginationServer
-                paginationTotalRows={users?.total || 0}
-                paginationDefaultPage={currentPage}
-                onChangePage={handlePageChange}
-                onChangeRowsPerPage={handleRowsPerPageChange}
-                onSort={handleSort}
-                highlightOnHover
-                pointerOnHover
-                striped
-                responsive
-                progressPending={loading}
-            />
+            <div className="overflow-x-auto w-full px-5 py-3">
+                <table className="w-full divide-x divide-gray-200 text-sm border">
+                    <thead className="bg-gray-50 border">
+                        <tr>
+                            <th className="border px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            {renderSortableHeader("name", "Nama")}
+                            {renderSortableHeader("email", "Email")}
+                            <th className="border px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Daerah</th>
+                            {renderSortableHeader("role", "Role")}
+                            <th className="border px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-x divide-gray-200 border">
+                        {loading ? (
+                            <tr>
+                                <td colSpan="6" className="border px-2 py-2 text-center text-sm text-gray-500">
+                                    Memuat data...
+                                </td>
+                            </tr>
+                        ) : users?.data?.length > 0 ? (
+                            users.data.map((row, index) => (
+                                <tr key={row.id} className="hover:bg-gray-50">
+                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        {row.id}
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap">
+                                        <div className="text-sm font-medium text-gray-900">
+                                            {row.name}
+                                        </div>
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        {row.email}
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        {getDaerahName(row)}
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        <CustomBadge role={row.role} />
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap text-right text-sm font-medium">
+                                        <Actions
+                                            row={row}
+                                            onEdit={onEdit}
+                                            onDelete={onDelete}
+                                            onView={onView}
+                                            onPrint={onPrint}
+                                        />
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="6" className="border px-2 py-2 text-center text-sm text-gray-500">
+                                    Tidak ada data yang ditemukan
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="px-6 py-3 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex items-center">
+                    <span className="text-sm text-gray-700 mr-2">Baris per halaman:</span>
+                    <select
+                        value={rowsPerPage}
+                        onChange={handleRowsPerPageChange}
+                        className="block w-20 pl-3 pr-10 py-1 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                    >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                    </select>
+                </div>
+
+                <div className="text-sm text-gray-700">
+                    Menampilkan <span className="font-medium">{(currentPage - 1) * rowsPerPage + 1}</span> sampai{' '}
+                    <span className="font-medium">
+                        {Math.min(currentPage * rowsPerPage, users?.total || 0)}
+                    </span>{' '}
+                    dari <span className="font-medium">{users?.total || 0}</span> data
+                </div>
+
+                <Pagination
+                    currentPage={currentPage}
+                    lastPage={users?.last_page || 1}
+                    handlePageChange={handlePageChange}
+                />
+            </div>
         </div>
     );
 }

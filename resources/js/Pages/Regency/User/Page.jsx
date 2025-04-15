@@ -12,7 +12,7 @@ import Select from "react-select";
 // Ambil token CSRF
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-export default function User({ initialUsers, regencies, districts, villages }) {
+export default function User({ initialUsers, regencies, districts, villages, userRegency }) {
     const { flash } = usePage().props;
     const [users, setUsers] = useState(initialUsers);
     const [loading, setLoading] = useState(false);
@@ -175,7 +175,7 @@ export default function User({ initialUsers, regencies, districts, villages }) {
         setNewUser({
             name: "",
             email: "",
-            role: "admin",
+            role: "regency",
             regency_id: "",
             district_id: "",
             village_id: "",
