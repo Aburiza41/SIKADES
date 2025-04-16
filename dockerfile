@@ -1,4 +1,4 @@
-FROM php:8.2-fpm
+FROM php:8.4-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -21,6 +21,12 @@ WORKDIR /var/www/html
 
 # Copy existing application directory contents
 COPY . /var/www/html/
+
+# Copy the CA certificate
+COPY cacert.pem /usr/local/etc/ssl/certs/cacert.pem
+
+# Configure Composer to use the CA certificate
+RUN composer config --global -- cafile /usr/local/etc/ssl/certs/cacert.pem
 
 # Install dependencies
 RUN composer install --no-progress --prefer-dist --optimize-autoloader
