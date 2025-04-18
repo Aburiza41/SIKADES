@@ -38,6 +38,14 @@ use App\Http\Controllers\Web\Village\OfficialOrganizationController as VillageOf
 // Middleware
 use App\Http\Middleware\Custom\AdminMiddleware;
 
+// Export
+use App\Exports\UsersExport;
+
+// Test
+Route::get('/test', function() {
+    return Maatwebsite\Excel\Excel::download(new UsersExport, 'users.xlsx');
+});
+
 Route::name('guest.')->group(function () {
 
     // Beranda
