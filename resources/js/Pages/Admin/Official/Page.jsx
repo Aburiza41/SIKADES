@@ -341,6 +341,7 @@ export default function Official({ initialOfficials, officials, role, position }
                     onDelete={handleDelete}
                     onView={handleView}
                     onPrint={handlePrint}
+                    position={position}
                 />
             </div>
 

@@ -17,6 +17,7 @@ use App\Http\Controllers\Web\Guest\MemberController as GuestMemberController;
 // Admin
 use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Web\Admin\OfficialController as AdminOfficialController;
+use App\Http\Controllers\Web\Admin\OfficialExportController as AdminOfficialExportController;
 use App\Http\Controllers\Web\Admin\AparatusController as AdminAparatusController;
 use App\Http\Controllers\Web\Admin\OrganizationController as AdminOrganizationController;
 use App\Http\Controllers\Web\Admin\TrainingController as AdminTrainingController;
@@ -111,6 +112,12 @@ Route::prefix('/admin')->name('admin.')->middleware('auth', AdminMiddleware::cla
         Route::get('/{id}', 'show')->name('show');
         Route::put('/{id}', 'update')->name('update');
         Route::delete('/{id}', 'destroy')->name('destroy');
+
+        Route::prefix('/export')->name('export.')->controller(AdminOfficialExportController::class)->group(function () {
+            Route::get('/json', 'json')->name('json');
+            Route::get('/excel', 'excel')->name('excel');
+            Route::get('/pdf', 'pdf')->name('pdf');
+        });
     });
 
     // Aparatus

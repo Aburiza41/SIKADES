@@ -24,16 +24,14 @@ class CreateOrganizationsTable extends Migration
 
         // Menambahkan data default untuk tabel organizations
         DB::table('organizations')->insert([
-            ['title' => 'Karang Taruna', 'description' => 'Organisasi kepemudaan di desa', 'created_at' => now(), 'updated_at' => now()],
-            ['title' => 'PKK', 'description' => 'Pemberdayaan dan kesejahteraan keluarga', 'created_at' => now(), 'updated_at' => now()],
-            ['title' => 'LPM', 'description' => 'Lembaga Pemberdayaan Masyarakat', 'created_at' => now(), 'updated_at' => now()],
-            ['title' => 'BPD', 'description' => 'Badan Permusyawaratan Desa', 'created_at' => now(), 'updated_at' => now()],
-            ['title' => 'RT/RW', 'description' => 'Rukun Tetangga / Rukun Warga', 'created_at' => now(), 'updated_at' => now()],
-            ['title' => 'Kelompok Tani', 'description' => 'Kelompok tani di desa', 'created_at' => now(), 'updated_at' => now()],
-            ['title' => 'Kelompok Nelayan', 'description' => 'Kelompok nelayan di desa', 'created_at' => now(), 'updated_at' => now()],
-            ['title' => 'Posyandu', 'description' => 'Pos Pelayanan Terpadu', 'created_at' => now(), 'updated_at' => now()],
-            ['title' => 'BUMDes', 'description' => 'Badan Usaha Milik Desa', 'created_at' => now(), 'updated_at' => now()],
-            ['title' => 'Koperasi Desa', 'description' => 'Koperasi yang beroperasi di desa', 'created_at' => now(), 'updated_at' => now()],
+            // Parpol
+            ['title' => 'Parpol', 'description' => 'Partai Politik', 'created_at' => now(), 'updated_at' => now()],
+            // Profesi
+            ['title' => 'Profesi', 'description' => 'Profesi', 'created_at' => now(), 'updated_at' => now()],
+            // Sosial
+            ['title' => 'Sosial', 'description' => 'Sosial', 'created_at' => now(), 'updated_at' => now()],
+            // Lainnya
+            ['title' => 'Lainnya', 'description' => 'Lainnya', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         // Tabel untuk menyimpan relasi antara pejabat dan organisasi
@@ -44,6 +42,13 @@ class CreateOrganizationsTable extends Migration
             $table->string('nama'); // Nama pejabat di organisasi
             $table->string('posisi')->nullable(); // Posisi pejabat di organisasi
             $table->longText('doc_scan')->nullable(); // Dokumen pendukung (scan surat keputusan, dll)
+            // Start date and end date
+            $table->date('mulai')->nullable(); // Tanggal mulai
+            $table->date('selesai')->nullable(); // Tanggal selesai
+            // Nama Pimpinan
+            $table->string('pimpinan')->nullable();
+            // Address
+            $table->longText('alamat')->nullable();
             $table->text('keterangan')->nullable(); // Keterangan tambahan
             $table->timestamps(); // Kolom created_at dan updated_at
         });

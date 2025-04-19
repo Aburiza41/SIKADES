@@ -1,13 +1,35 @@
 import { useState, useEffect } from "react";
-import { FaFileExport, FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
+import {
+    FaFileExport,
+    FaSort,
+    FaSortUp,
+    FaSortDown,
+    FaFileUpload,
+    FaFileAlt,
+    FaFileExcel,
+    FaArrowLeft,
+    FaArrowRight,
+    FaFilePdf,
+} from "react-icons/fa";
 import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
 import Actions from "./Actions";
 
-export default function List({ officials, fetchData, loading, onEdit, onDelete, onView, onPrint }) {
+export default function List({
+    officials,
+    fetchData,
+    loading,
+    onEdit,
+    onDelete,
+    onView,
+    onPrint,
+    position,
+}) {
     const [filterText, setFilterText] = useState("");
     const [educationFilter, setEducationFilter] = useState("");
-    const [currentPage, setCurrentPage] = useState(officials?.current_page || 1);
+    const [currentPage, setCurrentPage] = useState(
+        officials?.current_page || 1
+    );
     const [rowsPerPage, setRowsPerPage] = useState(officials?.per_page || 10);
     const [sortField, setSortField] = useState("id");
     const [sortDirection, setSortDirection] = useState("asc");
@@ -34,7 +56,14 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
             sortField: sortField,
             sortDirection: sortDirection,
         });
-    }, [currentPage, rowsPerPage, filterText, educationFilter, sortField, sortDirection]);
+    }, [
+        currentPage,
+        rowsPerPage,
+        filterText,
+        educationFilter,
+        sortField,
+        sortDirection,
+    ]);
 
     const handlePageChange = (page) => setCurrentPage(page);
     const handleRowsPerPageChange = (e) => {
@@ -57,72 +86,121 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "officials.json";
+        // link.download = "Pejabat.json";
+        link.download = `Jabatan_${position.name}_${new Date().toLocaleDateString()}.json`;
         link.click();
         URL.revokeObjectURL(url);
     };
 
     const handleExportExcel = () => {
-        const worksheet = XLSX.utils.json_to_sheet(officials.data);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "officials");
-        XLSX.writeFile(workbook, "officials.xlsx");
+        // Redirect ke endpoint Laravel
+        window.location.href = `/admin/official/${position.slug}/export/excel`;
+
+        // Atau jika menggunakan axios/fetch:
+        // axios.get('/export-officials-excel')
+        //   .then(response => {
+        //     // Jika Anda mengembalikan file download dari Laravel
+        //     const url = window.URL.createObjectURL(new Blob([response.data]));
+        //     const link = document.createElement('a');
+        //     link.href = url;
+        //     link.setAttribute('download', 'officials.xlsx');
+        //     document.body.appendChild(link);
+        //     link.click();
+        //   });
     };
+
 
     const renderSortIcon = (field) => {
         if (sortField !== field) return <FaSort className="ml-1" />;
-        return sortDirection === "asc" ? <FaSortUp className="ml-1" /> : <FaSortDown className="ml-1" />;
+        return sortDirection === "asc" ? (
+            <FaSortUp className="ml-1" />
+        ) : (
+            <FaSortDown className="ml-1" />
+        );
     };
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-300">
             {/* Header dengan pencarian dan filter */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                <motion.input
-                    type="text"
-                    placeholder="Cari nama..."
-                    value={filterText}
-                    onChange={(e) => setFilterText(e.target.value)}
-                    className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto"
-                    whileHover={{ scale: 1.02 }}
-                    whileFocus={{ scale: 1.02 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                />
+                <div className="flex gap-4 w-full md:w-auto">
+                    <div className="flex flex-col gap-1 w-full">
+                        <label htmlFor="search" className="text-sm font-medium">Pecarian</label>
+                        <motion.input
+                            type="text"
+                            id="search"
+                            name="search"
+                            placeholder="Pencarian ..."
+                            value={filterText}
+                            onChange={(e) => setFilterText(e.target.value)}
+                            className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500 w-full md:w-auto"
+                            whileHover={{ scale: 1.02 }}
+                            whileFocus={{ scale: 1.02 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                        />
+                    </div>
 
-                <select
-                    name="education"
-                    value={educationFilter}
-                    onChange={(e) => setEducationFilter(e.target.value)}
-                    className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto"
-                >
-                    <option value="">Semua Pendidikan</option>
-                    {educationOptions.map((education, index) => (
-                        <option key={index} value={education}>
-                            {education}
-                        </option>
-                    ))}
-                </select>
+                    <div className="flex flex-col gap-1">
+                        <label htmlFor="education" className="text-sm font-medium">Pendidikan</label>
+                        <select
+                            id="education"
+                            name="education"
+                            value={educationFilter}
+                            onChange={(e) => setEducationFilter(e.target.value)}
+                            className="border rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                            <option value="">Semua</option>
+                            {educationOptions.map((education, index) => (
+                                <option key={index} value={education}>
+                                    {education}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
 
                 <div className="flex gap-2 w-full md:w-auto justify-end">
                     <motion.button
                         onClick={handleExportJSON}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center"
+                        className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 300 }}
                     >
-                        <FaFileExport className="mr-2" /> Export JSON
+                        <FaFileAlt className="mr-2" /> JSON
                     </motion.button>
 
                     <motion.button
                         onClick={handleExportExcel}
-                        className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center"
+                        className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 300 }}
                     >
-                        <FaFileExport className="mr-2" /> Export Excel
+                        <FaFilePdf className="mr-2" /> PDF
                     </motion.button>
+
+                    <motion.button
+                        onClick={handleExportExcel}
+                        className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaFileExcel className="mr-2" /> Excel
+                    </motion.button>
+
+                    <motion.button
+                        // onClick={handleUpload}
+                        className="bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaFileUpload className="mr-2" /> Upload
+                    </motion.button>
+
+                    {/* <input type="file" className="p-2 border rounded" placeholder="Cari..." /> */}
                 </div>
             </div>
 
@@ -133,15 +211,15 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                         <tr>
                             <th
                                 scope="col"
-                                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: '70px' }}
+                                className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                style={{ width: "70px" }}
                             >
                                 No
                             </th>
                             <th
                                 scope="col"
-                                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: '250px' }}
+                                className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                style={{ width: "250px" }}
                                 onClick={() => handleSort("nama_lengkap")}
                             >
                                 <div className="flex items-center cursor-pointer">
@@ -151,8 +229,8 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                             </th>
                             <th
                                 scope="col"
-                                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: '150px' }}
+                                className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                style={{ width: "150px" }}
                                 onClick={() => handleSort("nik")}
                             >
                                 <div className="flex items-center cursor-pointer">
@@ -162,8 +240,8 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                             </th>
                             <th
                                 scope="col"
-                                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: '150px' }}
+                                className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                style={{ width: "150px" }}
                                 onClick={() => handleSort("nipd")}
                             >
                                 <div className="flex items-center cursor-pointer">
@@ -173,8 +251,8 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                             </th>
                             <th
                                 scope="col"
-                                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: '150px' }}
+                                className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                style={{ width: "150px" }}
                                 onClick={() => handleSort("pendidikan")}
                             >
                                 <div className="flex items-center cursor-pointer">
@@ -182,25 +260,20 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                                     {renderSortIcon("pendidikan")}
                                 </div>
                             </th>
-                            <th>
-                                <div className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Desa
-                                </div>
+
                             </th>
-                            <th>
-                                <div className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Kecamatan
-                                </div>
+                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Kecamatan
                             </th>
-                            <th>
-                                <div className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Kabupaten
-                                </div>
+                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Kabupaten
                             </th>
                             <th
                                 scope="col"
-                                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: '120px' }}
+                                className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                style={{ width: "120px" }}
                             >
                                 Aksi
                             </th>
@@ -209,38 +282,44 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                             <tr>
-                                <td colSpan="6" className="px-2 py-2 text-center">
+                                <td
+                                    colSpan="6"
+                                    className="px-2 py-4 border text-center"
+                                >
                                     Memuat data...
                                 </td>
                             </tr>
                         ) : officials?.data?.length > 0 ? (
                             officials.data.map((row, index) => (
                                 <tr key={row.id}>
-                                    <td className="px-2 py-2 whitespace-nowrap">
-                                        {(currentPage - 1) * rowsPerPage + index + 1}
+                                    <td className="px-2 py-2 border whitespace-nowrap">
+                                        {(currentPage - 1) * rowsPerPage +
+                                            index +
+                                            1}
                                     </td>
-                                    <td className="px-2 py-2 whitespace-nowrap">
+                                    <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.nama_lengkap}
                                     </td>
-                                    <td className="px-2 py-2 whitespace-nowrap">
+                                    <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.nik}
                                     </td>
-                                    <td className="px-2 py-2 whitespace-nowrap">
+                                    <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.nipd}
                                     </td>
-                                    <td className="px-2 py-2 whitespace-nowrap">
+                                    <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.identities.pendidikan || "-"}
                                     </td>
-                                    <td className="px-2 py-2 whitespace-nowrap">
+                                    <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.name_bps || "-"}
                                     </td>
-                                    <td className="px-2 py-2 whitespace-nowrap">
+                                    <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.district.name_bps || "-"}
                                     </td>
-                                    <td className="px-2 py-2 whitespace-nowrap">
-                                        {row.village.district.regency.name_bps || "-"}
+                                    <td className="px-2 py-2 border whitespace-nowrap">
+                                        {row.village.district.regency
+                                            .name_bps || "-"}
                                     </td>
-                                    <td className="px-2 py-2 whitespace-nowrap">
+                                    <td className="px-2 py-2 border whitespace-nowrap">
                                         <Actions
                                             row={row}
                                             onEdit={onEdit}
@@ -253,7 +332,10 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="6" className="px-6 py-4 text-center">
+                                <td
+                                    colSpan="6"
+                                    className="px-6 py-4 text-center"
+                                >
                                     Tidak ada data yang ditemukan
                                 </td>
                             </tr>
@@ -264,26 +346,13 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
 
             {/* Pagination */}
             <div className="flex flex-col md:flex-row justify-between items-center mt-4">
-                <div className="mb-2 md:mb-0">
-                    <span className="text-sm text-gray-700">
-                        Menampilkan <span className="font-medium">{(currentPage - 1) * rowsPerPage + 1}</span> sampai{' '}
-                        <span className="font-medium">
-                            {Math.min(currentPage * rowsPerPage, officials?.total || 0)}
-                        </span>{' '}
-                        dari <span className="font-medium">{officials?.total || 0}</span> data
-                    </span>
-                </div>
-
-                <div className="flex items-center gap-4">
+                <div className="mb-2 md:mb-0 flex items-center gap-4">
                     <div className="flex items-center">
-                        <label htmlFor="rowsPerPage" className="mr-2 text-sm text-gray-700">
-                            Baris per halaman:
-                        </label>
                         <select
                             id="rowsPerPage"
                             value={rowsPerPage}
                             onChange={handleRowsPerPageChange}
-                            className="border rounded p-1"
+                            className="border rounded"
                         >
                             {[5, 10, 25, 50, 100].map((size) => (
                                 <option key={size} value={size}>
@@ -292,35 +361,72 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                             ))}
                         </select>
                     </div>
+                    <span className="text-sm text-gray-700">
+                        <span className="font-medium">
+                            {(currentPage - 1) * rowsPerPage + 1}
+                        </span>{" "}
+                        -{" "}
+                        <span className="font-medium">
+                            {Math.min(
+                                currentPage * rowsPerPage,
+                                officials?.total || 0
+                            )}
+                        </span>{" "}
+                        Total{" "}
+                        <span className="font-medium">
+                            {officials?.total || 0}
+                        </span>
+                    </span>
+                </div>
 
+                <div className="flex items-center gap-4">
                     <div className="flex gap-1">
                         <button
                             onClick={() => handlePageChange(currentPage - 1)}
                             disabled={currentPage === 1}
-                            className="px-3 py-1 border rounded disabled:opacity-50"
+                            className="px-3 py-1 border rounded disabled:opacity-50 bg-green-700 text-white"
                         >
-                            Previous
+                            <FaArrowLeft />
                         </button>
-                        {Array.from({ length: Math.ceil((officials?.total || 0) / rowsPerPage) }, (_, i) => i + 1)
+                        {Array.from(
+                            {
+                                length: Math.ceil(
+                                    (officials?.total || 0) / rowsPerPage
+                                ),
+                            },
+                            (_, i) => i + 1
+                        )
                             .slice(
                                 Math.max(0, currentPage - 3),
-                                Math.min(Math.ceil((officials?.total || 0) / rowsPerPage), currentPage + 2)
+                                Math.min(
+                                    Math.ceil(
+                                        (officials?.total || 0) / rowsPerPage
+                                    ),
+                                    currentPage + 2
+                                )
                             )
                             .map((page) => (
                                 <button
                                     key={page}
                                     onClick={() => handlePageChange(page)}
-                                    className={`px-3 py-1 border rounded ${currentPage === page ? 'bg-blue-500 text-white' : ''}`}
+                                    className={`px-3 py-1 border rounded ${
+                                        currentPage === page
+                                            ? "bg-green-700 text-white opacity-50"
+                                            : ""
+                                    }`}
                                 >
                                     {page}
                                 </button>
                             ))}
                         <button
                             onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === Math.ceil((officials?.total || 0) / rowsPerPage)}
-                            className="px-3 py-1 border rounded disabled:opacity-50"
+                            disabled={
+                                currentPage ===
+                                Math.ceil((officials?.total || 0) / rowsPerPage)
+                            }
+                            className="px-3 py-1 border rounded disabled:opacity-50 bg-green-700 text-white"
                         >
-                            Next
+                            <FaArrowRight />
                         </button>
                     </div>
                 </div>
