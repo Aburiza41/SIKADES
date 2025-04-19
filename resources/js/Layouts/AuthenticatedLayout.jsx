@@ -97,7 +97,7 @@ export default function AuthenticatedLayout({ header, children, breadcrumb }) {
                         </div>
                     </Link>
                 </div>
-                <div className="space-y-2 mt-4 px-3">
+                <div className="space-y-1 mt-2 px-3 max-h-[90vh] overflow-y-auto pb-12 text-sm font-light">
                     {user.role === "admin" && <AdminSidebar />}
                     {user.role === "regency" && <RegencySidebar />}
                     {user.role === "district" && <DistrictSidebar />}

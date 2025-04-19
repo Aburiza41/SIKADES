@@ -128,19 +128,19 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
 
             {/* Tabel biasa dengan overflow horizontal */}
             <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="min-w-full divide-y divide-gray-200 text-xs border">
                     <thead className="bg-gray-50">
                         <tr>
                             <th
                                 scope="col"
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 style={{ width: '70px' }}
                             >
                                 No
                             </th>
                             <th
                                 scope="col"
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 style={{ width: '250px' }}
                                 onClick={() => handleSort("nama_lengkap")}
                             >
@@ -151,7 +151,7 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                             </th>
                             <th
                                 scope="col"
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 style={{ width: '150px' }}
                                 onClick={() => handleSort("nik")}
                             >
@@ -162,7 +162,7 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                             </th>
                             <th
                                 scope="col"
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 style={{ width: '150px' }}
                                 onClick={() => handleSort("niad")}
                             >
@@ -173,7 +173,7 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                             </th>
                             <th
                                 scope="col"
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 style={{ width: '150px' }}
                                 onClick={() => handleSort("pendidikan")}
                             >
@@ -182,9 +182,24 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                                     {renderSortIcon("pendidikan")}
                                 </div>
                             </th>
+                            <th>
+                                <div className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Desa
+                                </div>
+                            </th>
+                            <th>
+                                <div className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Kecamatan
+                                </div>
+                            </th>
+                            <th>
+                                <div className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Kabupaten
+                                </div>
+                            </th>
                             <th
                                 scope="col"
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 style={{ width: '120px' }}
                             >
                                 Aksi
@@ -194,29 +209,38 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                             <tr>
-                                <td colSpan="6" className="px-6 py-4 text-center">
+                                <td colSpan="6" className="px-2 py-2 text-center">
                                     Memuat data...
                                 </td>
                             </tr>
                         ) : officials?.data?.length > 0 ? (
                             officials.data.map((row, index) => (
                                 <tr key={row.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-2 py-2 whitespace-nowrap">
                                         {(currentPage - 1) * rowsPerPage + index + 1}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-2 py-2 whitespace-nowrap">
                                         {row.nama_lengkap}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-2 py-2 whitespace-nowrap">
                                         {row.nik}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-2 py-2 whitespace-nowrap">
                                         {row.niad}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-2 py-2 whitespace-nowrap">
                                         {row.pendidikan || "-"}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-2 py-2 whitespace-nowrap">
+                                        {row.village.name_bps || "-"}
+                                    </td>
+                                    <td className="px-2 py-2 whitespace-nowrap">
+                                        {row.village.district.name_bps || "-"}
+                                    </td>
+                                    <td className="px-2 py-2 whitespace-nowrap">
+                                        {row.village.district.regency.name_bps || "-"}
+                                    </td>
+                                    <td className="px-2 py-2 whitespace-nowrap">
                                         <Actions
                                             row={row}
                                             onEdit={onEdit}

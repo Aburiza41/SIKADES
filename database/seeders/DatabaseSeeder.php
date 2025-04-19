@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
     {
         try {
             User::factory()->create([
-                'name' => 'Admin',
+                'name' => 'ADMIN',
                 'username' => 'admin',
                 'email' => 'admin@sikades.kalbarprov.app',
                 'role' => 'admin',

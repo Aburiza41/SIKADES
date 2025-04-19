@@ -19,7 +19,7 @@ class OfficialSeeder extends Seeder
         // Ambil semua desa dan semua posisi
         $villages = DB::table('villages')->get();
         // dd($villages);
-        $positions = DB::table('positions')->get();
+        $positions = DB::table('positions')->limit(2)->get();
 
         // Pastikan ada data dalam tabel
         if ($villages->isEmpty() || $positions->isEmpty()) {

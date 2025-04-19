@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
+// All Role
+use App\Http\Controllers\Web\All\PositionController as AllPositionController;
 
 // Guest
 use App\Http\Controllers\Web\Guest\BerandaController as GuestBerandaController;
@@ -40,10 +42,11 @@ use App\Http\Middleware\Custom\AdminMiddleware;
 
 // Export
 use App\Exports\UsersExport;
+use Maatwebsite\Excel\Excel;
 
 // Test
-Route::get('/test', function() {
-    return Maatwebsite\Excel\Excel::download(new UsersExport, 'users.xlsx');
+Route::get('/test', function(Excel $excel) {
+    // return $excel->download(new UsersExport, 'users.xlsx');
 });
 
 Route::name('guest.')->group(function () {
@@ -77,17 +80,32 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Data Jabatan
+    Route::prefix('/position')->name('position.')->controller(AllPositionController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+    });
 });
 
+
+
 // Admin
-Route::prefix('/admin')->name('admin.')->middleware(AdminMiddleware::class)->group(function () {
+Route::prefix('/admin')->name('admin.')->middleware('auth', AdminMiddleware::class)->group(function () {
     // Dashboard
     Route::prefix('/dashboard')->name('dashboard.')->controller(AdminDashboardController::class)->group(function () {
         Route::get('/', 'index')->name('index');
     });
 
     // Official
-    Route::prefix('/official')->name('official.')->controller(AdminOfficialController::class)->group(function () {
+    // Route::prefix('/official')->name('official.')->controller(AdminOfficialController::class)->group(function () {
+    //     Route::get('/', 'index')->name('index');
+    //     Route::post('/', 'store')->name('store');
+    //     Route::get('/{id}', 'show')->name('show');
+    //     Route::put('/{id}', 'update')->name('update');
+    //     Route::delete('/{id}', 'destroy')->name('destroy');
+    // });
+
+    Route::prefix('/official/{role}')->name('official.')->controller(AdminOfficialController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
         Route::get('/{id}', 'show')->name('show');

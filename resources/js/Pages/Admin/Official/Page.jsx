@@ -10,7 +10,8 @@ import OfficialPDF from "./Partials/Component/PDF";
 // Ambil token CSRF
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-export default function Official({ initialOfficials, officials }) {
+export default function Official({ initialOfficials, officials, role }) {
+    // console.log(role);
     const { flash } = usePage().props;
     const [officialsData, setOfficialsData] = useState(initialOfficials);
     const [loading, setLoading] = useState(false);
@@ -65,7 +66,7 @@ export default function Official({ initialOfficials, officials }) {
     }) => {
         setLoading(true);
         router.get(
-            "/admin/official",
+            `/admin/official/${role}`,
             {
                 page,
                 per_page: perPage,
@@ -184,7 +185,7 @@ export default function Official({ initialOfficials, officials }) {
             confirmButtonText: "Yes, delete it!",
         }).then((result) => {
             if (result.isConfirmed) {
-                router.delete(`/admin/official/${id}`, {
+                router.delete(`/admin/official/${role}/${id}`, {
                     headers: {
                         'X-CSRF-TOKEN': csrfToken, // Sertakan token CSRF
                     },
@@ -227,7 +228,7 @@ export default function Official({ initialOfficials, officials }) {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        const url = isEdit ? `/admin/official/${selectedOfficial.id}` : "/admin/official";
+        const url = isEdit ? `/admin/official/${role}/${selectedOfficial.id}` : `/admin/official/${role}`;
         const method = isEdit ? "put" : "post";
 
         // Data yang akan dikirim ke backend
@@ -321,7 +322,7 @@ export default function Official({ initialOfficials, officials }) {
                     <p className="text-sm font-thin mt-1">Daftar Official</p>
                 </div>
             }
-            breadcrumb={[{ name: "Official", path: "/admin/official", active: true, icon: <HiUsers className="w-5 h-5 mr-3" /> }]}
+            breadcrumb={[{ name: "Official", path: `/admin/official/${role}`, active: true, icon: <HiUsers className="w-5 h-5 mr-3" /> }]}
         >
             <Head title="Official" />
 

@@ -12,7 +12,11 @@ class Position extends Model
 
     protected $fillable = [
         'name',
+        'slug',
         'description',
+        'min',
+        'level',
+        'parent_id',
     ];
 
     public function officials()

@@ -99,6 +99,14 @@ class Official extends Model
         return $this->hasMany(PositionOfficial::class);
     }
 
+    // Posisi saat ini
+    public function position_current()
+    {
+        // Ambil Data paling baru dari PositionOfficial berdasarkan id dari official ini
+        return $this->hasOne(PositionOfficial::class)->latest();
+        // return $this->belongsTo(Position::class, 'position_id');
+    }
+
     public function statusLogs()
     {
         return $this->hasMany(OfficialStatusLog::class);

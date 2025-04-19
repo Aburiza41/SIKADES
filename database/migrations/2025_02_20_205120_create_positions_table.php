@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str; // Untuk menghasilkan slug
 
 return new class extends Migration
 {
@@ -15,6 +16,7 @@ return new class extends Migration
         Schema::create('positions', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('slug')->unique(); // Tambahkan kolom slug
             $table->string('description');
             $table->integer('min')->default(0);
             $table->integer('level')->default(0);
@@ -23,31 +25,36 @@ return new class extends Migration
         });
 
         // Insert data to positions table || Susunan Perangkat Desa
-        DB::table('positions')->insert([
+        $positions = [
             // Level 1: Kepala Desa
             ['name' => 'Kepala Desa', 'description' => 'Kepala Desa', 'min' => 1, 'level' => 1, 'parent_id' => null],
 
             // Level 2: Jabatan di bawah Kepala Desa
             ['name' => 'Sekretaris Desa', 'description' => 'Sekretaris Desa', 'min' => 1, 'level' => 2, 'parent_id' => 1],
+            ['name' => 'Kepala Urusan Tata Usaha dan Umum', 'description' => 'Kepala Urusan Tata Usaha dan Umum', 'min' => 1, 'level' => 2, 'parent_id' => 1],
             ['name' => 'Kepala Urusan Keuangan', 'description' => 'Kepala Urusan Keuangan', 'min' => 1, 'level' => 2, 'parent_id' => 1],
             ['name' => 'Kepala Urusan Perencanaan', 'description' => 'Kepala Urusan Perencanaan', 'min' => 1, 'level' => 2, 'parent_id' => 1],
-            ['name' => 'Kepala Urusan Kepegawaian', 'description' => 'Kepala Urusan Kepegawaian', 'min' => 1, 'level' => 2, 'parent_id' => 1],
-            ['name' => 'Kepala Urusan Pemerintahan', 'description' => 'Kepala Urusan Pemerintahan', 'min' => 1, 'level' => 2, 'parent_id' => 1],
-            ['name' => 'Kepala Urusan Pembangunan', 'description' => 'Kepala Urusan Pembangunan', 'min' => 1, 'level' => 2, 'parent_id' => 1],
-            ['name' => 'Kepala Urusan Kesra', 'description' => 'Kepala Urusan Kesra', 'min' => 1, 'level' => 2, 'parent_id' => 1],
+            ['name' => 'Kepala Urusan Umum dan Perencanaan', 'description' => 'Kepala Urusan Umum dan Perencanaan', 'min' => 1, 'level' => 2, 'parent_id' => 1],
+            ['name' => 'Kepala Seksi Pemerintahan', 'description' => 'Kepala Seksi Pemerintahan', 'min' => 1, 'level' => 2, 'parent_id' => 1],
+            ['name' => 'Kepala Seksi Kesejahteraan', 'description' => 'Kepala Seksi Kesejahteraan', 'min' => 1, 'level' => 2, 'parent_id' => 1],
+            ['name' => 'Kepala Seksi Pelayanan', 'description' => 'Kepala Seksi Pelayanan', 'min' => 1, 'level' => 2, 'parent_id' => 1],
+            ['name' => 'Kepala Seksi Kesejahteraan dan Pelayanan', 'description' => 'Kepala Seksi Kesejahteraan dan Pelayanan', 'min' => 1, 'level' => 2, 'parent_id' => 1],
+            ['name' => 'Kepala Dusun', 'description' => 'Kepala Dusun', 'min' => 1, 'level' => 2, 'parent_id' => 1],
 
-            // Level 3: Kepala Dusun (di bawah Kepala Desa)
-            ['name' => 'Kepala Dusun', 'description' => 'Kepala Dusun', 'min' => 1, 'level' => 3, 'parent_id' => 1],
+            // Level 3: Jabatan Desa BPD
+            ['name' => 'Ketua BPD', 'description' => 'Ketua Badan Permusyawaratan Desa', 'min' => 1, 'level' => 3, 'parent_id' => 1],
+            ['name' => 'Wakil Ketua BPD', 'description' => 'Wakil Ketua Badan Permusyawaratan Desa', 'min' => 1, 'level' => 3, 'parent_id' => 1],
+            ['name' => 'Sekretaris BPD', 'description' => 'Sekretaris Badan Permusyawaratan Desa', 'min' => 1, 'level' => 3, 'parent_id' => 1],
+            ['name' => 'Anggota BPD', 'description' => 'Anggota Badan Permusyawaratan Desa', 'min' => 1, 'level' => 3, 'parent_id' => 1],
+        ];
 
-            // Level 4: Jabatan di bawah Kepala Dusun
-            ['name' => 'Sekretaris Dusun', 'description' => 'Sekretaris Dusun', 'min' => 1, 'level' => 4, 'parent_id' => 9],
-            ['name' => 'Kepala Urusan Keuangan Dusun', 'description' => 'Kepala Urusan Keuangan Dusun', 'min' => 1, 'level' => 4, 'parent_id' => 9],
-            ['name' => 'Kepala Urusan Perencanaan Dusun', 'description' => 'Kepala Urusan Perencanaan Dusun', 'min' => 1, 'level' => 4, 'parent_id' => 9],
-            ['name' => 'Kepala Urusan Kepegawaian Dusun', 'description' => 'Kepala Urusan Kepegawaian Dusun', 'min' => 1, 'level' => 4, 'parent_id' => 9],
-            ['name' => 'Kepala Urusan Pemerintahan Dusun', 'description' => 'Kepala Urusan Pemerintahan Dusun', 'min' => 1, 'level' => 4, 'parent_id' => 9],
-            ['name' => 'Kepala Urusan Pembangunan Dusun', 'description' => 'Kepala Urusan Pembangunan Dusun', 'min' => 1, 'level' => 4, 'parent_id' => 9],
-            ['name' => 'Kepala Urusan Kesra Dusun', 'description' => 'Kepala Urusan Kesra Dusun', 'min' => 1, 'level' => 4, 'parent_id' => 9],
-        ]);
+        // Tambahkan kolom slug sebelum insert
+        foreach ($positions as &$position) {
+            $position['slug'] = Str::slug($position['name']); // Generate slug dari nama
+        }
+
+        // Insert data ke tabel positions
+        DB::table('positions')->insert($positions);
     }
 
     /**
