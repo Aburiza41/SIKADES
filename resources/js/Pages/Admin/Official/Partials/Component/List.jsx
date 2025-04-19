@@ -164,11 +164,11 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                                 scope="col"
                                 className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 style={{ width: '150px' }}
-                                onClick={() => handleSort("niad")}
+                                onClick={() => handleSort("nipd")}
                             >
                                 <div className="flex items-center cursor-pointer">
-                                    NIAD
-                                    {renderSortIcon("niad")}
+                                    NIPD
+                                    {renderSortIcon("nipd")}
                                 </div>
                             </th>
                             <th
@@ -226,10 +226,10 @@ export default function List({ officials, fetchData, loading, onEdit, onDelete, 
                                         {row.nik}
                                     </td>
                                     <td className="px-2 py-2 whitespace-nowrap">
-                                        {row.niad}
+                                        {row.nipd}
                                     </td>
                                     <td className="px-2 py-2 whitespace-nowrap">
-                                        {row.pendidikan || "-"}
+                                        {row.identities.pendidikan || "-"}
                                     </td>
                                     <td className="px-2 py-2 whitespace-nowrap">
                                         {row.village.name_bps || "-"}

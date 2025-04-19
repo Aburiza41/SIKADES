@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Official;
+use App\Models\Position;
 use App\Models\Village;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,7 @@ class OfficialController extends Controller
                 });
             })
             ->when($request->filled('filters'), function ($query) use ($request) {
-                $query->whereHas('village', function ($q) use ($request) {
+                $query->whereHas('identities', function ($q) use ($request) {
                     $q->where('pendidikan', $request->filters); // Filter berdasarkan ID village
                 });
             })
@@ -49,7 +50,10 @@ class OfficialController extends Controller
             )
             ->paginate($request->per_page ?? 10);
 
-        // dd($officials);
+        // dd($officials[0]->identities);
+
+        // Cari Position
+        $position = Position::where('slug', $role)->first();
 
         // Kembalikan data menggunakan Inertia
         return Inertia::render('Admin/Official/Page', [
@@ -65,7 +69,8 @@ class OfficialController extends Controller
             'filters' => $request->filters, // Kirim filter yang aktif
             'sort' => $request->only(['sort_field', 'sort_direction']), // Kirim sorting yang aktif
             'search' => $request->search, // Kirim pencarian yang aktif
-            'role' => $role
+            'role' => $role,
+            'position' => $position
         ]);
     }
 

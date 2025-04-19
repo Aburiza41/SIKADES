@@ -10,7 +10,7 @@ import OfficialPDF from "./Partials/Component/PDF";
 // Ambil token CSRF
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-export default function Official({ initialOfficials, officials, role }) {
+export default function Official({ initialOfficials, officials, role, position }) {
     // console.log(role);
     const { flash } = usePage().props;
     const [officialsData, setOfficialsData] = useState(initialOfficials);
@@ -235,7 +235,7 @@ export default function Official({ initialOfficials, officials, role }) {
         const payload = {
             village_id: newOfficial.village_id,
             nik: newOfficial.nik,
-            niad: newOfficial.niad,
+            nipd: newOfficial.nipd,
             nama_lengkap: newOfficial.nama_lengkap,
             gelar_depan: newOfficial.gelar_depan,
             gelar_belakang: newOfficial.gelar_belakang,
@@ -318,21 +318,21 @@ export default function Official({ initialOfficials, officials, role }) {
         <AuthenticatedLayout
             header={
                 <div className="text-2xl font-semibold leading-tight">
-                    Official
-                    <p className="text-sm font-thin mt-1">Daftar Official</p>
+                    Daftar {position.name}
+                    <p className="text-sm font-thin mt-1">Daftar pejabat desa dengan jabatan {position.name}</p>
                 </div>
             }
-            breadcrumb={[{ name: "Official", path: `/admin/official/${role}`, active: true, icon: <HiUsers className="w-5 h-5 mr-3" /> }]}
+            breadcrumb={[{ name: "Pejabat", path: `/admin/official/${role}`, active: true, icon: <HiUsers className="w-5 h-5 mr-3" /> }]}
         >
             <Head title="Official" />
 
             <div className="p-4">
-                <button
+                {/* <button
                     onClick={handleAdd}
                     className="mb-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                 >
                     Add Official
-                </button>
+                </button> */}
                 <OfficialList
                     officials={officialsData}
                     fetchData={fetchData}
@@ -367,7 +367,7 @@ export default function Official({ initialOfficials, officials, role }) {
                             />
                         </div>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700">NIAD</label>
+                            <label className="block text-sm font-medium text-gray-700">NIPD</label>
                             <input
                                 type="text"
                                 value={newOfficial.niad}

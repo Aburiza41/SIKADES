@@ -45,7 +45,7 @@ class OfficialSeeder extends Seeder
                 $official = [
                     'village_id' => $village->id,
                     'nik' => $faker->unique()->numerify('################'), // 16 digit NIK
-                    'niad' => $faker->unique()->numerify('##########'), // 10 digit NIAD
+                    'nipd' => $faker->unique()->numerify('##########'), // 10 digit NIPD
                     'nama_lengkap' => $faker->name,
                     'gelar_depan' => null,
                     'gelar_belakang' => null,

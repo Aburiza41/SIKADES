@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('village_id')->constrained('villages')->onDelete('cascade'); // Relasi ke tabel villages
             $table->string('nik', 16)->unique(); // Nomor Induk Kependudukan (NIK)
-            $table->bigInteger('niad')->unique(); // Nomor Induk Administrasi Desa
+            $table->bigInteger('nipd')->unique(); // Nomor Induk Administrasi Desa
             $table->string('nama_lengkap'); // Nama lengkap pejabat
             $table->string('gelar_depan')->nullable(); // Gelar di depan nama
             $table->string('gelar_belakang')->nullable(); // Gelar di belakang nama
