@@ -12,9 +12,11 @@ class AdminOfficialExport implements WithMultipleSheets
     use Exportable;
 
     private $role;
+    private $request;
 
-    public function __construct(String $role) {
+    public function __construct(String $role, Object $request) {
         $this->role = $role;
+        $this->request = $request;
     }
 
     /**
@@ -24,7 +26,7 @@ class AdminOfficialExport implements WithMultipleSheets
     {
         // return \App\Models\Official::all();
         return [
-            new AllOfficialsSheet( $this->role )
+            new AllOfficialsSheet( $this->role, $this->request ),
         ];
     }
 }

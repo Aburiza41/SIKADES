@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import {
     FaFileExport,
     FaSort,
@@ -14,6 +15,7 @@ import {
 import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
 import Actions from "./Actions";
+import { router } from "@inertiajs/react";
 
 export default function List({
     officials,
@@ -80,34 +82,61 @@ export default function List({
         }
     };
 
-    const handleExportJSON = () => {
-        const jsonData = JSON.stringify(officials.data, null, 2);
-        const blob = new Blob([jsonData], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        // link.download = "Pejabat.json";
-        link.download = `Jabatan_${position.name}_${new Date().toLocaleDateString()}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
+    const handleExport = async (type) => {
+        try {
+            const params = {
+                page: currentPage,
+                per_page: rowsPerPage,
+                search: filterText,
+                filters: educationFilter,
+                sort_field: sortField,
+                sort_direction: sortDirection,
+            };
+
+            const response = await axios.get(
+                `/admin/official/${position.slug}/export/${type}`,
+                {
+                    params,
+                    responseType: 'blob' // Important for file downloads
+                }
+            );
+
+            // Determine file extension and content type
+            const extensions = {
+                json: 'json',
+                excel: 'xlsx',
+                pdf: 'pdf'
+            };
+            const contentType = {
+                json: 'application/json',
+                excel: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                pdf: 'application/pdf'
+            };
+
+            // Create download link
+            const url = window.URL.createObjectURL(new Blob([response.data], {
+                type: contentType[type]
+            }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Pejabat_${position.slug}_${new Date().toLocaleDateString()}.${extensions[type]}`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            // Show success notification
+            Swal.fire("Success", `${type.toUpperCase()} exported successfully!`, "success");
+
+        } catch (error) {
+            console.error(`Export ${type} error:`, error);
+            Swal.fire("Error", `Failed to export ${type.toUpperCase()}. Please try again.`, "error");
+        }
     };
 
-    const handleExportExcel = () => {
-        // Redirect ke endpoint Laravel
-        window.location.href = `/admin/official/${position.slug}/export/excel`;
-
-        // Atau jika menggunakan axios/fetch:
-        // axios.get('/export-officials-excel')
-        //   .then(response => {
-        //     // Jika Anda mengembalikan file download dari Laravel
-        //     const url = window.URL.createObjectURL(new Blob([response.data]));
-        //     const link = document.createElement('a');
-        //     link.href = url;
-        //     link.setAttribute('download', 'officials.xlsx');
-        //     document.body.appendChild(link);
-        //     link.click();
-        //   });
-    };
+    // Usage:
+    const handleExportJSON = () => handleExport('json');
+    const handleExportExcel = () => handleExport('excel');
+    const handleExportPDF = () => handleExport('pdf');
 
 
     const renderSortIcon = (field) => {
@@ -160,6 +189,7 @@ export default function List({
                 </div>
 
                 <div className="flex gap-2 w-full md:w-auto justify-end">
+
                     <motion.button
                         onClick={handleExportJSON}
                         className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
@@ -171,7 +201,7 @@ export default function List({
                     </motion.button>
 
                     <motion.button
-                        onClick={handleExportExcel}
+                        onClick={handleExportPDF}
                         className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}

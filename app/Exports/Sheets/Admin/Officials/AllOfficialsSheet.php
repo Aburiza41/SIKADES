@@ -3,87 +3,118 @@
 namespace App\Exports\Sheets\Admin\Officials;
 
 use App\Models\Official;
-use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class AllOfficialsSheet implements FromQuery, WithHeadings, WithMapping, WithStyles, WithTitle, ShouldAutoSize  {
-
+class AllOfficialsSheet implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle, ShouldAutoSize
+{
     private $role;
+    private $request;
     private $index = 0;
 
-    public function __construct($role) {
+    public function __construct($role, $request)
+    {
         $this->role = $role;
+        $this->request = $request;
     }
 
-    public function query()
+    public function collection()
     {
-        $officials = Official::with(['village.district.regency', 'addresses', 'contacts', 'identities', 'studies.study', 'positions.position', 'officialOrganizations', 'position_current.position'])
-            ->when($this->role, function ($query) {
-                $query->whereHas('position_current.position', function ($q) {
-                    $q->where('slug', $this->role); // Filter berdasarkan position->slug
+        $query = Official::with([
+                'village.district.regency',
+                'addresses',
+                'contacts',
+                'identities',
+                'studies.study',
+                'positions.position',
+                'officialTrainings',
+                'officialOrganizations',
+                'position_current.position'
+            ])
+            ->when($this->request->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('nama_lengkap', 'like', '%'.$this->request->search.'%')
+                      ->orWhere('nik', 'like', '%'.$this->request->search.'%')
+                      ->orWhere('niad', 'like', '%'.$this->request->search.'%');
                 });
             })
-            ->orderBy('id', 'asc');
+            ->when($this->request->filters, function ($query) {
+                $query->whereHas('identities', function ($q) {
+                    $q->where('pendidikan', $this->request->filters);
+                });
+            })
+            ->when($this->role, function ($query) {
+                $query->whereHas('position_current.position', function ($q) {
+                    $q->where('slug', $this->role);
+                });
+            })
+            ->orderBy(
+                $this->request->sort_field ?? 'id',
+                $this->request->sort_direction ?? 'asc'
+            );
 
+        // If you need pagination (not recommended for exports)
+        if ($this->request->per_page) {
+            return $query->paginate($this->request->per_page)->getCollection();
+        }
 
-        return $officials;
+        return $query->get();
     }
 
     public function headings(): array
     {
         return [
-            'ID',
-            'Nama Pejabat',
-            'Jabatan',
+            'No',
+            'Nama Lengkap',
             'NIK',
+            'NIAD',
+            'Jabatan',
             'Alamat',
-            'Tanggal Mulai',
-            'Tanggal Selesai',
+            'Tanggal Dibuat',
+            'Tanggal Diupdate',
             'Status'
         ];
     }
 
     public function map($official): array
     {
-        $this->index++;
         return [
-            $this->index,
-            $official->name,
-            $official->nik,
-            $official->niad ,
-            $official->address,
-            $official->created_at->format('d/m/Y'),
-            $official->updated_at->format('d/m/Y'),
-            $official->status
+            ++$this->index,
+            $official->nama_lengkap ?? '-',
+            "'" . ($official->nik ?? '-'), // Prepend with ' to preserve leading zeros
+            "'" . ($official->niad ?? '-'),
+            $official->position_current->position->name ?? '-',
+            $official->addresses->first()->alamat_lengkap ?? '-',
+            $official->created_at?->format('d/m/Y') ?? '-',
+            $official->updated_at?->format('d/m/Y') ?? '-',
+            $official->status ? 'Aktif' : 'Non-Aktif'
         ];
     }
 
-    public function styles($sheet)
+    public function styles(Worksheet $sheet)
     {
         return [
-            // Style header row
-            1 => [
+            1 => [ // Header row
                 'font' => [
                     'bold' => true,
                     'color' => ['rgb' => 'FFFFFF']
                 ],
                 'fill' => [
-                    'fillType' => 'solid',
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
                     'startColor' => ['rgb' => '4285F4']
                 ]
             ],
-            // Format NIK column as text
-            'D' => [
+            'C:D' => [ // NIK and NIAD columns as text
                 'numberFormat' => [
                     'formatCode' => '@'
                 ]
             ],
-            // Format date columns
-            'F:G' => [
+            'G:H' => [ // Date columns
                 'numberFormat' => [
                     'formatCode' => 'dd/mm/yyyy'
                 ]
@@ -93,6 +124,6 @@ class AllOfficialsSheet implements FromQuery, WithHeadings, WithMapping, WithSty
 
     public function title(): string
     {
-        return ucfirst((str_replace('_', ' ', $this->role)));
+        return ucfirst(str_replace('_', ' ', $this->role));
     }
 }
