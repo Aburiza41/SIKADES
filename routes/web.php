@@ -18,6 +18,7 @@ use App\Http\Controllers\Web\Guest\MemberController as GuestMemberController;
 use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Web\Admin\OfficialController as AdminOfficialController;
 use App\Http\Controllers\Web\Admin\OfficialExportController as AdminOfficialExportController;
+use App\Http\Controllers\Web\Admin\OfficialImportController as AdminOfficialImportController;
 use App\Http\Controllers\Web\Admin\AparatusController as AdminAparatusController;
 use App\Http\Controllers\Web\Admin\OrganizationController as AdminOrganizationController;
 use App\Http\Controllers\Web\Admin\TrainingController as AdminTrainingController;
@@ -95,6 +96,7 @@ Route::prefix('/admin')->name('admin.')->middleware('auth', AdminMiddleware::cla
     // Dashboard
     Route::prefix('/dashboard')->name('dashboard.')->controller(AdminDashboardController::class)->group(function () {
         Route::get('/', 'index')->name('index');
+
     });
 
     // Official
@@ -108,6 +110,7 @@ Route::prefix('/admin')->name('admin.')->middleware('auth', AdminMiddleware::cla
 
     Route::prefix('/official/{role}')->name('official.')->controller(AdminOfficialController::class)->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
         Route::post('/', 'store')->name('store');
         Route::get('/{id}', 'show')->name('show');
         Route::put('/{id}', 'update')->name('update');
@@ -117,6 +120,12 @@ Route::prefix('/admin')->name('admin.')->middleware('auth', AdminMiddleware::cla
             Route::get('/json', 'json')->name('json');
             Route::get('/excel', 'excel')->name('excel');
             Route::get('/pdf', 'pdf')->name('pdf');
+        });
+
+        Route::prefix('/import')->name('export.')->controller(AdminOfficialImportController::class)->group(function () {
+            // Route::get('/json', 'json')->name('json');
+            Route::get('/excel', 'excel')->name('excel');
+            // Route::get('/pdf', 'pdf')->name('pdf');
         });
     });
 

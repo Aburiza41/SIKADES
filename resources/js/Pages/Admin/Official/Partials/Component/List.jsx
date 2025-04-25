@@ -11,11 +11,13 @@ import {
     FaArrowLeft,
     FaArrowRight,
     FaFilePdf,
+    FaPlus
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
 import Actions from "./Actions";
-import { router } from "@inertiajs/react";
+import { router, usePage, Link } from "@inertiajs/react";
+import Procces from "./Procces";
 
 export default function List({
     officials,
@@ -26,7 +28,11 @@ export default function List({
     onView,
     onPrint,
     position,
+    onAccept,
+    onReject,
+    role
 }) {
+    const user = usePage().props.auth.user;
     const [filterText, setFilterText] = useState("");
     const [educationFilter, setEducationFilter] = useState("");
     const [currentPage, setCurrentPage] = useState(
@@ -138,13 +144,31 @@ export default function List({
     const handleExportExcel = () => handleExport('excel');
     const handleExportPDF = () => handleExport('pdf');
 
-
     const renderSortIcon = (field) => {
         if (sortField !== field) return <FaSort className="ml-1" />;
         return sortDirection === "asc" ? (
             <FaSortUp className="ml-1" />
         ) : (
             <FaSortDown className="ml-1" />
+        );
+    };
+
+    const CustomBadge = ({ role }) => {
+        let badgeColor = "";
+        let roleName = "";
+
+        switch (role) {
+            case "tolak": badgeColor = "bg-red-500"; roleName = "Tolak"; break;
+            case "daftar": badgeColor = "bg-blue-500"; roleName = "Daftar"; break;
+            case "validasi": badgeColor = "bg-green-500"; roleName = "Terima"; break;
+            case "proses": badgeColor = "bg-yellow-500"; roleName = "Proses"; break;
+            default: badgeColor = "bg-gray-500"; roleName = "Tidak Diketahui";
+        }
+
+        return (
+            <span className={`px-2 py-1 text-xs text-white rounded-full ${badgeColor}`}>
+                {roleName}
+            </span>
         );
     };
 
@@ -221,7 +245,7 @@ export default function List({
                     </motion.button>
 
                     <motion.button
-                        // onClick={handleUpload}
+                        onClick={handleImportExcel}
                         className="bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -229,6 +253,20 @@ export default function List({
                     >
                         <FaFileUpload className="mr-2" /> Upload
                     </motion.button>
+
+                    <motion.div
+
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <Link
+                        href={`/admin/official/${role}/create`}
+                        className="bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
+                        >
+                        <FaPlus className="mr-2" /> Tambah
+                        </Link>
+                    </motion.div>
 
                     {/* <input type="file" className="p-2 border rounded" placeholder="Cari..." /> */}
                 </div>
@@ -300,6 +338,26 @@ export default function List({
                             <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Kabupaten
                             </th>
+                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                            {/* { (user.role == 'regency')  (
+                                    <th
+                                        scope="col"
+                                        className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                        style={{ width: "120px" }}
+                                    >
+                                        Proses
+                                    </th>
+                                )
+                            } */}
+                            <th
+                                scope="col"
+                                className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                style={{ width: "120px" }}
+                            >
+                                Proses
+                            </th>
                             <th
                                 scope="col"
                                 className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -348,6 +406,12 @@ export default function List({
                                     <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.district.regency
                                             .name_bps || "-"}
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
+                                        <CustomBadge role={row.status} />
+                                    </td>
+                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
+                                        <Procces row={row} onAccept={onAccept} onReject={onReject} />
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
                                         <Actions

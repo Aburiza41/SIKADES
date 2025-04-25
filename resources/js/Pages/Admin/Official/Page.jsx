@@ -314,6 +314,123 @@ export default function Official({ initialOfficials, officials, role, position }
         }); // Reset form
     };
 
+    // Handle Accept Official
+        const handleAccept = (official) => {
+            Swal.fire({
+                title: `Apakah anda yakin?`,
+                text: `Pilih terima untuk menyetujui verifikasi ${official.nama_lengkap}`,
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonColor: "#28a745",
+                cancelButtonColor: "#6c757d",
+                confirmButtonText: "Terima",
+                cancelButtonText: "Batal",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    setIsProcessing(true); // Set loading state
+                    router.put(
+                        `/regency/official/${official.nik}/accept`,
+                        {},
+                        {
+                            // headers: {
+                            //     "X-CSRF-TOKEN": csrfToken, // Sertakan token CSRF
+                            // },
+                            onSuccess: (official) => {
+                                Swal.fire(
+                                    "Terima!",
+                                    `Verifikasi ${official.nama_lengkap} diterima`,
+                                    "success"
+                                );
+
+                                // Perbarui state lokal
+                                const updatedOfficials = officialsData.data.map(
+                                    (item) => {
+                                        if (item.nik === official.nik) {
+                                            return { ...item, status: "validasi" }; // Update status
+                                        }
+                                        return item;
+                                    }
+                                );
+
+                                setOfficialsData({
+                                    ...officialsData,
+                                    data: updatedOfficials,
+                                });
+                                setIsProcessing(false); // Reset loading state
+                            },
+                            onError: (official) => {
+                                Swal.fire(
+                                    "Error",
+                                    `Verifikasi Terima ${official.nama_lengkap} dalam kendala`,
+                                    "error"
+                                );
+                                setIsProcessing(false); // Reset loading state
+                            },
+                        }
+                    );
+                }
+            });
+        };
+
+        // Handle Reject Official
+        const handleReject = (official) => {
+            Swal.fire({
+                title: `Apakah anda yakin?`,
+                text: `Pilih terima untuk menolak verifikasi ${official.nama_lengkap}`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#dc3545", // Warna merah untuk konfirmasi
+                cancelButtonColor: "#6c757d", // Warna abu-abu untuk batal
+                confirmButtonText: "Terima",
+                cancelButtonText: "Batal",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Kirim permintaan PUT ke backend
+                    router.put(
+                        `/regency/official/${official.nik}/reject`,
+                        {}, // Data kosong karena hanya mengubah status
+                        {
+                            // headers: {
+                            //     "X-CSRF-TOKEN": csrfToken, // Sertakan token CSRF
+                            // },
+                            onSuccess: () => {
+                                // Tampilkan pesan sukses
+                                Swal.fire(
+                                    "Tolak!",
+                                    `Verifikasi ${official.nama_lengkap} ditolak`,
+                                    "success"
+                                );
+
+                                // Perbarui state lokal tanpa perlu refresh halaman
+                                const updatedOfficials = officialsData.data.map(
+                                    (item) => {
+                                        if (item.nik === official.nik) {
+                                            return { ...item, status: "tolak" }; // Update status menjadi "tolak"
+                                        }
+                                        return item;
+                                    }
+                                );
+
+                                // Set state baru
+                                setOfficialsData({
+                                    ...officialsData,
+                                    data: updatedOfficials,
+                                });
+                            },
+                            onError: () => {
+                                // Tampilkan pesan error jika terjadi kesalahan
+                                Swal.fire(
+                                    "Error",
+                                    `Verifikasi Tolak ${official.nama_lengkap} dalam kendala`,
+                                    "error"
+                                );
+                            },
+                        }
+                    );
+                }
+            });
+        };
+
     return (
         <AuthenticatedLayout
             header={
@@ -342,6 +459,9 @@ export default function Official({ initialOfficials, officials, role, position }
                     onView={handleView}
                     onPrint={handlePrint}
                     position={position}
+                    onAccept={handleAccept}
+                    onReject={handleReject}
+                    role={role}
                 />
             </div>
 

@@ -77,9 +77,15 @@ class OfficialController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(String $role)
     {
-        //
+        return Inertia::render('Admin/Official/Create', [
+            'positions' => \App\Models\Position::all()->toArray(),
+            'trainings' => \App\Models\Training::all()->toArray(),
+            'organizations' => \App\Models\Organization::all()->toArray(),
+            'studies' => \App\Models\Study::all()->toArray(),
+            'position' => \App\Models\Position::where('slug', $role)->first()->toArray(),
+        ]);
     }
 
     /**
