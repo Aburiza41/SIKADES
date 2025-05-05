@@ -195,12 +195,6 @@ export default function User({ initialUsers, regencies, districts, villages }) {
             <Head title="Users" />
 
             <div className="p-4">
-                <button
-                    onClick={handleAdd}
-                    className="mb-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                >
-                    Add User
-                </button>
                 <UserList
                     users={users}
                     fetchData={fetchData}

@@ -11,13 +11,14 @@ import {
     FaArrowLeft,
     FaArrowRight,
     FaFilePdf,
-    FaPlus
+    FaPlus,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
 import Actions from "./Actions";
 import { router, usePage, Link } from "@inertiajs/react";
 import Procces from "./Procces";
+import ExcelImportModal from "../Form/ExcelImportModal";
 
 export default function List({
     officials,
@@ -30,7 +31,7 @@ export default function List({
     position,
     onAccept,
     onReject,
-    role
+    role,
 }) {
     const user = usePage().props.auth.user;
     const [filterText, setFilterText] = useState("");
@@ -103,46 +104,60 @@ export default function List({
                 `/admin/official/${position.slug}/export/${type}`,
                 {
                     params,
-                    responseType: 'blob' // Important for file downloads
+                    responseType: "blob", // Important for file downloads
                 }
             );
 
             // Determine file extension and content type
             const extensions = {
-                json: 'json',
-                excel: 'xlsx',
-                pdf: 'pdf'
+                json: "json",
+                excel: "xlsx",
+                pdf: "pdf",
             };
             const contentType = {
-                json: 'application/json',
-                excel: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                pdf: 'application/pdf'
+                json: "application/json",
+                excel: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                pdf: "application/pdf",
             };
 
             // Create download link
-            const url = window.URL.createObjectURL(new Blob([response.data], {
-                type: contentType[type]
-            }));
-            const link = document.createElement('a');
+            const url = window.URL.createObjectURL(
+                new Blob([response.data], {
+                    type: contentType[type],
+                })
+            );
+            const link = document.createElement("a");
             link.href = url;
-            link.setAttribute('download', `Pejabat_${position.slug}_${new Date().toLocaleDateString()}.${extensions[type]}`);
+            link.setAttribute(
+                "download",
+                `Pejabat_${position.slug}_${new Date().toLocaleDateString()}.${
+                    extensions[type]
+                }`
+            );
             document.body.appendChild(link);
             link.click();
             link.remove();
 
             // Show success notification
-            Swal.fire("Success", `${type.toUpperCase()} exported successfully!`, "success");
-
+            Swal.fire(
+                "Success",
+                `${type.toUpperCase()} exported successfully!`,
+                "success"
+            );
         } catch (error) {
             console.error(`Export ${type} error:`, error);
-            Swal.fire("Error", `Failed to export ${type.toUpperCase()}. Please try again.`, "error");
+            Swal.fire(
+                "Error",
+                `Failed to export ${type.toUpperCase()}. Please try again.`,
+                "error"
+            );
         }
     };
 
     // Usage:
-    const handleExportJSON = () => handleExport('json');
-    const handleExportExcel = () => handleExport('excel');
-    const handleExportPDF = () => handleExport('pdf');
+    const handleExportJSON = () => handleExport("json");
+    const handleExportExcel = () => handleExport("excel");
+    const handleExportPDF = () => handleExport("pdf");
 
     const renderSortIcon = (field) => {
         if (sortField !== field) return <FaSort className="ml-1" />;
@@ -153,20 +168,116 @@ export default function List({
         );
     };
 
+    const handleImportExcel = async (file) => {
+        // Tampilkan loading indicator
+        // Swal.fire({
+        //     title: "Memproses File",
+        //     html: "Sedang mengupload dan memproses file Excel...",
+        //     allowOutsideClick: false,
+        //     didOpen: () => {
+        //         Swal.showLoading();
+        //     },
+        // });
+
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await axios.post(
+                `/admin/official/${position.slug}/import/excel`,
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
+
+            // Tutup loading dan tampilkan sukses
+            Swal.fire({
+                icon: "success",
+                title: "Import Berhasil!",
+                html: `
+                <div class="text-left">
+                    <p>File <strong>${file.name}</strong> berhasil diimport.</p>
+                    ${
+                        response.data.inserted
+                            ? `<p>Total data: <strong>${response.data.inserted}</strong></p>`
+                            : ""
+                    }
+                </div>
+            `,
+                confirmButtonText: "OK",
+                willClose: () => {
+                    // Lakukan sesuatu setelah alert ditutup
+                    // Misalnya refresh data atau reset form
+                },
+            });
+
+            return response.data;
+        } catch (error) {
+            let errorMessage = "Terjadi kesalahan saat mengimport file";
+
+            if (error.response) {
+                // Error dari server (4xx/5xx)
+                errorMessage =
+                    error.response.data.message ||
+                    `Error ${error.response.status}: ${error.response.statusText}`;
+            } else if (error.request) {
+                // Tidak ada response dari server
+                errorMessage =
+                    "Tidak ada respon dari server. Silakan coba lagi.";
+            } else if (error.message.includes("Network Error")) {
+                errorMessage =
+                    "Koneksi jaringan bermasalah. Periksa koneksi internet Anda.";
+            }
+
+            Swal.fire({
+                icon: "error",
+                title: "Import Gagal",
+                html: `
+                <div class="text-left">
+                    <p>${errorMessage}</p>
+                    ${file ? `<p>File: <strong>${file.name}</strong></p>` : ""}
+                </div>
+            `,
+                confirmButtonText: "Tutup",
+            });
+
+            throw error;
+        }
+    };
+
     const CustomBadge = ({ role }) => {
         let badgeColor = "";
         let roleName = "";
 
         switch (role) {
-            case "tolak": badgeColor = "bg-red-500"; roleName = "Tolak"; break;
-            case "daftar": badgeColor = "bg-blue-500"; roleName = "Daftar"; break;
-            case "validasi": badgeColor = "bg-green-500"; roleName = "Terima"; break;
-            case "proses": badgeColor = "bg-yellow-500"; roleName = "Proses"; break;
-            default: badgeColor = "bg-gray-500"; roleName = "Tidak Diketahui";
+            case "tolak":
+                badgeColor = "bg-red-500";
+                roleName = "Tolak";
+                break;
+            case "daftar":
+                badgeColor = "bg-blue-500";
+                roleName = "Daftar";
+                break;
+            case "validasi":
+                badgeColor = "bg-green-500";
+                roleName = "Terima";
+                break;
+            case "proses":
+                badgeColor = "bg-yellow-500";
+                roleName = "Proses";
+                break;
+            default:
+                badgeColor = "bg-gray-500";
+                roleName = "Tidak Diketahui";
         }
 
         return (
-            <span className={`px-2 py-1 text-xs text-white rounded-full ${badgeColor}`}>
+            <span
+                className={`px-2 py-1 text-xs text-white rounded-full ${badgeColor}`}
+            >
                 {roleName}
             </span>
         );
@@ -178,7 +289,9 @@ export default function List({
             <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <div className="flex gap-4 w-full md:w-auto">
                     <div className="flex flex-col gap-1 w-full">
-                        <label htmlFor="search" className="text-sm font-medium">Pecarian</label>
+                        <label htmlFor="search" className="text-sm font-medium">
+                            Pecarian
+                        </label>
                         <motion.input
                             type="text"
                             id="search"
@@ -194,7 +307,12 @@ export default function List({
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <label htmlFor="education" className="text-sm font-medium">Pendidikan</label>
+                        <label
+                            htmlFor="education"
+                            className="text-sm font-medium"
+                        >
+                            Pendidikan
+                        </label>
                         <select
                             id="education"
                             name="education"
@@ -213,7 +331,6 @@ export default function List({
                 </div>
 
                 <div className="flex gap-2 w-full md:w-auto justify-end">
-
                     <motion.button
                         onClick={handleExportJSON}
                         className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
@@ -244,27 +361,18 @@ export default function List({
                         <FaFileExcel className="mr-2" /> Excel
                     </motion.button>
 
-                    <motion.button
-                        onClick={handleImportExcel}
-                        className="bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                    >
-                        <FaFileUpload className="mr-2" /> Upload
-                    </motion.button>
+                    <ExcelImportModal onImport={handleImportExcel} />
 
                     <motion.div
-
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 300 }}
                     >
                         <Link
-                        href={`/admin/official/${role}/create`}
-                        className="bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
+                            href={`/admin/official/${role}/create`}
+                            className="bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
                         >
-                        <FaPlus className="mr-2" /> Tambah
+                            <FaPlus className="mr-2" /> Tambah
                         </Link>
                     </motion.div>
 
@@ -329,8 +437,7 @@ export default function List({
                                 </div>
                             </th>
                             <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Desa
-
+                                Desa
                             </th>
                             <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Kecamatan
@@ -411,7 +518,11 @@ export default function List({
                                         <CustomBadge role={row.status} />
                                     </td>
                                     <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
-                                        <Procces row={row} onAccept={onAccept} onReject={onReject} />
+                                        <Procces
+                                            row={row}
+                                            onAccept={onAccept}
+                                            onReject={onReject}
+                                        />
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
                                         <Actions

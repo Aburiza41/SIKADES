@@ -124,7 +124,7 @@ Route::prefix('/admin')->name('admin.')->middleware('auth', AdminMiddleware::cla
 
         Route::prefix('/import')->name('export.')->controller(AdminOfficialImportController::class)->group(function () {
             // Route::get('/json', 'json')->name('json');
-            Route::get('/excel', 'excel')->name('excel');
+            Route::post('/excel', 'excel')->name('excel');
             // Route::get('/pdf', 'pdf')->name('pdf');
         });
     });
