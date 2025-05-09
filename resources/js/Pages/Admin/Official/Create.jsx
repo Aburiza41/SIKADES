@@ -373,7 +373,7 @@ export default function UpdateOfficial({
                         villages={villages}
                     />
 
-<HubunganForm
+                    <HubunganForm
                         hubungan={hubungan}
                         setHubungan={setHubungan}
                         errors={errors}
@@ -383,7 +383,7 @@ export default function UpdateOfficial({
                         villages={villages}
                     />
 
-<AnakForm
+                    <AnakForm
                         anak={anak}
                         setAnak={setAnak}
                         errors={errors}

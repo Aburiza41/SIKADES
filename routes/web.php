@@ -23,6 +23,8 @@ use App\Http\Controllers\Web\Admin\AparatusController as AdminAparatusController
 use App\Http\Controllers\Web\Admin\OrganizationController as AdminOrganizationController;
 use App\Http\Controllers\Web\Admin\TrainingController as AdminTrainingController;
 use App\Http\Controllers\Web\Admin\UserController as AdminUserController;
+// use App\Http\Controllers\Web\Admin\UserExportController as AdminUserExportController;
+use App\Http\Controllers\Web\Admin\UserImportController as AdminUserImportController;
 
 // Regency
 use App\Http\Controllers\Web\Regency\DashboardController as RegencyDashboardController;
@@ -157,9 +159,15 @@ Route::prefix('/admin')->name('admin.')->middleware('auth', AdminMiddleware::cla
     Route::prefix('/user')->name('user.')->controller(AdminUserController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
-        Route::get('/{id}', 'show')->name('show');
-        Route::put('/{id}', 'update')->name('update');
-        Route::delete('/{id}', 'destroy')->name('destroy');
+        Route::get('/{id}/show', 'show')->name('show');
+        Route::put('/{id}/update', 'update')->name('update');
+        Route::delete('/{id}/delete', 'destroy')->name('destroy');
+
+        Route::prefix('/import')->name('export.')->controller(AdminUserImportController::class)->group(function () {
+            // Route::get('/json', 'json')->name('json');
+            Route::post('/excel', 'excel')->name('excel');
+            // Route::get('/pdf', 'pdf')->name('pdf');
+        });
     });
 });
 

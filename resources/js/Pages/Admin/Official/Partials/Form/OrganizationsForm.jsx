@@ -18,6 +18,10 @@ export default function OrganizationForm({
     const [selectedOrganization, setSelectedOrganization] = useState(null);
     const [nama, setNama] = useState("");
     const [posisi, setPosisi] = useState("");
+    const [mulai, setMulai] = useState("");
+    const [selesai, setSelesai] = useState("");
+    const [pimpinan, setPimpinan] = useState("");
+    const [tempat, setTempat] = useState("");
     const [docScan, setDocScan] = useState(null);
     const [keterangan, setKeterangan] = useState("");
     const [editIndex, setEditIndex] = useState(null);
@@ -50,6 +54,10 @@ export default function OrganizationForm({
             setSelectedOrganization(null);
             setNama("");
             setPosisi("");
+            setMulai("");
+            setSelesai("");
+            setPimpinan("");
+            setTempat("");
             setDocScan(null);
             setKeterangan("");
             setEditIndex(null);
@@ -62,6 +70,10 @@ export default function OrganizationForm({
         setSelectedOrganization(null);
         setNama("");
         setPosisi("");
+        setMulai("");
+        setSelesai("");
+        setPimpinan("");
+        setTempat("");
         setDocScan(null);
         setKeterangan("");
         setEditIndex(null);
@@ -359,7 +371,7 @@ export default function OrganizationForm({
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="col-span-2">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Organisasi
+                                            Jenis Organisasi
                                         </label>
                                         <Select
                                             options={organizationOptions}
@@ -374,7 +386,7 @@ export default function OrganizationForm({
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Nama
+                                            Nama Organisasi
                                         </label>
                                         <input
                                             type="text"
@@ -386,7 +398,7 @@ export default function OrganizationForm({
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Posisi
+                                            Kedudukan / Jabatan
                                         </label>
                                         <input
                                             type="text"
@@ -396,6 +408,61 @@ export default function OrganizationForm({
                                             placeholder="Posisi"
                                         />
                                     </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Tanggal Mulai Menjabat
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={mulai}
+                                            onChange={(e) => setMulai(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Tanggal Mulai Menjabat"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Tanggal Selesai Menjabat
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={selesai}
+                                            onChange={(e) => setSelesai(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Tanggal Selesai Menjabat"
+                                        />
+                                    </div>
+
+                                    {/* Nama Pimpinan */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Nama Pimpinan
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={pimpinan}
+                                            onChange={(e) => setPimpinan(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Pimpinan"
+                                        />
+                                    </div>
+
+                                    {/* Tempat */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Tempat
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={tempat}
+                                            onChange={(e) => setTempat(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Tempat"
+                                        />
+                                    </div>
+
                                     <div className="col-span-2">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Dokumen

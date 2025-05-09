@@ -4,16 +4,19 @@ import {
     FaFileExport,
     FaFileAlt,
     FaFilePdf,
-    FaFileExcel
+    FaFileExcel,
+    FaPlus,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
 import Actions from "./Actions";
+import ExcelImportModal from "./ExcelImportModal";
 
 export default function List({
     users,
     fetchData,
     loading,
+    onAdd,
     onEdit,
     onDelete,
     onView,
@@ -285,6 +288,94 @@ export default function List({
         return name;
     };
 
+    const handleImportExcel = async (file) => {
+        // Tampilkan loading indicator
+        // Swal.fire({
+        //     title: "Memproses File",
+        //     html: "Sedang mengupload dan memproses file Excel...",
+        //     allowOutsideClick: false,
+        //     didOpen: () => {
+        //         Swal.showLoading();
+        //     },
+        // });
+
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await axios.post(
+                `/admin/user/import/excel`,
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
+
+            // Tutup loading dan tampilkan sukses
+            Swal.fire({
+                icon: "success",
+                title: "Import Berhasil!",
+                html: `
+                    <div class="text-left">
+                        <p>File <strong>${
+                            file.name
+                        }</strong> berhasil diimport.</p>
+                        ${
+                            response.data.inserted
+                                ? `<p>Total data: <strong>${response.data.inserted}</strong></p>`
+                                : ""
+                        }
+                    </div>
+                `,
+                confirmButtonText: "OK",
+                willClose: () => {
+                    // Lakukan sesuatu setelah alert ditutup
+                    // Misalnya refresh data atau reset form
+                },
+            });
+
+            return response.data;
+        } catch (error) {
+            let errorMessage = "Terjadi kesalahan saat mengimport file";
+
+            if (error.response) {
+                // Error dari server (4xx/5xx)
+                errorMessage =
+                    error.response.data.message ||
+                    `Error ${error.response.status}: ${error.response.statusText}`;
+            } else if (error.request) {
+                // Tidak ada response dari server
+                errorMessage =
+                    "Tidak ada respon dari server. Silakan coba lagi.";
+            } else if (error.message.includes("Network Error")) {
+                errorMessage =
+                    "Koneksi jaringan bermasalah. Periksa koneksi internet Anda.";
+            }
+
+            Swal.fire({
+                icon: "error",
+                title: "Import Gagal",
+                html: `
+                    <div class="text-left">
+                        <p>${errorMessage}</p>
+                        ${
+                            file
+                                ? `<p>File: <strong>${file.name}</strong></p>`
+                                : ""
+                        }
+                    </div>
+                `,
+                confirmButtonText: "Tutup",
+            });
+
+            throw error;
+        }
+    };
+
+
+
     return (
         <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-300">
             {/* Header dengan pencarian dan filter */}
@@ -360,7 +451,17 @@ export default function List({
                         <FaFileExcel className="mr-2" /> Excel
                     </motion.button>
 
-                    {/* <ExcelImportModal onImport={handleImportExcel} /> */}
+                    <ExcelImportModal onImport={handleImportExcel} />
+
+                    <motion.button
+                        onClick={onAdd}
+                        className="bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaPlus className="mr-2" /> Tambah
+                    </motion.button>
 
                     {/* <motion.div
                         whileHover={{ scale: 1.05 }}
@@ -398,7 +499,6 @@ export default function List({
                 responsive
                 progressPending={loading}
             />
-
         </div>
     );
 }

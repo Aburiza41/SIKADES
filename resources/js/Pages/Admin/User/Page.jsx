@@ -199,6 +199,7 @@ export default function User({ initialUsers, regencies, districts, villages }) {
                     users={users}
                     fetchData={fetchData}
                     loading={loading}
+                    onAdd={handleAdd}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onView={handleView}
