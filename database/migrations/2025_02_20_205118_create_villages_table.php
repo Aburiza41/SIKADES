@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('logo_path')->nullable(); // Store file path instead of longText
             $table->longText('description')->nullable();
             $table->string('website')->nullable();
+            $table->boolean('active')->default(false);
             $table->timestamps();
         });
 

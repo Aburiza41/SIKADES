@@ -65,7 +65,7 @@ class DatabaseSeeder extends Seeder
         $seeders = [
             UserRegencySeeder::class,
             UserVillageSeeder::class,
-            OfficialSeeder::class,
+            // OfficialSeeder::class,
         ];
 
         foreach ($seeders as $seeder) {

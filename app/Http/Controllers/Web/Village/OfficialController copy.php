@@ -28,15 +28,23 @@ class OfficialController extends Controller
      * Display a listing of the resource.
      */
 
-    public function index(Request $request, String $role)
+    public function index(Request $request)
     {
-        // dd($role);
-        // Debug request
-        Log::info('Request parameters:', $request->all());
+        // Ambil village_id dari user yang login
+        $village = Auth::user()->user_village->village;
 
-        // dd(Official::with(['position_current.position'])->first());
         // Query utama untuk officials dengan filter dan sorting
-        $officials = Official::with(['village.district.regency', 'addresses', 'contacts', 'identities', 'studies.study', 'positions.position', 'officialTrainings', 'officialOrganizations', 'position_current.position'])
+        $officials = Official::with([
+            'village.district.regency',
+            'addresses',
+            'contacts',
+            'identities',
+            'studies.study', // Relasi studies dengan study
+            'positions.position',
+            'officialTrainings',
+            'officialOrganizations'
+        ])
+            ->where('village_id', $village->id) // Hanya ambil data dari village_id user yang login
             ->when($request->has('search') && $request->search !== '', function ($query) use ($request) {
                 $query->where(function ($q) use ($request) {
                     $q->where('nama_lengkap', 'like', '%' . $request->search . '%')
@@ -49,24 +57,32 @@ class OfficialController extends Controller
                     $q->where('pendidikan', $request->filters); // Filter berdasarkan ID village
                 });
             })
-            ->when($role, function ($query) use ($role) {
-                $query->whereHas('position_current.position', function ($q) use ($role) {
-                    $q->where('slug', $role); // Filter berdasarkan position->slug
-                });
-            })
             ->orderBy(
                 in_array($request->sort_field, ['id', 'nama_lengkap', 'nik', 'niad', 'created_at', 'updated_at']) ? $request->sort_field : 'id',
                 in_array(strtolower($request->sort_direction), ['asc', 'desc']) ? strtolower($request->sort_direction) : 'asc'
             )
             ->paginate($request->per_page ?? 10);
 
-        // dd($officials[0]->identities);
-        dd($officials);
-        // Cari Position
-        $position = Position::where('slug', $role)->first();
+        // Proses data untuk menambahkan pendidikan tertinggi
+        $officials->getCollection()->transform(function ($official) {
+            // Ambil data studies
+            $studies = $official->studies;
+
+            // Cari pendidikan dengan level tertinggi
+            $highestEducation = null;
+            if ($studies->isNotEmpty()) {
+                $highestEducation = $studies->sortByDesc('study.level')->first();
+            }
+
+            // Tambahkan properti pendidikan tertinggi ke official
+            $official->highest_education = $highestEducation ? $highestEducation->study->name : '-';
+            $official->highest_education_level = $highestEducation ? $highestEducation->study->level : 0;
+
+            return $official;
+        });
 
         // Kembalikan data menggunakan Inertia
-        return Inertia::render('Admin/Official/Page', [
+        return Inertia::render('Village/Official/Page', [
             'officials' => [
                 'current_page' => $officials->currentPage(),
                 'data' => $officials->items(),
@@ -79,8 +95,6 @@ class OfficialController extends Controller
             'filters' => $request->filters, // Kirim filter yang aktif
             'sort' => $request->only(['sort_field', 'sort_direction']), // Kirim sorting yang aktif
             'search' => $request->search, // Kirim pencarian yang aktif
-            'role' => $role,
-            'position' => $position
         ]);
     }
 
@@ -586,18 +600,18 @@ class OfficialController extends Controller
         $official = Official::with(['addresses', 'contacts', 'identities', 'studies', 'positions', 'officialTrainings', 'officialOrganizations'])
             ->where('nik', $id)->firstOrFail();
 
-        // Hapus Secara Berurutan
-        $official->addresses()->delete();
-        $official->contacts()->delete();
-        $official->identities()->delete();
-        $official->studies()->delete();
-        $official->positions()->delete();
-        $official->officialTrainings()->delete();
-        $official->officialOrganizations()->delete();
+            // Hapus Secara Berurutan
+            $official->addresses()->delete();
+            $official->contacts()->delete();
+            $official->identities()->delete();
+            $official->studies()->delete();
+            $official->positions()->delete();
+            $official->officialTrainings()->delete();
+            $official->officialOrganizations()->delete();
 
-        // Hapus Data Utama
-        $official->delete();
+            // Hapus Data Utama
+            $official->delete();
 
-        return redirect()->route('village.official.index')->with('success', 'Data berhasil dihapus.');
+            return redirect()->route('village.official.index')->with('success', 'Data berhasil dihapus.');
     }
 }

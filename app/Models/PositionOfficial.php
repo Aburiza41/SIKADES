@@ -9,6 +9,8 @@ class PositionOfficial extends Model
 {
     use HasFactory;
 
+    protected $table = 'position_officials';
+
     protected $fillable = [
         'position_id',
         'official_id',

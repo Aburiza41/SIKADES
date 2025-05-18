@@ -92,7 +92,7 @@ return new class extends Migration
             $table->foreignId('official_id')->constrained('officials')->onDelete('cascade'); // Relasi ke tabel officials
             $table->string('alamat')->nullable(); // Alamat perusahaan
             // Rt
-            $table->string('rw')->nullable();
+            $table->string('rt')->nullable();
             // Rw
             $table->string('rw')->nullable(); // Kode provinsi
             // Kode Pos
@@ -103,8 +103,6 @@ return new class extends Migration
             $table->foreignId('district_id')->nullable()->constrained('districts')->onDelete('set null'); // Relasi ke tabel districts
             // Kabupaten
             $table->foreignId('regency_id')->nullable()->constrained('regencies')->onDelete('set null'); // Relasi ke tabel regencies
-            // Provinsi
-            $table->foreignId('province_id')->nullable()->constrained('provinces')->onDelete('set null'); // Relasi ke tabel provinces
             $table->timestamps();
         });
 
@@ -146,14 +144,14 @@ return new class extends Migration
             $table->string('rw')->nullable();
             // Kode Pos
             $table->string('kode_pos')->nullable();
-            // Desa
-            $table->foreignId('village_id')->nullable()->constrained('villages')->onDelete('set null'); // Relasi ke tabel villages
-            // Kecamatan
-            $table->foreignId('district_id')->nullable()->constrained('districts')->onDelete('set null'); // Relasi ke tabel districts
-            // Kabupaten
-            $table->foreignId('regency_id')->nullable()->constrained('regencies')->onDelete('set null'); // Relasi ke tabel regencies
-            // Provinsi
-            $table->foreignId('province_id')->nullable()->constrained('provinces')->onDelete('set null'); // Relasi ke tabel provinces
+            $table->string('province_code'); // Kode provinsi
+            $table->string('province_name'); // Nama provinsi
+            $table->string('regency_code'); // Kode kabupaten/kota
+            $table->string('regency_name'); // Nama kabupaten/kota
+            $table->string('district_code'); // Kode kecamatan
+            $table->string('district_name'); // Nama kecamatan
+            $table->string('village_code'); // Kode desa/kelurahan
+            $table->string('village_name'); // Nama desa/kelurahan  
             // No Telepon
             $table->string('no_telepon')->nullable();
             $table->timestamps();

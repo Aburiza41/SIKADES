@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('name_bps');
             $table->string('code_dagri')->unique();
             $table->string('name_dagri');
+            $table->boolean('active')->default(false);
             // $table->string('logo_path')->nullable(); // Store file path instead of longText
             // $table->longText('description')->nullable();
             // $table->string('website')->nullable();
