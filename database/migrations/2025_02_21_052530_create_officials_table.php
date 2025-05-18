@@ -69,6 +69,7 @@ return new class extends Migration
             $table->string('bpjs_kesehatan', 20)->unique(); // Nomor BPJS Kesehatan
             $table->string('bpjs_ketenagakerjaan', 20)->unique(); // Nomor BPJS Ketenagakerjaan
             $table->string('npwp', 20)->unique(); // Nomor NPWP
+            $table->string('foto')->nullable(); // Dokumen pendukung (scan KTP, KK, dll)
             $table->timestamps();
         });
 
@@ -116,8 +117,8 @@ return new class extends Migration
             $table->string('nomor_sk', 255)->unique(); // Nomor SK pengangkatan
             $table->date('tanggal_sk'); // Tanggal SK pengangkatan
             $table->string('file_sk')->nullable(); // File SK (opsional)
-            $table->date('mulai'); // Tanggal mulai menjabat
-            $table->date('selesai')->nullable(); // Tanggal selesai menjabat (nullable jika masih aktif)
+            $table->date('tmt_jabatan'); // Tanggal mulai menjabat
+            // $table->date('selesai')->nullable(); // Tanggal selesai menjabat (nullable jika masih aktif)
             // Periode jabatan
             $table->integer('periode')->nullable();
             $table->text('keterangan')->nullable(); // Keterangan tambahan

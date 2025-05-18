@@ -49,6 +49,7 @@ class CreateOrganizationsTable extends Migration
             $table->string('pimpinan')->nullable();
             // Address
             $table->longText('alamat')->nullable();
+            $table->longText('doc_scan')->nullable();
             $table->text('keterangan')->nullable(); // Keterangan tambahan
             $table->timestamps(); // Kolom created_at dan updated_at
         });
