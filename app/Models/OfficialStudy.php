@@ -10,14 +10,13 @@ class OfficialStudy extends Model
     protected $table = 'study_officials';
 
     protected $fillable = [
-        'study_id',
+        // 'study_id',
         'official_id',
-        'jenjang',
+        'pendidikan_umum',
         'nama_sekolah',
         'alamat_sekolah',
-        'jurusan',
-        'tahun_masuk',
-        'tahun_keluar',
+        'tanggal',
+        'nomor_ijazah',
         'dokumen',
     ];
 

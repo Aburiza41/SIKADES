@@ -24,7 +24,7 @@ return new class extends Migration
             $table->date('tanggal_lahir'); // Tanggal lahir
             $table->enum('jenis_kelamin', ['L', 'P']); // Jenis kelamin
             $table->enum('agama', ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'])->nullable(); // Agama
-            $table->enum('status_perkawinan', ['Belum Menikah', 'Menikah', 'Cerai', 'Duda', 'Janda'])->default('Menikah'); // Status perkawinan
+            $table->enum('status_perkawinan', ['Belum Kawin', 'Kawin', 'Duda', 'Janda'])->default('Kawin'); // Status perkawinan
             $table->enum('status', ['daftar', 'proses', 'validasi', 'tolak'])->default('daftar'); // Status administrasi
             $table->foreignId('user_village_id')->nullable()->constrained('users')->onDelete('set null'); // Verifikasi oleh admin desa
             // $table->foreignId('user_district_id')->nullable()->constrained('users')->onDelete('set null'); // Verifikasi oleh admin kecamatan
@@ -77,11 +77,12 @@ return new class extends Migration
         Schema::create('study_officials', function (Blueprint $table) {
             $table->id();
             $table->foreignId('official_id')->constrained('officials')->onDelete('cascade'); // Relasi ke tabel officials
-            $table->foreignId('study_id')->constrained('studies')->onDelete('cascade'); // Relasi ke tabel studies
+            // $table->foreignId('study_id')->constrained('studies')->onDelete('cascade'); // Relasi ke tabel studies
+            $table->enum('pendidikan_umum', ['SD/MI', 'SMP/MTS', 'SMA/SMK/MA', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3'])->nullable(); // Pendidikan terakhir
             $table->string('nama_sekolah'); // Nama sekolah/universitas
             $table->string('alamat_sekolah')->nullable(); // Alamat sekolah/universitas
             $table->string('nomor_ijazah')->nullable(); // Jurusan (jika ada)
-            $table->integer('tanggal'); // Tahun masuk
+            $table->date('tanggal'); // Tahun masuk
             $table->string('dokumen')->nullable(); // Dokumen pendukung (scan ijazah, transkrip, dll)
             $table->timestamps();
         });
@@ -104,6 +105,21 @@ return new class extends Migration
             // Kabupaten
             $table->foreignId('regency_id')->nullable()->constrained('regencies')->onDelete('set null'); // Relasi ke tabel regencies
             $table->timestamps();
+        });
+
+        // Tabel untuk menyimpan relasi antara pejabat dan pelatihan
+        Schema::create('official_trainings', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('official_id')->constrained('officials')->onDelete('cascade'); // Relasi ke tabel officials
+            $table->string('nama'); // Nama peserta pelatihan
+            $table->string('alamat'); // Jabatan peserta
+            $table->string('pelatihan'); // Alamat peserta
+            $table->string('penyelenggara'); // Jabatan peserta
+            $table->string('nomor_sertifikat')->nullable(); // Nomor sertifikat
+            $table->string('tanggal_sertifikat')->nullable(); // Nomor ijazah
+            $table->text('keterangan')->nullable(); // Keterangan tambahan
+            $table->longText('doc_scan')->nullable(); // Dokumen pendukung (sertifikat, dll)
+            $table->timestamps(); // Kolom created_at dan updated_at
         });
 
         // Tabel untuk menyimpan riwayat jabatan pejabat
@@ -151,7 +167,7 @@ return new class extends Migration
             $table->string('district_code'); // Kode kecamatan
             $table->string('district_name'); // Nama kecamatan
             $table->string('village_code'); // Kode desa/kelurahan
-            $table->string('village_name'); // Nama desa/kelurahan  
+            $table->string('village_name'); // Nama desa/kelurahan
             // No Telepon
             $table->string('no_telepon')->nullable();
             $table->timestamps();
@@ -187,7 +203,7 @@ return new class extends Migration
             // Tanggal Lahir
             $table->date('tanggal_lahir')->nullable();
             // Status
-            $table->enum('status', ['anak_kandung', 'anak_tiri', 'anak_angkat'])->nullable();
+            $table->enum('status', ['Anak Kandung', 'Anak Tiri', 'Anak Angkat'])->nullable();
             // Pendidikan Umum
             $table->enum('pendidikan_umum', ['SD/MI', 'SMP/MTS', 'SMA/SMK/MA', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3'])->nullable(); // Pendidikan terakhir
             // Pekerjaan

@@ -64,7 +64,7 @@ export default function VillageSidebar(props) {
                 </li>
 
                 {/* Menu Pejabat Desa */}
-                <li>
+                {/* <li>
                     <Link
                         href={route("village.official.index")} // Ganti dengan route yang sesuai
                         className={
@@ -76,7 +76,7 @@ export default function VillageSidebar(props) {
                     >
                         <HiUsers className="w-5 h-5 mr-3" />Pejabat
                     </Link>
-                </li>
+                </li> */}
 
                 {/* Menu Pejabat Desa (Dinamis dari API) */}
                 {positions.length > 0 ? (

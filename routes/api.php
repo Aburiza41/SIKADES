@@ -7,6 +7,7 @@ use App\Models\Village;
 use App\Models\District;
 use App\Models\Regency;
 use App\Models\Official;
+use App\Models\Organization;
 use App\Models\Study;
 use App\Models\Position;
 
@@ -270,5 +271,13 @@ Route::get('/global-stats', function () {
             'statistics' => $stats,
             'last_updated' => now()->toDateTimeString()
         ]
+    ]);
+});
+
+// Route Ambil Data Organisasi List
+Route::get('/organization', function () {
+    return response()->json([
+        'success' => true,
+        'data' => Organization::get()
     ]);
 });

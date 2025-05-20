@@ -3,18 +3,25 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class OfficialTraining extends Model
 {
+    use HasFactory;
+
+    protected $table = 'official_trainings';
+
     // HasFactory
     protected $fillable = [
         'official_id',
-        'training_id',
-        'doc_scan',
         'nama',
+        'alamat',
+        'pelatihan',
+        'penyelenggara',
+        'nomor_sertifikat',
+        'tanggal_sertifikat',
+        'doc_scan',
         'keterangan',
-        'mulai',
-        'selesai',
     ];
 
     protected $hidden = [

@@ -21,6 +21,7 @@ class Official extends Model
         'tanggal_lahir',
         'jenis_kelamin',
         'status_perkawinan',
+        'pendidikan_terakhir',
         'agama',
         'status',
         'user_village_id',

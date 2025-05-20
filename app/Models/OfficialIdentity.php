@@ -15,7 +15,7 @@ class OfficialIdentity extends Model
     protected $fillable = [
         'official_id',
         'gol_darah',
-        'pendidikan',
+        'pendidikan_terakhir',
         'bpjs_kesehatan',
         'bpjs_ketenagakerjaan',
         'npwp',

@@ -21,10 +21,12 @@ const csrfToken =
     document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
 export default function UpdateOfficial({
+    official: initialOfficial,
     initialPositions,
     initialOrganizations,
     position
 }) {
+
     // State untuk data utama (Official Form)
     // const [official, setOfficial] = useState(
     //     {

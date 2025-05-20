@@ -20,10 +20,18 @@ export default function AddressForm({
             transition={{ delay: 0.2 }}
             className="bg-white w-full p-4 shadow rounded-lg space-y-4"
         >
+            <div className="space-y-0 border-b">
+                {/* Judul Form */}
+                <h1 className="text-2xl font-semibold text-gray-700">B. Formulir Alamat Pejabat</h1>
+                {/* Keterangan Formulir */}
+                <p className="text-sm text-gray-500">
+                    Formulir ini digunakan untuk mengisi alamat pejabat desa.
+                </p>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Field Alamat Lengkap */}
-                <div className="col-span-4">
+                <div className="col-span-2">
                     <label className="block text-sm font-medium text-gray-700">
                         Alamat Lengkap
                     </label>
@@ -72,24 +80,6 @@ export default function AddressForm({
                             setAddress({
                                 ...address,
                                 rw: e.target.value,
-                            })
-                        }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                        placeholder="Contoh: 002"
-                    />
-                </div>
-                {/* Field RW */}
-                <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                        Kode Pos
-                    </label>
-                    <input
-                        type="number"
-                        value={address.postal}
-                        onChange={(e) =>
-                            setAddress({
-                                ...address,
-                                postal: e.target.value,
                             })
                         }
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"

@@ -18,8 +18,8 @@ class PositionOfficial extends Model
         'nomor_sk',
         'tanggal_sk',
         'file_sk',
-        'mulai',
-        'selesai',
+        'tmt_jabatan',
+        'period',
         'keterangan',
     ];
 

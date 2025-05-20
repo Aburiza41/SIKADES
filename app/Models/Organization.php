@@ -10,5 +10,7 @@ class Organization extends Model
     /** @use HasFactory<\Database\Factories\OrganizationFactory> */
     use HasFactory;
 
+    protected $table = 'organizations';
+
     protected $fillable = ['title', 'description'];
 }

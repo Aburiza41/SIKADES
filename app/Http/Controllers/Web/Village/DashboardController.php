@@ -19,109 +19,71 @@ class DashboardController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-{
-    // Ambil data desa yang terkait dengan user yang login
-    $village = Auth::user()->user_village->village;
-    $district = $village->district;
-    $regency = $district->regency;
+    {
+        // Ambil data desa yang terkait dengan user yang login
+        $village = Auth::user()->user_village->village;
+        $district = $village->district;
+        $regency = $district->regency;
 
-    // Ambil data pendidikan dari tabel studies
-    $educationLevels = Study::pluck('name', 'id')->toArray();
+        // Ambil data pendidikan dari tabel studies
+        $educationLevels = Study::pluck('name', 'id')->toArray();
 
-    // Hitung total pejabat dengan status "validasi"
-    $official = Official::where('village_id', $village->id)
-        ->where('status', 'validasi')
-        ->count();
-
-    // Hitung total pejabat berdasarkan status
-    $statusOptions = ['daftar', 'proses', 'validasi', 'tolak'];
-    $status_pejabat = array_map(function($status) use ($village) {
-        return Official::where('village_id', $village->id)
-            ->where('status', $status)
-            ->count();
-    }, $statusOptions);
-
-    // Hitung total pejabat berdasarkan jenis kelamin dengan status "validasi"
-    $genderOptions = ['L', 'P'];
-    $jenis_kelamin = array_map(function($gender) use ($village) {
-        return Official::where('village_id', $village->id)
+        // Hitung total pejabat dengan status "validasi"
+        $official = Official::where('village_id', $village->id)
             ->where('status', 'validasi')
-            ->where('jenis_kelamin', $gender)
             ->count();
-    }, $genderOptions);
 
-    // Hitung total pejabat berdasarkan pendidikan dengan status "validasi"
-    $pendidikan = [];
-    foreach ($educationLevels as $id => $education) {
-        $pendidikan[$education] = Official::where('village_id', $village->id)
-            ->where('status', 'validasi')
-            ->whereHas('identities', function ($q) use ($id) {
-                $q->where('pendidikan', $id);
-            })
-            ->count();
-    }
+        // Hitung total pejabat berdasarkan status
+        $statusOptions = ['daftar', 'proses', 'validasi', 'tolak'];
+        $status_pejabat = array_map(function ($status) use ($village) {
+            return Official::where('village_id', $village->id)
+                ->where('status', $status)
+                ->count();
+        }, $statusOptions);
 
-    // Hitung total posisi
-    $postions = Position::count();
+        // Hitung total pejabat berdasarkan jenis kelamin dengan status "validasi"
+        $genderOptions = ['L', 'P'];
+        $jenis_kelamin = array_map(function ($gender) use ($village) {
+            return Official::where('village_id', $village->id)
+                ->where('status', 'validasi')
+                ->where('jenis_kelamin', $gender)
+                ->count();
+        }, $genderOptions);
 
-    // Kirim data ke view
-    return Inertia::render('Village/Dashboard/Page', [
-        'regency' => $regency,
-        'district' => $district,
-        'village' => $village,
-        'official' => $official,
-        'status_pejabat' => $status_pejabat,
-        'jenis_kelamin' => $jenis_kelamin,
-        'pendidikan' => $pendidikan,
-        'posisi' => $postions,
-    ]);
-}
+        // Hitung total pejabat berdasarkan pendidikan dengan status "validasi"
+        // $pendidikan = [];
+        // foreach ($educationLevels as $id => $education) {
+        //     $pendidikan[$education] = Official::where('village_id', $village->id)
+        //         ->where('status', 'validasi')
+        //         ->whereHas('identities', function ($q) use ($id) {
+        //             $q->where('pendidikan', $id);
+        //         })
+        //         ->count();
+        // }
+        // Hitung total pejabat berdasarkan pendidikan dengan status "validasi"
+        $pendidikan = [];
+        foreach ($educationLevels as $id => $education) {
+            $pendidikan[$education] = Official::where('village_id', $village->id)
+                ->where('status', 'validasi')
+                ->whereHas('identities', function ($q) use ($id) {
+                    $q->where('pendidikan_terakhir', $id); // Ubah 'pendidikan' menjadi 'pendidikan_terakhir'
+                })
+                ->count();
+        }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
+        // Hitung total posisi
+        $postions = Position::count();
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        // Kirim data ke view
+        return Inertia::render('Village/Dashboard/Page', [
+            'regency' => $regency,
+            'district' => $district,
+            'village' => $village,
+            'official' => $official,
+            'status_pejabat' => $status_pejabat,
+            'jenis_kelamin' => $jenis_kelamin,
+            'pendidikan' => $pendidikan,
+            'posisi' => $postions,
+        ]);
     }
 }
