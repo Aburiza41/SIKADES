@@ -6,19 +6,15 @@ jobs:
   laravel-tests:
     runs-on: ubuntu-latest
 
-    # Define environment variables at the job level
-    env:
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-
     services:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: password123  # Hardcoded for service container
+          MYSQL_ROOT_PASSWORD: rootpassword
           MYSQL_DATABASE: sikades
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping -uroot -ppassword123" --health-interval=10s --health-timeout=5s --health-retries=5
+        options: --health-cmd="mysqladmin ping -uroot -prootpassword" --health-interval=10s --health-timeout=5s --health-retries=5
 
     steps:
       - name: Checkout code
@@ -35,33 +31,34 @@ jobs:
 
       - name: Get Composer Cache Directory
         id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+        run: |
+          echo "dir=$(composer config cache-files-dir)" >> $GITHUB_ENV
+          echo "COMPOSER_CACHE_DIR=$(composer config cache-files-dir)" >> $GITHUB_ENV
 
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
-          path: ${{ steps.composer-cache.outputs.dir }}
+          path: ${{ env.COMPOSER_CACHE_DIR }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
             ${{ runner.os }}-composer-
 
       - name: Install dependencies
         run: |
-          composer validate
-          composer install --no-progress --prefer-dist --optimize-autoloader --no-interaction
+          composer validate --no-check-all --no-check-publish
+          composer install --no-progress --prefer-dist --optimize-autoloader
 
       - name: Prepare environment
         run: |
           cp .env.example .env.test
           echo "APP_ENV=testing" >> .env.test
-          echo "APP_KEY=" >> .env.test
           echo "DB_CONNECTION=mysql" >> .env.test
           echo "DB_HOST=mysql" >> .env.test
           echo "DB_PORT=3306" >> .env.test
           echo "DB_DATABASE=sikades" >> .env.test
           echo "DB_USERNAME=root" >> .env.test
-          echo "DB_PASSWORD=password123" >> .env.test  # Matching service container
-          php artisan key:generate --env=testing
+          echo "DB_PASSWORD=rootpassword" >> .env.test
+          php artisan key:generate --env=testing --force
 
       - name: Execute tests
         run: |
@@ -69,9 +66,9 @@ jobs:
           php artisan migrate:fresh --env=testing --force
           vendor/bin/phpunit --verbose --coverage-clover=coverage.xml
 
-      - name: Upload coverage to Codecov (optional)
-        uses: codecov/codecov-action@v3
+      - name: Upload coverage to Codecov
         if: success()
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: coverage.xml
