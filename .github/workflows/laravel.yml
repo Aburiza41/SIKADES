@@ -2,21 +2,23 @@ name: Laravel CI
 
 on: [push]
 
-env:
-  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-
 jobs:
   laravel-tests:
     runs-on: ubuntu-latest
+
+    # Define environment variables at the job level
+    env:
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
     services:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: ${{ env.DB_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: password123  # Hardcoded for service container
           MYSQL_DATABASE: sikades
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping -uroot -p${{ env.DB_PASSWORD }}" --health-interval=10s --health-timeout=5s --health-retries=5
+        options: --health-cmd="mysqladmin ping -uroot -ppassword123" --health-interval=10s --health-timeout=5s --health-retries=5
 
     steps:
       - name: Checkout code
@@ -58,7 +60,7 @@ jobs:
           echo "DB_PORT=3306" >> .env.test
           echo "DB_DATABASE=sikades" >> .env.test
           echo "DB_USERNAME=root" >> .env.test
-          echo "DB_PASSWORD=${{ env.DB_PASSWORD }}" >> .env.test
+          echo "DB_PASSWORD=password123" >> .env.test  # Matching service container
           php artisan key:generate --env=testing
 
       - name: Execute tests
