@@ -1,6 +1,13 @@
-name: Laravel CI
+name: Laravel CI/CD Pipeline
 
 on: [push]
+
+env:
+  DB_HOST: mysql
+  DB_PORT: 3306
+  DB_DATABASE: sikades
+  DB_USERNAME: root
+  DB_PASSWORD: rootpassword
 
 jobs:
   laravel-tests:
@@ -20,19 +27,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup CA Certificate
+      - name: Setup system dependencies
         run: |
-          sudo mkdir -p /usr/local/share/ca-certificates
-          sudo wget -O /usr/local/share/ca-certificates/cacert.pem https://curl.se/ca/cacert.pem
-          sudo update-ca-certificates
-          echo "SSL_CERT_FILE=/usr/local/share/ca-certificates/cacert.pem" >> $GITHUB_ENV
+          sudo apt-get update -y
+          sudo apt-get install -y ca-certificates openssl
+          sudo update-ca-certificates --fresh
+          export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+          echo "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt" >> $GITHUB_ENV
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, pdo_mysql, dom, fileinfo, openssl
-          ini-values: memory_limit=512M
+          extensions: mbstring, pdo_mysql, dom, fileinfo, openssl, gd, zip
+          ini-values: |
+            memory_limit=512M
+            openssl.cafile=/etc/ssl/certs/ca-certificates.crt
+            curl.cainfo=/etc/ssl/certs/ca-certificates.crt
           coverage: none
           tools: composer:v2
 
@@ -41,33 +52,37 @@ jobs:
           composer config --global cafile $SSL_CERT_FILE
           composer config --global disable-tls false
           composer config --global secure-http true
+          composer --version
+          composer diagnose
 
-      - name: Get Composer Cache Directory
+      - name: Setup Composer cache
         id: composer-cache
         run: |
-          echo "dir=$(composer config cache-files-dir)" >> $GITHUB_ENV
+          echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+          echo "COMPOSER_CACHE_DIR=$(composer config cache-files-dir)" >> $GITHUB_ENV
 
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
-          path: ${{ env.dir }}
+          path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
             ${{ runner.os }}-composer-
 
       - name: Install dependencies
-        run: composer install --no-progress --prefer-dist --optimize-autoloader
+        run: |
+          composer install --no-progress --prefer-dist --optimize-autoloader --no-interaction
 
       - name: Prepare environment
         run: |
           cp .env.example .env.test
           echo "APP_ENV=testing" >> .env.test
           echo "DB_CONNECTION=mysql" >> .env.test
-          echo "DB_HOST=mysql" >> .env.test
-          echo "DB_PORT=3306" >> .env.test
-          echo "DB_DATABASE=sikades" >> .env.test
-          echo "DB_USERNAME=root" >> .env.test
-          echo "DB_PASSWORD=rootpassword" >> .env.test
+          echo "DB_HOST=${{ env.DB_HOST }}" >> .env.test
+          echo "DB_PORT=${{ env.DB_PORT }}" >> .env.test
+          echo "DB_DATABASE=${{ env.DB_DATABASE }}" >> .env.test
+          echo "DB_USERNAME=${{ env.DB_USERNAME }}" >> .env.test
+          echo "DB_PASSWORD=${{ env.DB_PASSWORD }}" >> .env.test
           php artisan key:generate --env=testing --force
 
       - name: Execute tests
