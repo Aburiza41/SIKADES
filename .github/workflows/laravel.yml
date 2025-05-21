@@ -16,17 +16,14 @@ jobs:
           - 3306:3306
         options: --health-cmd="mysqladmin ping -uroot -prootpassword" --health-interval=10s --health-timeout=5s --health-retries=5
 
-    env:
-      SSL_CERT_FILE: /usr/local/share/ca-certificates/cacert.pem
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Setup CA Certificate
         run: |
-          sudo mkdir -p /usr/local/share/ca-certificates/
-          sudo cp cacert.pem /usr/local/share/ca-certificates/cacert.pem
+          sudo mkdir -p /usr/local/share/ca-certificates
+          sudo wget -O /usr/local/share/ca-certificates/cacert.pem https://curl.se/ca/cacert.pem
           sudo update-ca-certificates
           echo "SSL_CERT_FILE=/usr/local/share/ca-certificates/cacert.pem" >> $GITHUB_ENV
 
@@ -39,24 +36,27 @@ jobs:
           coverage: none
           tools: composer:v2
 
+      - name: Configure Composer
+        run: |
+          composer config --global cafile $SSL_CERT_FILE
+          composer config --global disable-tls false
+          composer config --global secure-http true
+
       - name: Get Composer Cache Directory
         id: composer-cache
         run: |
-          echo "COMPOSER_CACHE_DIR=$(composer config cache-files-dir)" >> $GITHUB_ENV
+          echo "dir=$(composer config cache-files-dir)" >> $GITHUB_ENV
 
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
-          path: ${{ env.COMPOSER_CACHE_DIR }}
+          path: ${{ env.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
             ${{ runner.os }}-composer-
 
       - name: Install dependencies
-        run: |
-          composer config --global cafile $SSL_CERT_FILE
-          composer validate --no-check-all --no-check-publish
-          composer install --no-progress --prefer-dist --optimize-autoloader
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
 
       - name: Prepare environment
         run: |
