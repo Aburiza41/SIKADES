@@ -96,7 +96,7 @@ class Official extends Model
 
     public function positions()
     {
-        return $this->hasMany(PositionOfficial::class);
+        return $this->hasOne(PositionOfficial::class);
     }
 
     // Posisi saat ini

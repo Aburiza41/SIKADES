@@ -24,12 +24,8 @@ export default function UpdateOfficial({
     official: initialOfficial,
     studies: initialStudies,
     initialPositions,
-    organizations: initialOrganizations,
+    initialOrganizations,
     position,
-    anak: initialAnak,
-    trainings: initialTrainings,
-    orang_tua: initialOrangtua,
-    pasangan: initialPasangan,
     id
 }) {
     // console.log('official',initialOfficial);
@@ -150,24 +146,14 @@ export default function UpdateOfficial({
     const [officialPosition, setOfficialPosition] = useState([]);
 
     // State untuk data trainings (dinamis)
-    const [officialTrainings, setOfficialTrainings] = useState(
-        initialTrainings
-    );
+    const [officialTrainings, setOfficialTrainings] = useState([]);
 
     // State untuk data organizations (dinamis)
-    const [officialOrganizations, setOfficialOrganizations] = useState(
-        initialOrganizations
-    );
+    const [officialOrganizations, setOfficialOrganizations] = useState([]);
 
-    const [orangTua, setOrangTua] = useState(
-        initialOrangtua
-    );
-    const [hubungan, setHubungan] = useState(
-        initialPasangan || {}
-    );
-    const [anak, setAnak] = useState(
-        initialAnak
-    );
+    const [orangTua, setOrangTua] = useState([]);
+    const [hubungan, setHubungan] = useState([]);
+    const [anak, setAnak] = useState([]);
 
     // State untuk loading dan error
     const [isLoading, setIsLoading] = useState(false);

@@ -38,7 +38,7 @@ class OfficialController extends Controller
                 $query->where(function ($q) use ($request) {
                     $q->where('nama_lengkap', 'like', '%' . $request->search . '%')
                     ->orWhere('nik', 'like', '%' . $request->search . '%')
-                    ->orWhere('niad', 'like', '%' . $request->search . '%');
+                    ->orWhere('nipd', 'like', '%' . $request->search . '%');
                 });
             })
             ->when($request->filled('filters'), function ($query) use ($request) {
@@ -52,7 +52,7 @@ class OfficialController extends Controller
                 });
             })
             ->orderBy(
-                in_array($request->sort_field, ['id', 'nama_lengkap', 'nik', 'niad', 'created_at', 'updated_at']) ? $request->sort_field : 'id',
+                in_array($request->sort_field, ['id', 'nama_lengkap', 'nik', 'nipd', 'created_at', 'updated_at']) ? $request->sort_field : 'id',
                 in_array(strtolower($request->sort_direction), ['asc', 'desc']) ? strtolower($request->sort_direction) : 'asc'
             )
             ->paginate($request->per_page ?? 10);

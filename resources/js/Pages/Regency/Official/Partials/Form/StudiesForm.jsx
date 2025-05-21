@@ -1,35 +1,38 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { HiTrash, HiPlus, HiPencil, HiInformationCircle, HiX, HiCheck,
-    HiLocationMarker, HiUserGroup, HiCalendar, HiDocumentText } from "react-icons/hi";
+         HiLocationMarker, HiCalendar, HiDocumentText } from "react-icons/hi";
 import { FaGraduationCap } from "react-icons/fa";
 import { useState } from "react";
 import Swal from "sweetalert2";
 
-export default function TrainingsForm({ officialTrainings = [], setOfficialTrainings }) {
+export default function StudiesForm({ officialStudies = [], setOfficialStudies }) {
   // State untuk form
   const [formData, setFormData] = useState({
-    nama: "",
+    tingkatPendidikan: "",
+    namaSekolah: "",
     tempat: "",
-    pelatihan: "",
-    penyelenggara: "",
-    nomor: "",
-    tanggal: "",
-    docScan: null
+    nomorIjazah: "",
+    tanggalIjazah: "",
+    dokumenIjazah: null
   });
 
   const [editIndex, setEditIndex] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Options untuk tingkat pendidikan
+  const pendidikanOptions = [
+    'SD/MI', 'SMP/MTS', 'SMA/SMK/MA', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3'
+  ];
+
   // Reset form
   const resetForm = () => {
     setFormData({
-      nama: "",
+      tingkatPendidikan: "",
+      namaSekolah: "",
       tempat: "",
-      pelatihan: "",
-      penyelenggara: "",
-      nomor: "",
-      tanggal: "",
-      docScan: null
+      nomorIjazah: "",
+      tanggalIjazah: "",
+      dokumenIjazah: null
     });
     setEditIndex(null);
   };
@@ -37,15 +40,14 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
   // Buka modal
   const openModal = (index = null) => {
     if (index !== null) {
-      const training = officialTrainings[index];
+      const study = officialStudies[index];
       setFormData({
-        nama: training.nama,
-        tempat: training.tempat,
-        pelatihan: training.pelatihan,
-        penyelenggara: training.penyelenggara,
-        nomor: training.nomor,
-        tanggal: training.tanggal,
-        docScan: training.docScan || null
+        tingkatPendidikan: study.tingkatPendidikan,
+        namaSekolah: study.namaSekolah,
+        tempat: study.tempat,
+        nomorIjazah: study.nomorIjazah,
+        tanggalIjazah: study.tanggalIjazah,
+        dokumenIjazah: study.dokumenIjazah
       });
       setEditIndex(index);
     }
@@ -76,36 +78,36 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
       return;
     }
 
-    setFormData(prev => ({ ...prev, docScan: file }));
+    setFormData(prev => ({ ...prev, dokumenIjazah: file }));
   };
 
   // Hapus dokumen
   const removeDocument = () => {
-    setFormData(prev => ({ ...prev, docScan: null }));
+    setFormData(prev => ({ ...prev, dokumenIjazah: null }));
   };
 
   // Submit form
   const handleSubmit = () => {
     // Validasi
-    if (!formData.nama || !formData.tempat || !formData.pelatihan || !formData.penyelenggara) {
+    if (!formData.tingkatPendidikan || !formData.namaSekolah) {
       Swal.fire({
         icon: "error",
         title: "Oops...",
-        text: "Harap isi semua field yang diperlukan!",
+        text: "Harap isi Tingkat Pendidikan dan Nama Sekolah!",
       });
       return;
     }
 
-    const trainingData = { ...formData };
+    const studyData = { ...formData };
 
     if (editIndex !== null) {
       // Update existing data
-      const updated = [...officialTrainings];
-      updated[editIndex] = trainingData;
-      setOfficialTrainings(updated);
+      const updated = [...officialStudies];
+      updated[editIndex] = studyData;
+      setOfficialStudies(updated);
     } else {
       // Add new data
-      setOfficialTrainings(prev => [...prev, trainingData]);
+      setOfficialStudies(prev => [...prev, studyData]);
     }
 
     setIsModalOpen(false);
@@ -113,7 +115,7 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
   };
 
   // Hapus data
-  const deleteTraining = (index) => {
+  const deleteStudy = (index) => {
     Swal.fire({
       title: "Apakah Anda yakin?",
       text: "Data yang dihapus tidak dapat dikembalikan!",
@@ -125,7 +127,7 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
       cancelButtonText: "Batal",
     }).then((result) => {
       if (result.isConfirmed) {
-        setOfficialTrainings(prev => prev.filter((_, i) => i !== index));
+        setOfficialStudies(prev => prev.filter((_, i) => i !== index));
         Swal.fire("Dihapus!", "Data telah dihapus.", "success");
       }
     });
@@ -150,11 +152,11 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
             </motion.div>
             <div>
               <h1 className="text-2xl font-bold text-gray-800">
-                F. RIWAYAT PELATIHAN/BIMBINGAN TEKNIS/SOSIALISASI
+                E. RIWAYAT PENDIDIKAN
               </h1>
               <p className="text-sm text-gray-600 mt-1 flex items-center">
                 <HiInformationCircle className="mr-1 text-blue-500" />
-                Formulir ini digunakan untuk mengisi riwayat pelatihan pejabat desa.
+                Formulir ini digunakan untuk mengisi riwayat pendidikan pejabat desa.
               </p>
             </div>
           </div>
@@ -183,22 +185,16 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  NAMA
+                  TINGKAT PENDIDIKAN
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  NAMA SEKOLAH
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   TEMPAT
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  PELATIHAN
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  PENYELENGGARA
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  NOMOR
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  TANGGAL
+                  IJAZAH
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   AKSI
@@ -206,50 +202,37 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {officialTrainings.length > 0 ? (
-                officialTrainings.map((training, index) => (
+              {officialStudies.length > 0 ? (
+                officialStudies.map((study, index) => (
                   <motion.tr
                     key={index}
                     className="hover:bg-gray-50"
                     variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                      {training.nama}
+                      {study.tingkatPendidikan}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                      {training.tempat}
+                      {study.namaSekolah}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                      {training.pelatihan}
+                      {study.tempat || "-"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                      {training.penyelenggara}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                      {training.nomor || "-"}
-                      {/* <a
-                            href={URL.createObjectURL(training.docScan)}
+                      {study.dokumenIjazah ? (
+                        <div className="flex items-center">
+                          <span className="mr-2">{study.nomorIjazah || 'No.Ijazah'}</span>
+                          <a
+                            href={URL.createObjectURL(study.dokumenIjazah)}
                             target="_blank"
                             className="text-blue-500 hover:underline flex items-center"
                           >
                             <HiDocumentText className="mr-1" /> Lihat
-                          </a> */}
-                          <a
-  href={training?.docScan instanceof Blob ? URL.createObjectURL(training.docScan) : "#"}
-  target="_blank"
-  className="text-blue-500 hover:underline flex items-center"
-  onClick={(e) => {
-    if (!(training?.docScan instanceof Blob)) {
-      e.preventDefault();
-      // Optional: show error message or handle invalid file
-    }
-  }}
->
-  <HiDocumentText className="mr-1" /> Lihat
-</a>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                      {training.tanggal || "-"}
+                          </a>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
@@ -264,7 +247,7 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
                         </motion.button>
                         <motion.button
                           type="button"
-                          onClick={() => deleteTraining(index)}
+                          onClick={() => deleteStudy(index)}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                           className="px-3 py-1 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 flex items-center text-xs shadow-sm"
@@ -277,11 +260,11 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
                 ))
               ) : (
                 <motion.tr variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}>
-                  <td colSpan="7" className="px-6 py-8 text-center">
+                  <td colSpan="5" className="px-6 py-8 text-center">
                     <div className="flex flex-col items-center justify-center text-gray-400">
                       <HiInformationCircle className="text-4xl mb-2 text-blue-200" />
                       <p className="text-sm font-medium">
-                        Tidak ada data riwayat pelatihan.
+                        Tidak ada data riwayat pendidikan.
                       </p>
                       <motion.button
                         type="button"
@@ -320,26 +303,52 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
               <div className="p-6">
                 <h2 className="text-xl font-bold text-gray-800 flex items-center">
                   <FaGraduationCap className="mr-2 text-blue-500" />
-                  {editIndex !== null ? "Edit Riwayat Pelatihan" : "Tambah Riwayat Pelatihan"}
+                  {editIndex !== null ? "Edit Riwayat Pendidikan" : "Tambah Riwayat Pendidikan"}
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  {/* Nama */}
+                  {/* Tingkat Pendidikan */}
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1 }}
+                    className="col-span-2"
                   >
                     <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                      <HiUserGroup className="mr-2 text-blue-500" /> Nama *
+                      <HiDocumentText className="mr-2 text-blue-500" /> Tingkat Pendidikan *
+                    </label>
+                    <motion.select
+                      name="tingkatPendidikan"
+                      value={formData.tingkatPendidikan}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      required
+                      whileFocus="focus"
+                    >
+                      <option value="">Pilih Pendidikan</option>
+                      {pendidikanOptions.map(option => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </motion.select>
+                  </motion.div>
+
+                  {/* Nama Sekolah */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="col-span-2"
+                  >
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                      <HiDocumentText className="mr-2 text-blue-500" /> Nama Sekolah *
                     </label>
                     <motion.input
                       type="text"
-                      name="nama"
-                      value={formData.nama}
+                      name="namaSekolah"
+                      value={formData.namaSekolah}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="Nama"
+                      placeholder="Nama Sekolah"
                       required
                       whileFocus="focus"
                     />
@@ -349,10 +358,10 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 }}
+                    transition={{ delay: 0.3 }}
                   >
                     <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                      <HiLocationMarker className="mr-2 text-blue-500" /> Tempat *
+                      <HiLocationMarker className="mr-2 text-blue-500" /> Tempat
                     </label>
                     <motion.input
                       type="text"
@@ -361,101 +370,58 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       placeholder="Tempat"
-                      required
                       whileFocus="focus"
                     />
                   </motion.div>
 
-                  {/* Pelatihan */}
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                      <HiCalendar className="mr-2 text-blue-500" /> Pelatihan *
-                    </label>
-                    <motion.input
-                      type="text"
-                      name="pelatihan"
-                      value={formData.pelatihan}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="Pelatihan"
-                      required
-                      whileFocus="focus"
-                    />
-                  </motion.div>
-
-                  {/* Penyelenggara */}
+                  {/* Nomor Ijazah */}
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 }}
                   >
                     <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                      <HiCalendar className="mr-2 text-blue-500" /> Penyelenggara *
+                      <HiDocumentText className="mr-2 text-blue-500" /> Nomor Ijazah
                     </label>
                     <motion.input
                       type="text"
-                      name="penyelenggara"
-                      value={formData.penyelenggara}
+                      name="nomorIjazah"
+                      value={formData.nomorIjazah}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="Penyelenggara"
-                      required
+                      placeholder="Nomor Ijazah"
                       whileFocus="focus"
                     />
                   </motion.div>
 
-                  {/* Nomor */}
+                  {/* Tanggal Ijazah */}
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.5 }}
                   >
                     <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                      <HiDocumentText className="mr-2 text-blue-500" /> Nomor
+                      <HiCalendar className="mr-2 text-blue-500" /> Tanggal Ijazah
                     </label>
                     <motion.input
-                      type="text"
-                      name="nomor"
-                      value={formData.nomor}
+                      type="date"
+                      name="tanggalIjazah"
+                      value={formData.tanggalIjazah}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="Nomor"
                       whileFocus="focus"
                     />
                   </motion.div>
 
-                  {/* Tanggal */}
+                  {/* Dokumen Ijazah */}
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.6 }}
-                  >
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                      <HiCalendar className="mr-2 text-blue-500" /> Tanggal
-                    </label>
-                    <motion.input
-                      type="date"
-                      name="tanggal"
-                      value={formData.tanggal}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      whileFocus="focus"
-                    />
-                  </motion.div>
-
-                  {/* Dokumen Scan */}
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.7 }}
                     className="col-span-2"
                   >
                     <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                      <HiDocumentText className="mr-2 text-blue-500" /> Dokumen Scan
+                      <HiDocumentText className="mr-2 text-blue-500" /> Dokumen Ijazah
                     </label>
                     <div className="flex items-center gap-2">
                       <motion.input
@@ -465,7 +431,7 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
                         accept=".pdf,.jpg,.jpeg,.png"
                         whileFocus="focus"
                       />
-                      {formData.docScan && (
+                      {formData.dokumenIjazah && (
                         <button
                           onClick={removeDocument}
                           className="p-2 text-red-500 hover:text-red-700"
@@ -475,12 +441,12 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
                         </button>
                       )}
                     </div>
-                    {formData.docScan && (
+                    {formData.dokumenIjazah && (
                       <div className="mt-2 flex items-center text-sm text-gray-600">
                         <HiDocumentText className="mr-2" />
-                        <span>{formData.docScan.name}</span>
+                        <span>{formData.dokumenIjazah.name}</span>
                         <span className="ml-2 text-gray-400">
-                          ({(formData.docScan.size / 1024).toFixed(1)} KB)
+                          ({(formData.dokumenIjazah.size / 1024).toFixed(1)} KB)
                         </span>
                       </div>
                     )}

@@ -16,6 +16,11 @@ import {
     FaInfoCircle,
     FaHome,
     FaUserTie,
+    FaMale,
+    FaFemale, FaChartLine,
+    FaDatabase,
+    FaCalendarAlt,
+    FaLayerGroup
 } from "react-icons/fa";
 import DataTable from "react-data-table-component";
 
@@ -565,330 +570,259 @@ export default function ContentSection() {
                             className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-start justify-center pt-20 shadow-lg"
                         >
                             <motion.div
-                                initial={{ y: -50, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                exit={{ y: -50, opacity: 0 }}
-                                className="bg-white p-6 rounded-lg w-full max-w-5xl max-h-[80vh]"
-                            >
-                                {/* Header Modal */}
-                                <div className="flex justify-between items-center mb-3 px-5">
-                                    <h3 className="text-2xl font-bold">
-                                        Profil {modalData.name_bps}
-                                    </h3>
-                                    <button
-                                        onClick={closeModal}
-                                        className="text-gray-500 hover:text-gray-700 transition-all duration-300"
-                                    >
-                                        <FaTimes size={24} />
-                                    </button>
-                                </div>
+    initial={{ y: -50, opacity: 0 }}
+    animate={{ y: 0, opacity: 1 }}
+    exit={{ y: -50, opacity: 0 }}
+    className="bg-white p-6 rounded-lg w-full max-w-5xl max-h-[80vh]"
+>
+    {/* Header Modal */}
+    <div className="flex justify-between items-center mb-3 px-5">
+        <h3 className="text-2xl font-bold">
+            Profil {modalData.name_bps}
+        </h3>
+        <button
+            onClick={closeModal}
+            className="text-gray-500 hover:text-gray-700 transition-all duration-300"
+        >
+            <FaTimes size={24} />
+        </button>
+    </div>
 
-                                <div className="max-h-[65vh] overflow-y-auto p-5">
-                                    {/* Informasi Umum */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="bg-green-50 p-6 rounded-lg border border-green-200 shadow-md">
-                                            <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                                <FaMapMarkerAlt /> Lokasi
-                                            </h4>
-                                            <p className="text-gray-700">
-                                                <span className="font-semibold">
-                                                    Nama Dagri:
-                                                </span>{" "}
-                                                {modalData.name_dagri}
-                                            </p>
-                                            <p className="text-gray-700">
-                                                <span className="font-semibold">
-                                                    Nama BPS:
-                                                </span>{" "}
-                                                {modalData.name_bps}
-                                            </p>
-                                            <p className="text-gray-700">
-                                                <span className="font-semibold">
-                                                    Kode BPS:
-                                                </span>{" "}
-                                                {modalData.code_bps}
-                                            </p>
-                                            <p className="text-gray-700">
-                                                <span className="font-semibold">
-                                                    Kode Dagri:
-                                                </span>{" "}
-                                                {modalData.code_dagri}
-                                            </p>
-                                        </div>
+    <div className="max-h-[65vh] overflow-y-auto p-5">
+        {/* Informasi Umum */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-green-50 p-6 rounded-lg border border-green-200 shadow-md">
+                <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <FaMapMarkerAlt /> Lokasi
+                </h4>
+                <p className="text-gray-700">
+                    <span className="font-semibold">Nama Dagri:</span> {modalData.name_dagri}
+                </p>
+                <p className="text-gray-700">
+                    <span className="font-semibold">Nama BPS:</span> {modalData.name_bps}
+                </p>
+                <p className="text-gray-700">
+                    <span className="font-semibold">Kode BPS:</span> {modalData.code_bps}
+                </p>
+                <p className="text-gray-700">
+                    <span className="font-semibold">Kode Dagri:</span> {modalData.code_dagri}
+                </p>
+            </div>
 
-                                        <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 shadow-md">
-                                            <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                                <FaInfoCircle /> Informasi Umum
-                                            </h4>
-                                            <p className="text-gray-700">
-                                                <span className="font-semibold">
-                                                    Total Kecamatan:
-                                                </span>{" "}
-                                                {modalData.total_districts}
-                                            </p>
-                                            <p className="text-gray-700">
-                                                <span className="font-semibold">
-                                                    Total Desa:
-                                                </span>{" "}
-                                                {modalData.total_villages}
-                                            </p>
-                                            <p className="text-gray-700">
-                                                <span className="font-semibold">
-                                                    Total Pejabat:
-                                                </span>{" "}
-                                                {modalData.total_officials}
-                                            </p>
-                                            <p className="text-gray-700">
-                                                <span className="font-semibold">
-                                                    Dibuat Pada:
-                                                </span>{" "}
-                                                {new Date(
-                                                    modalData.created_at
-                                                ).toLocaleDateString()}
-                                            </p>
-                                            <p className="text-gray-700">
-                                                <span className="font-semibold">
-                                                    Diperbarui Pada:
-                                                </span>{" "}
-                                                {new Date(
-                                                    modalData.updated_at
-                                                ).toLocaleDateString()}
-                                            </p>
-                                        </div>
+            <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 shadow-md">
+                <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <FaInfoCircle /> Informasi Umum
+                </h4>
+                <p className="text-gray-700">
+                    <span className="font-semibold">Total Perangkat:</span> {modalData.total_officials || 0}
+                </p>
+                <p className="text-gray-700">
+                    <span className="font-semibold">Dibuat Pada:</span> {new Date(modalData.created_at).toLocaleDateString()}
+                </p>
+                <p className="text-gray-700">
+                    <span className="font-semibold">Diperbarui Pada:</span> {new Date(modalData.updated_at).toLocaleDateString()}
+                </p>
+            </div>
+        </div>
+
+        {/* Data Pendidikan Perangkat */}
+        {modalData.education_totals && (
+            <div className="bg-purple-50 p-6 rounded-lg border border-purple-200 shadow-md mt-6">
+                <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <FaGraduationCap /> Pendidikan Perangkat Desa
+                </h4>
+
+                {Object.values(modalData.education_totals).some(val => val > 0) ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.entries(modalData.education_totals).map(([education, count]) => (
+                            count > 0 && (
+                                <div key={education} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium text-gray-700">{education}</span>
+                                        <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                            {count} orang
+                                        </span>
                                     </div>
-
-                                    {/* Informasi Desa */}
-                                    {modalData?.description_latest && (
-                                        <div className="bg-purple-50 p-6 rounded-lg border border-purple-200 shadow-md mt-6">
-                                            <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                                <FaInfoCircle /> Deskripsi
-                                                Terbaru Desa
-                                            </h4>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <p className="text-gray-700">
-                                                    <span className="font-semibold">
-                                                        Skor IDM:
-                                                    </span>{" "}
-                                                    {modalData
-                                                        .description_latest
-                                                        .score_idm ||
-                                                        "Tidak tersedia"}
-                                                </p>
-                                                <p className="text-gray-700">
-                                                    <span className="font-semibold">
-                                                        Status IDM:
-                                                    </span>{" "}
-                                                    {modalData
-                                                        .description_latest
-                                                        .status_idm ||
-                                                        "Tidak tersedia"}
-                                                </p>
-                                                <p className="text-gray-700">
-                                                    <span className="font-semibold">
-                                                        Skor Prodeskel:
-                                                    </span>{" "}
-                                                    {modalData
-                                                        .description_latest
-                                                        .score_prodeskel ||
-                                                        "Tidak tersedia"}
-                                                </p>
-                                                <p className="text-gray-700">
-                                                    <span className="font-semibold">
-                                                        Skor Epdeskel:
-                                                    </span>{" "}
-                                                    {modalData
-                                                        .description_latest
-                                                        .score_epdeskel ||
-                                                        "Tidak tersedia"}
-                                                </p>
-                                                <p className="text-gray-700">
-                                                    <span className="font-semibold">
-                                                        Status Pengembangan:
-                                                    </span>{" "}
-                                                    {modalData
-                                                        .description_latest
-                                                        .status ||
-                                                        "Tidak tersedia"}
-                                                </p>
-                                                <p className="text-gray-700">
-                                                    <span className="font-semibold">
-                                                        Klasifikasi:
-                                                    </span>{" "}
-                                                    {modalData
-                                                        .description_latest
-                                                        .classification ||
-                                                        "Tidak tersedia"}
-                                                </p>
-                                                <p className="text-gray-700">
-                                                    <span className="font-semibold">
-                                                        Tahun:
-                                                    </span>{" "}
-                                                    {modalData
-                                                        .description_latest
-                                                        .year ||
-                                                        "Tidak tersedia"}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Informasi Kepala Daerah */}
-                                    {modalData?.officials &&
-                                        modalData.officials.length > 0 && (
-                                            <div className="bg-green-50 p-6 rounded-lg border border-green-200 shadow-md mt-6">
-                                                <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                                    <FaUserTie /> Informasi
-                                                    Kepala Desa
-                                                </h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <p className="text-gray-700">
-                                                        <span className="font-semibold">
-                                                            Nama Lengkap:
-                                                        </span>{" "}
-                                                        {modalData.officials[0]
-                                                            ?.nama_lengkap ||
-                                                            "Tidak tersedia"}
-                                                    </p>
-                                                    <p className="text-gray-700">
-                                                        <span className="font-semibold">
-                                                            Tempat, Tanggal
-                                                            Lahir:
-                                                        </span>{" "}
-                                                        {`${
-                                                            modalData
-                                                                .officials[0]
-                                                                ?.tempat_lahir
-                                                        }, ${new Date(
-                                                            modalData.officials[0]?.tanggal_lahir
-                                                        ).toLocaleDateString(
-                                                            "id-ID"
-                                                        )}` || "Tidak tersedia"}
-                                                    </p>
-                                                    <p className="text-gray-700">
-                                                        <span className="font-semibold">
-                                                            Jenis Kelamin:
-                                                        </span>{" "}
-                                                        {modalData.officials[0]
-                                                            ?.jenis_kelamin ===
-                                                        "L"
-                                                            ? "Laki-laki"
-                                                            : "Perempuan"}
-                                                    </p>
-                                                    <p className="text-gray-700">
-                                                        <span className="font-semibold">
-                                                            Pendidikan:
-                                                        </span>{" "}
-                                                        {modalData.officials[0]
-                                                            ?.pendidikan ||
-                                                            "Tidak tersedia"}
-                                                    </p>
-                                                    <p className="text-gray-700">
-                                                        <span className="font-semibold">
-                                                            Alamat:
-                                                        </span>{" "}
-                                                        {modalData.officials[0]
-                                                            ?.alamat ||
-                                                            "Tidak tersedia"}
-                                                    </p>
-                                                    <p className="text-gray-700">
-                                                        <span className="font-semibold">
-                                                            Mulai Jabatan:
-                                                        </span>{" "}
-                                                        {new Date(
-                                                            modalData.officials[0]?.position_official[0].mulai
-                                                        ).toLocaleDateString(
-                                                            "id-ID"
-                                                        ) || "Tidak tersedia"}
-                                                    </p>
-                                                    <p className="text-gray-700">
-                                                        <span className="font-semibold">
-                                                            Selesai Jabatan:
-                                                        </span>{" "}
-                                                        {modalData.officials[0]
-                                                            ?.position_official[0]
-                                                            .selesai
-                                                            ? new Date(
-                                                                  modalData.officials[0]?.position_official[0].selesai
-                                                              ).toLocaleDateString(
-                                                                  "id-ID"
-                                                              )
-                                                            : "Masih Menjabat"}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                    {/* Grid untuk Grafik dan Tabel */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                                        {/* Card Grafik Pendidikan */}
-                                        <motion.div
-                                            whileHover={{ scale: 1.02 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200 hover:border-blue-300 shadow-md hover:shadow-lg"
-                                        >
-                                            <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                                <FaChartBar /> Pendidikan
-                                            </h4>
-                                            <div className="h-48">
-                                                <canvas id="educationChart"></canvas>
-                                            </div>
-                                        </motion.div>
-
-                                        {/* Card Grafik Jenis Kelamin */}
-                                        <motion.div
-                                            whileHover={{ scale: 1.02 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg border border-purple-200 hover:border-purple-300 shadow-md hover:shadow-lg"
-                                        >
-                                            <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                                <FaChartBar /> Jenis Kelamin
-                                            </h4>
-                                            <div className="h-48">
-                                                <canvas id="genderChart"></canvas>
-                                            </div>
-                                        </motion.div>
-                                    </div>
-
-                                    {/* Grid untuk Tabel */}
-                                    <div className="grid grid-cols-1 gap-6 mt-6">
-                                        {/* Card Tabel Pendidikan */}
-                                        <motion.div
-                                            whileHover={{ scale: 1.02 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200 hover:border-blue-300 shadow-md hover:shadow-lg"
-                                        >
-                                            <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                                <FaTable /> Pendidikan
-                                            </h4>
-                                            <DataTable
-                                                columns={educationColumns}
-                                                data={educationData}
-                                                pagination
-                                                highlightOnHover
-                                                responsive
-                                            />
-                                        </motion.div>
-
-                                        {/* Card Tabel Jenis Kelamin */}
-                                        <motion.div
-                                            whileHover={{ scale: 1.02 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg border border-purple-200 hover:border-purple-300 shadow-md hover:shadow-lg"
-                                        >
-                                            <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                                <FaTable /> Jenis Kelamin
-                                            </h4>
-                                            <DataTable
-                                                columns={genderColumns}
-                                                data={genderData}
-                                                pagination
-                                                highlightOnHover
-                                                responsive
-                                            />
-                                        </motion.div>
+                                    <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                                        <div
+                                            className="bg-purple-600 h-2 rounded-full"
+                                            style={{ width: `${(count / modalData.total_officials) * 100}%` }}
+                                        ></div>
                                     </div>
                                 </div>
-                            </motion.div>
+                            )
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-4 text-gray-500">
+                        <FaInfoCircle className="inline-block mr-2" />
+                        Data pendidikan perangkat tidak tersedia
+                    </div>
+                )}
+            </div>
+        )}
+
+        {/* Data Gender Perangkat */}
+        {modalData.gender_totals && (
+            <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 shadow-md mt-6">
+                <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <FaVenusMars /> Gender Perangkat Desa
+                </h4>
+
+                {Object.values(modalData.gender_totals).some(val => val > 0) ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Laki-laki */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                            <div className="flex items-center mb-2">
+                                <FaMale className="text-blue-500 mr-2" />
+                                <span className="font-medium">Laki-laki</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-2xl font-bold text-blue-600">
+                                    {modalData.gender_totals['L'] || 0}
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                    {Math.round((modalData.gender_totals['L'] / modalData.total_officials) * 100)}%
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Perempuan */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                            <div className="flex items-center mb-2">
+                                <FaFemale className="text-pink-500 mr-2" />
+                                <span className="font-medium">Perempuan</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-2xl font-bold text-pink-600">
+                                    {modalData.gender_totals['P'] || 0}
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                    {Math.round((modalData.gender_totals['P'] / modalData.total_officials) * 100)}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-center py-4 text-gray-500">
+                        <FaInfoCircle className="inline-block mr-2" />
+                        Data gender perangkat tidak tersedia
+                    </div>
+                )}
+            </div>
+        )}
+
+        {/* Informasi IDM Terbaru */}
+        {modalData.village_idm_latest ? (
+            <div className="space-y-6 mt-6">
+                {/* Ringkasan Utama */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 shadow-sm">
+                        <div className="flex items-center gap-2 text-blue-600 mb-2">
+                            <FaChartLine />
+                            <span className="font-medium">Skor IDM</span>
+                        </div>
+                        <div className="flex items-end justify-between">
+                            <span className="text-3xl font-bold">
+                                {modalData.village_idm_latest.score_idm}
+                            </span>
+                            <div className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                modalData.village_idm_latest.score_idm >= 80 ? 'bg-green-100 text-green-800' :
+                                modalData.village_idm_latest.score_idm >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                            }`}>
+                                {modalData.village_idm_latest.status_idm}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200 shadow-sm">
+                        <div className="flex items-center gap-2 text-purple-600 mb-2">
+                            <FaCalendarAlt />
+                            <span className="font-medium">Tahun</span>
+                        </div>
+                        <span className="text-3xl font-bold">
+                            {modalData.village_idm_latest.year}
+                        </span>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200 shadow-sm">
+                        <div className="flex items-center gap-2 text-green-600 mb-2">
+                            <FaLayerGroup />
+                            <span className="font-medium">Klasifikasi</span>
+                        </div>
+                        <span className="text-xl font-semibold capitalize">
+                            {modalData.village_idm_latest.classification}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Detail Skor */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <FaChartBar className="text-blue-500" />
+                            Skor Prodeskel
+                        </h4>
+                        <div className="flex items-center gap-4">
+                            <div className="w-full bg-gray-200 rounded-full h-4">
+                                <div
+                                    className="bg-blue-600 h-4 rounded-full"
+                                    style={{ width: `${modalData.village_idm_latest.score_prodeskel}%` }}
+                                ></div>
+                            </div>
+                            <span className="font-bold text-blue-600 whitespace-nowrap">
+                                {modalData.village_idm_latest.score_prodeskel}%
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <FaChartBar className="text-green-500" />
+                            Skor Epdeskel
+                        </h4>
+                        <div className="flex items-center gap-4">
+                            <div className="w-full bg-gray-200 rounded-full h-4">
+                                <div
+                                    className="bg-green-600 h-4 rounded-full"
+                                    style={{ width: `${modalData.village_idm_latest.score_epdeskel}%` }}
+                                ></div>
+                            </div>
+                            <span className="font-bold text-green-600 whitespace-nowrap">
+                                {modalData.village_idm_latest.score_epdeskel}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Status dan Keterangan */}
+                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <FaInfoCircle className="text-yellow-600" />
+                        Status Pengembangan
+                    </h4>
+                    <p className="text-gray-700">
+                        {modalData.village_idm_latest.status || 'Tidak ada informasi status'}
+                    </p>
+                </div>
+            </div>
+        ) : (
+            <div className="text-center py-8">
+                <div className="inline-block p-4 bg-gray-100 rounded-full mb-3">
+                    <FaDatabase className="text-gray-400 text-2xl" />
+                </div>
+                <h4 className="text-lg font-medium text-gray-600 mb-1">
+                    Data IDM Tidak Tersedia
+                </h4>
+                <p className="text-gray-500 text-sm">
+                    Desa ini belum memiliki data Indeks Desa Membangun
+                </p>
+            </div>
+        )}
+
+    </div>
+</motion.div>
                         </motion.div>
                     )}
                 </AnimatePresence>

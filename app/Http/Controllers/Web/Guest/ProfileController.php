@@ -28,91 +28,67 @@ class ProfileController extends Controller
      * Ambil data Kabupaten.
      */
     public function getRegencies()
-{
-    // Ambil data Kabupaten dengan relasi districts dan villages
-    $regencies = Regency::with(['districts.villages.officials' => function ($query) {
-        $query->where('status', 'validasi'); // Filter status "validasi"
-    }])->get();
-    // dd($regencies);
-    // Ambil data pendidikan dari tabel studies
-    $educationLevels = Study::pluck('name', 'id')->toArray();
-
-    // Proses setiap Kabupaten
-    $regencies->each(function ($regency) use ($educationLevels) {
-        // Hitung total Kecamatan
-        $regency->total_districts = $regency->districts->count();
-
-        // Hitung total Desa
-        $regency->total_villages = $regency->districts->sum(function ($district) {
-            return $district->villages->count();
-        });
-
-        // Hitung total Perangkat Desa dengan status "validasi"
-        $regency->total_officials = $regency->districts->sum(function ($district) {
-            return $district->villages->sum(function ($village) {
-                return $village->officials->count();
-            });
-        });
-
-        // Hitung total Perangkat berdasarkan Pendidikan Terakhir dengan status "validasi"
-        $educationTotals = [];
-        // foreach ($educationLevels as $id => $education) {
-        //     // Ambil pendidikan terakhir untuk setiap official
-        //     $latestStudies = DB::table('study_officials as so')
-        //         ->select('so.official_id', 'so.study_id')
-        //         ->join('studies as s', 'so.study_id', '=', 's.id') // Join dengan tabel studies untuk mendapatkan level
-        //         ->join(DB::raw('(SELECT so2.official_id, MAX(s2.level) as max_level
-        //                      FROM study_officials as so2
-        //                      JOIN studies as s2 ON so2.study_id = s2.id
-        //                      GROUP BY so2.official_id) as latest'), function ($join) {
-        //             $join->on('so.official_id', '=', 'latest.official_id')
-        //                 ->on('s.level', '=', 'latest.max_level');
-        //         })
-        //         ->where('so.study_id', $id) // Filter berdasarkan study_id
-        //         ->whereExists(function ($query) {
-        //             $query->select(DB::raw(1))
-        //                 ->from('officials as o')
-        //                 ->whereColumn('o.id', 'so.official_id')
-        //                 ->where('o.status', 'validasi'); // Filter status "validasi"
-        //         })
-        //         ->get();
-
-        //     // Ambil official_id dari hasil query di atas
-        //     $officialIds = $latestStudies->pluck('official_id')->toArray();
-
-        //     // Hitung jumlah officials yang memiliki pendidikan terakhir dengan study_id = $id
-        //     $educationTotals[$education] = $regency->districts()
-        //         ->with(['villages.officials' => function ($query) use ($officialIds) {
-        //             $query->whereIn('id', $officialIds); // Filter berdasarkan official_id
-        //         }])
-        //         ->get()
-        //         ->sum(function ($district) {
-        //             return $district->villages->sum(function ($village) {
-        //                 return $village->officials->count();
-        //             });
-        //         });
-        // }
-        $regency->education_totals = $educationTotals;
-
-        // Hitung total Perangkat berdasarkan Jenis Kelamin dengan status "validasi"
-        $genderTotals = [
-            'L' => $regency->districts->sum(function ($district) {
-                return $district->villages->sum(function ($village) {
-                    return $village->officials->where('jenis_kelamin', 'L')->count();
-                });
-            }),
-            'P' => $regency->districts->sum(function ($district) {
-                return $district->villages->sum(function ($village) {
-                    return $village->officials->where('jenis_kelamin', 'P')->count();
-                });
-            }),
+    {
+        // Ambil data Kabupaten dengan relasi districts dan villages
+        $regencies = Regency::with(['districts.villages.officials' => function ($query) {
+            $query->where('status', 'daftar'); // Filter status "validasi"
+        }])->get();
+        // dd($regencies);
+        // Ambil data pendidikan dari tabel studies
+        $educationLevels = [
+            1 => 'SD/MI',
+            2 => 'SMP/MTS',
+            3 => 'SMA/SMK/MA',
+            4 => 'D1',
+            5 => 'D2',
+            6 => 'D3',
+            7 => 'D4',
+            8 => 'S1',
+            9 => 'S2',
+            10 => 'S3',
         ];
-        $regency->gender_totals = $genderTotals;
-    });
 
-    // Kembalikan data
-    return response()->json($regencies);
-}
+        // Proses setiap Kabupaten
+        $regencies->each(function ($regency) use ($educationLevels) {
+            // Hitung total Kecamatan
+            $regency->total_districts = $regency->districts->count();
+
+            // Hitung total Desa
+            $regency->total_villages = $regency->districts->sum(function ($district) {
+                return $district->villages->count();
+            });
+
+            // Hitung total Perangkat Desa dengan status "validasi"
+            $regency->total_officials = $regency->districts->sum(function ($district) {
+                return $district->villages->sum(function ($village) {
+                    return $village->officials->count();
+                });
+            });
+
+            // Hitung total Perangkat berdasarkan Pendidikan Terakhir dengan status "validasi"
+            $educationTotals = [];
+
+            $regency->education_totals = $educationTotals;
+
+            // Hitung total Perangkat berdasarkan Jenis Kelamin dengan status "validasi"
+            $genderTotals = [
+                'L' => $regency->districts->sum(function ($district) {
+                    return $district->villages->sum(function ($village) {
+                        return $village->officials->where('jenis_kelamin', 'L')->count();
+                    });
+                }),
+                'P' => $regency->districts->sum(function ($district) {
+                    return $district->villages->sum(function ($village) {
+                        return $village->officials->where('jenis_kelamin', 'P')->count();
+                    });
+                }),
+            ];
+            $regency->gender_totals = $genderTotals;
+        });
+
+        // Kembalikan data
+        return response()->json($regencies);
+    }
 
     /**
      * Ambil data Kecamatan berdasarkan kode Kabupaten.
@@ -140,7 +116,7 @@ class ProfileController extends Controller
             // Hitung total Perangkat Desa dengan status "validasi"
             $district->total_officials = $district->villages()
                 ->with(['officials' => function ($query) {
-                    $query->where('status', 'validasi');
+                    $query->where('status', 'daftar');
                 }])
                 ->get()
                 ->sum(function ($village) {
@@ -208,16 +184,16 @@ class ProfileController extends Controller
 
         // Ambil data Desa dengan relasi officials (Kepala Desa) dan descriptionLatest
         $villages = Village::with(['officials' => function ($query) use ($position) {
-            $query->whereHas('positionOfficial', function ($q) use ($position) {
+            $query->whereHas('positions', function ($q) use ($position) {
                 $q->where('position_id', $position->id)
-                    ->where('mulai', '<=', Carbon::now()) // Mulai <= Hari Ini
+                    ->where('tmt_jabatan', '<=', Carbon::now()) // TMT Jabatan <= Hari Ini
                     ->where(function ($query) {
-                        $query->where('selesai', '>=', Carbon::now()) // Selesai >= Hari Ini
-                            ->orWhereNull('selesai'); // Atau Selesai NULL (masih aktif)
+                        $query->where('periode', '>=', Carbon::now()) // Periode >= Hari Ini
+                            ->orWhereNull('periode'); // Atau Periode NULL (masih aktif)
                     })
-                    ->latest('mulai'); // Ambil data terbaru berdasarkan tanggal mulai
+                    ->latest('tmt_jabatan'); // Ambil data terbaru berdasarkan TMT Jabatan
             })
-                ->with(['positionOfficial.position']);
+                ->with(['positions.position']);
         }, 'villageIdmLatest'])
             ->where('district_id', $district->id)
             ->get(); // Ambil semua desa yang memenuhi kriteria
@@ -229,7 +205,7 @@ class ProfileController extends Controller
         $villages->each(function ($village) use ($educationLevels) {
             // Hitung total Perangkat Desa dengan status "validasi"
             $village->total_officials = $village->officials()
-                ->where('status', 'validasi')
+                ->where('status', 'daftar')
                 ->count();
 
             // Hitung total Perangkat berdasarkan Pendidikan dengan status "validasi"
@@ -239,7 +215,7 @@ class ProfileController extends Controller
                     ->whereHas('identities', function ($query) use ($id) {
                         $query->where('pendidikan_terakhir', $id);
                     })
-                    ->where('status', 'validasi')
+                    ->where('status', 'daftar')
                     ->count();
             }
             $village->education_totals = $educationTotals;
@@ -247,17 +223,18 @@ class ProfileController extends Controller
             // Hitung total Perangkat berdasarkan Jenis Kelamin dengan status "validasi"
             $genderTotals = [
                 'L' => $village->officials()
-                    ->where('status', 'validasi')
+                    ->where('status', 'daftar')
                     ->where('jenis_kelamin', 'L')
                     ->count(),
                 'P' => $village->officials()
-                    ->where('status', 'validasi')
+                    ->where('status', 'daftar')
                     ->where('jenis_kelamin', 'P')
                     ->count(),
             ];
             $village->gender_totals = $genderTotals;
         });
 
+        // dd($villages);
         // Kembalikan data
         return response()->json($villages);
     }

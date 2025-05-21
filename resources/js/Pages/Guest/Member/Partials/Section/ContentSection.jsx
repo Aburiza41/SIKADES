@@ -577,9 +577,9 @@ export default function ContentSection({ regencies }) {
                                 className="bg-white p-6 rounded-lg w-full max-w-5xl max-h-[80vh]"
                             >
                                 {/* Header Modal */}
-                                <div className="flex justify-between items-center mb-3 px-5">
+                                <div className="flex justify-between items-center px-5">
                                     <h3 className="text-2xl font-bold">
-                                        Profil {modalData.name_bps}
+                                        Anggota {modalData.name_bps}
                                     </h3>
                                     <button
                                         onClick={closeModal}
@@ -591,7 +591,7 @@ export default function ContentSection({ regencies }) {
 
                                 <div className="max-h-[65vh] overflow-y-auto p-5">
                                     {/* Informasi Umum */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="bg-green-50 p-6 rounded-lg border border-green-200 shadow-md">
                                             <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
                                                 <FaMapMarkerAlt /> Lokasi
@@ -661,98 +661,175 @@ export default function ContentSection({ regencies }) {
                                                 ).toLocaleDateString()}
                                             </p>
                                         </div>
-                                    </div>
+                                    </div> */}
 
-                                    {/* Perankat Desa / Official dan Tampilkan jika terdapat modalData.official */}
-                                    {modalData?.officials && (
-                                        <div className="grid grid-cols-1 gap-6 mt-6">
-                                            {modalData?.officials.map(
+                                    {/* Perangkat Desa / Official - Tampilkan jika ada data officials */}
+                                    {modalData?.officials?.length > 0 && (
+                                        <div className="space-y-4">
+                                            <h2 className="text-2xl font-bold mb-4">
+                                                Perangkat Desa
+                                            </h2>
+
+                                            {modalData.officials.map(
                                                 (official, index) => {
-                                                    // Ambil data position_official pertama (jika ada)
                                                     const position =
-                                                        official
-                                                            .position_official[0];
+                                                        official?.positions;
 
-                                                    // Jika tidak ada data position_official, skip render
-                                                    if (!position) {
-                                                        return null;
-                                                    }
-
-                                                    // Hitung sisa waktu menjabat (jika selesai ada)
-                                                    const sisaWaktu =
-                                                        position?.selesai
-                                                            ? calculateRemainingTime(
-                                                                  position.selesai
-                                                              )
-                                                            : "Masih Menjabat";
+                                                    // Skip jika tidak ada data position
+                                                    if (!position) return null;
 
                                                     return (
                                                         <div
                                                             key={index}
-                                                            className="bg-white p-6 rounded-lg shadow-md border border-gray-200"
+                                                            className="bg-white rounded-lg shadow p-6 border border-gray-100"
                                                         >
-                                                            <h3 className="text-xl font-semibold mb-2">
-                                                                {
-                                                                    official.nama_lengkap
-                                                                }
-                                                            </h3>
+                                                            {/* Header dengan nama dan gelar */}
+                                                            <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                                                                <div>
+                                                                    <h3 className="text-xl font-semibold">
+                                                                        {official.gelar_depan &&
+                                                                            `${official.gelar_depan} `}
+                                                                        {
+                                                                            official.nama_lengkap
+                                                                        }
+                                                                        {official.gelar_belakang &&
+                                                                            `, ${official.gelar_belakang}`}
+                                                                    </h3>
+                                                                    <p className="text-gray-600">
+                                                                        {position
+                                                                            ?.position
+                                                                            ?.name ||
+                                                                            "Jabatan tidak tersedia"}
+                                                                    </p>
+                                                                </div>
 
-                                                            <p className="text-gray-700">
-                                                                <span className="font-semibold">
-                                                                    Jabatan:
-                                                                </span>
-                                                                {official.position_official.map(
-                                                                    (
-                                                                        pos,
-                                                                        idx
-                                                                    ) => (
-                                                                        <span
-                                                                            key={
-                                                                                idx
-                                                                            }
-                                                                        >
-                                                                            {" "}
-                                                                            {
-                                                                                pos
-                                                                                    .position
-                                                                                    .name
-                                                                            }
-                                                                        </span>
-                                                                    )
-                                                                )}
-                                                            </p>
+                                                                <div className="mt-2 md:mt-0">
+                                                                    <span
+                                                                        className={`px-3 py-1 rounded-full text-sm font-medium
+                                ${
+                                    official.jenis_kelamin === "L"
+                                        ? "bg-blue-100 text-blue-800"
+                                        : "bg-pink-100 text-pink-800"
+                                }`}
+                                                                    >
+                                                                        {official.jenis_kelamin ===
+                                                                        "L"
+                                                                            ? "Laki-laki"
+                                                                            : "Perempuan"}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
 
-                                                            <p className="text-gray-700">
-                                                                <span className="font-semibold">
-                                                                    Mulai
-                                                                    Menjabat:
-                                                                </span>{" "}
-                                                                {position?.mulai
-                                                                    ? new Date(
-                                                                          position.mulai
-                                                                      ).toLocaleDateString()
-                                                                    : "-"}
-                                                            </p>
+                                                            {/* Informasi pribadi */}
+                                                            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                                                <div>
+                                                                    <p className="text-sm text-gray-500">
+                                                                        Tempat/Tanggal
+                                                                        Lahir
+                                                                    </p>
+                                                                    <p>
+                                                                        {
+                                                                            official.tempat_lahir
+                                                                        }
+                                                                        ,{" "}
+                                                                        {new Date(
+                                                                            official.tanggal_lahir
+                                                                        ).toLocaleDateString(
+                                                                            "id-ID"
+                                                                        )}
+                                                                    </p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm text-gray-500">
+                                                                        Agama
+                                                                    </p>
+                                                                    <p>
+                                                                        {
+                                                                            official.agama
+                                                                        }
+                                                                    </p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm text-gray-500">
+                                                                        Status
+                                                                        Perkawinan
+                                                                    </p>
+                                                                    <p>
+                                                                        {
+                                                                            official.status_perkawinan
+                                                                        }
+                                                                    </p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm text-gray-500">
+                                                                        NIK
+                                                                    </p>
+                                                                    <p>
+                                                                        {
+                                                                            official.nik
+                                                                        }
+                                                                    </p>
+                                                                </div>
+                                                            </div> */}
 
-                                                            <p className="text-gray-700">
-                                                                <span className="font-semibold">
-                                                                    Selesai
-                                                                    Menjabat:
-                                                                </span>{" "}
-                                                                {position?.selesai
-                                                                    ? new Date(
-                                                                          position.selesai
-                                                                      ).toLocaleDateString()
-                                                                    : "Masih Menjabat"}
-                                                            </p>
-
-                                                            <p className="text-gray-700">
-                                                                <span className="font-semibold">
-                                                                    Sisa Waktu
-                                                                    Menjabat:
-                                                                </span>{" "}
-                                                                {sisaWaktu}
-                                                            </p>
+                                                            {/* Informasi jabatan */}
+                                                            {/* <div className="border-t pt-4">
+                                                                <h4 className="font-medium text-lg mb-3">
+                                                                    Informasi
+                                                                    Jabatan
+                                                                </h4>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                    <div>
+                                                                        <p className="text-sm text-gray-500">
+                                                                            Nomor
+                                                                            SK
+                                                                        </p>
+                                                                        <p>
+                                                                            {position.nomor_sk ||
+                                                                                "-"}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-sm text-gray-500">
+                                                                            Penetap
+                                                                        </p>
+                                                                        <p>
+                                                                            {position.penetap ||
+                                                                                "-"}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-sm text-gray-500">
+                                                                            Tanggal
+                                                                            SK
+                                                                        </p>
+                                                                        <p>
+                                                                            {position.tanggal_sk
+                                                                                ? new Date(
+                                                                                      position.tanggal_sk
+                                                                                  ).toLocaleDateString(
+                                                                                      "id-ID"
+                                                                                  )
+                                                                                : "-"}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-sm text-gray-500">
+                                                                            TMT
+                                                                            Jabatan
+                                                                        </p>
+                                                                        <p>
+                                                                            {position.tmt_jabatan
+                                                                                ? new Date(
+                                                                                      position.tmt_jabatan
+                                                                                  ).toLocaleDateString(
+                                                                                      "id-ID"
+                                                                                  )
+                                                                                : "-"}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div> */}
                                                         </div>
                                                     );
                                                 }

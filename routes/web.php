@@ -179,13 +179,54 @@ Route::prefix('/regency')->name('regency.')->group(function () {
     });
 
     // Official
-    Route::prefix('/official')->name('official.')->controller(RegencyOfficialController::class)->group(function () {
+    // Route::prefix('/official')->name('official.')->controller(RegencyOfficialController::class)->group(function () {
+    //     Route::get('/', 'index')->name('index');
+    //     Route::post('/', 'store')->name('store');
+    //     Route::get('/{id}', 'show')->name('show');
+    //     Route::put('/{id}/{action}', 'update')->name('update');
+    //     Route::delete('/{id}', 'destroy')->name('destroy');
+    // });
+
+    Route::prefix('/official/{role}')->name('official.')->controller(RegencyOfficialController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::post('/', 'store')->name('store');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/store', 'store')->name('store');
         Route::get('/{id}', 'show')->name('show');
-        Route::put('/{id}/{action}', 'update')->name('update');
-        Route::delete('/{id}', 'destroy')->name('destroy');
+        Route::get('/{id}/edit', 'edit')->name('edit');
+        Route::post('/{id}/edit', 'update')->name('update');
+        Route::delete('/{id}/delete', 'destroy')->name('destroy');
+
+        // Route::prefix('/export')->name('export.')->controller(AdminOfficialExportController::class)->group(function () {
+        //     Route::get('/json', 'json')->name('json');
+        //     Route::get('/excel', 'excel')->name('excel');
+        //     Route::get('/pdf', 'pdf')->name('pdf');
+        // });
+
+        // Route::prefix('/import')->name('export.')->controller(AdminOfficialImportController::class)->group(function () {
+        //     // Route::get('/json', 'json')->name('json');
+        //     Route::post('/excel', 'excel')->name('excel');
+        //     // Route::get('/pdf', 'pdf')->name('pdf');
+        // });
+
+        // Children Position Official
+        // Route::prefix('/position')->name('position.')->controller(VillageOfficialPositionController::class)->group(function () {
+        //     Route::get('/', 'index')->name('index');
+        //     Route::post('/store', 'store')->name('store');
+        // });
+
+        // Children Training Official
+        // Route::prefix('/training')->name('training.')->controller(VillageOfficialTrainingController::class)->group(function () {
+        //     Route::get('/', 'index')->name('index');
+        //     Route::post('/store', 'store')->name('store');
+        // });
+
+        // Children Organization Official
+        // Route::prefix('/organization')->name('organization.')->controller(VillageOfficialOrganizationController::class)->group(function () {
+        //     Route::get('/', 'index')->name('index');
+        //     Route::post('/store', 'store')->name('store');
+        // });
     });
+
 
     // Aparatus
     Route::prefix('/aparatus')->name('aparatus.')->controller(RegencyAparatusController::class)->group(function () {

@@ -363,7 +363,7 @@ export default function List({
 
                     <ExcelImportModal onImport={handleImportExcel} />
 
-                    <motion.div
+                    {/* <motion.div
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 300 }}
@@ -374,7 +374,7 @@ export default function List({
                         >
                             <FaPlus className="mr-2" /> Tambah
                         </Link>
-                    </motion.div>
+                    </motion.div> */}
 
                     {/* <input type="file" className="p-2 border rounded" placeholder="Cari..." /> */}
                 </div>

@@ -53,7 +53,7 @@ class DashboardController extends Controller
             $pendidikan[$education] = Official::whereIn('village_id', $villages->pluck('id'))
                 ->where('status', 'validasi')
                 ->whereHas('identities', function ($q) use ($id) {
-                    $q->where('pendidikan', $id);
+                    $q->where('pendidikan_terakhir', $id);
                 })
                 ->count();
         }

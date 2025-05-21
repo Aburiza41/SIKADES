@@ -230,6 +230,9 @@ return new class extends Migration
     {
         // Menghapus tabel secara berurutan untuk menghindari error foreign key constraint
         Schema::dropIfExists('official_status_logs');
+        Schema::dropIfExists('spouse_officials');
+        Schema::dropIfExists('child_officials');
+        Schema::dropIfExists('parent_officials');
         Schema::dropIfExists('position_officials');
         Schema::dropIfExists('study_officials');
         Schema::dropIfExists('official_identities');

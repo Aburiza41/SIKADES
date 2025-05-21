@@ -305,30 +305,34 @@ class OfficialController extends Controller
                 OfficialTraining::create($trainingInput);
             }
 
-            // Simpan data organizations (organisasi)
-            $organizations = $request->input('organizations');
-            foreach ($organizations as $index => $organization) {
-                $organizationInput = [
-                    'official_id' => $official->id,
-                    'organization_id' => $organization['organization_id'],
-                    'nama' => $organization['nama'],
-                    'posisi' => $organization['posisi'],
-                    'mulai' => $organization['mulai'],
-                    'selesai' => $organization['selesai'],
-                    'pimpinan' => $organization['pimpinan'],
-                    'alamat' => $organization['tempat'],
+            try {
+                // Simpan data organizations (organisasi)
+                $organizations = $request->input('organizations');
+                foreach ($organizations as $index => $organization) {
+                    $organizationInput = [
+                        'official_id' => $official->id,
+                        'organization_id' => $organization['organization_id'],
+                        'nama' => $organization['nama'],
+                        'posisi' => $organization['posisi'],
+                        'mulai' => $organization['mulai'],
+                        'selesai' => $organization['selesai'],
+                        'pimpinan' => $organization['pimpinan'],
+                        'alamat' => $organization['tempat'],
 
 
-                ];
-                // Simpan file dokumen jika ada
-                if ($request->hasFile("organizations.{$index}.doc_scan")) {
-                    $file = $request->file("organizations.{$index}.doc_scan");
-                    $fileName = time() . '_' . $file->getClientOriginalName();
-                    $file->storeAs('public/uploads/organizations', $fileName);
-                    $organizationInput['doc_scan'] = $fileName;
+                    ];
+                    // Simpan file dokumen jika ada
+                    if ($request->hasFile("organizations.{$index}.doc_scan")) {
+                        $file = $request->file("organizations.{$index}.doc_scan");
+                        $fileName = time() . '_' . $file->getClientOriginalName();
+                        $file->storeAs('public/uploads/organizations', $fileName);
+                        $organizationInput['doc_scan'] = $fileName;
+                    }
+
+                    OfficialOrganization::create($organizationInput);
                 }
-
-                OfficialOrganization::create($organizationInput);
+            } catch (\Throwable $th) {
+                //throw $th;
             }
 
             try {
@@ -365,7 +369,8 @@ class OfficialController extends Controller
             }
 
             // Simpan Pasangan
-            $pasangan = $request->input('pasangan');
+            try {
+                $pasangan = $request->input('pasangan');
             if ($pasangan) {
                 // Jika Official memiliki pasangan dan official adalah laki-laki maka pasanganya adalah istri
                 if ($pasangan['jenis_kelamin'] == 'Laki-laki') {
@@ -386,9 +391,13 @@ class OfficialController extends Controller
 
                 SpouseOfficial::create($pasanganInput);
             }
+            } catch (\Throwable $th) {
+                //throw $th;
+            }
 
             // Simpan Anak
-            $anakList = $request->input('anak');
+            try {
+                $anakList = $request->input('anak');
             foreach ($anakList as $index => $anak) {
                 $anakInput = [
                     'official_id' => $official->id,
@@ -401,6 +410,9 @@ class OfficialController extends Controller
                     'pekerjaan' => $anak['pekerjaan'],
                 ];
                 ChildrenOfficial::create($anakInput);
+            }
+            } catch (\Throwable $th) {
+                //throw $th;
             }
 
 
@@ -483,7 +495,7 @@ class OfficialController extends Controller
             'penyelenggara' => $training->penyelenggara,
             'nomor' => $training->nomor_sertifikat,
             'tanggal' => $training->tanggal_sertifikat,
-            // 'docScan' => $training->doc_scan ? 'exists' : null
+            'doc_scan' => $training->doc_scan ? 'exists' : null
         ];
     }
 
@@ -607,7 +619,7 @@ class OfficialController extends Controller
         // ],
         'studies' => $formattedStudies,
         'tempat_kerja' => $formattedWorkPlace,
-        'position' => null,
+        'positionOfficial' => null,
         'trainings' => $formattedTrainings,
         'organizations' => $formattedOrganizations,
         'orang_tua' => $formattedParents,

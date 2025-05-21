@@ -227,26 +227,13 @@ export default function TrainingsForm({ officialTrainings = [], setOfficialTrain
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                       {training.nomor || "-"}
-                      {/* <a
+                      <a
                             href={URL.createObjectURL(training.docScan)}
                             target="_blank"
                             className="text-blue-500 hover:underline flex items-center"
                           >
                             <HiDocumentText className="mr-1" /> Lihat
-                          </a> */}
-                          <a
-  href={training?.docScan instanceof Blob ? URL.createObjectURL(training.docScan) : "#"}
-  target="_blank"
-  className="text-blue-500 hover:underline flex items-center"
-  onClick={(e) => {
-    if (!(training?.docScan instanceof Blob)) {
-      e.preventDefault();
-      // Optional: show error message or handle invalid file
-    }
-  }}
->
-  <HiDocumentText className="mr-1" /> Lihat
-</a>
+                          </a>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                       {training.tanggal || "-"}

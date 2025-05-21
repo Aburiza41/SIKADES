@@ -6,7 +6,7 @@ export default function Procces({ row, onAccept, onReject }) {
     const isProses = row.status === "proses";
 
     return (
-        <div className="flex space-x-2 items-center justify-center">
+        <div className="flex space-x-2">
             {/* Tombol Terima (hanya tampil jika status "proses") */}
             {isProses ? (
                 <>

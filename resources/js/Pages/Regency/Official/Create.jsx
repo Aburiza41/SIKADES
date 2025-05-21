@@ -21,19 +21,10 @@ const csrfToken =
     document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
 export default function UpdateOfficial({
-    official: initialOfficial,
-    studies: initialStudies,
     initialPositions,
-    organizations: initialOrganizations,
-    position,
-    anak: initialAnak,
-    trainings: initialTrainings,
-    orang_tua: initialOrangtua,
-    pasangan: initialPasangan,
-    id
+    initialOrganizations,
+    position
 }) {
-    // console.log('official',initialOfficial);
-
     // State untuk data utama (Official Form)
     // const [official, setOfficial] = useState(
     //     {
@@ -63,122 +54,38 @@ export default function UpdateOfficial({
     //         npwp: "",
     //     }
     // );
-    const [official, setOfficial] = useState(
-        {
-            // 'nik' => $request->input('official.nik'),
-            'nik': initialOfficial.nik,
-            // 'nipd' => $request->input('official.nipd'),
-            'nipd': initialOfficial.nipd,
-            // 'nama_lengkap' => $request->input('official.nama_lengkap'),
-            'nama_lengkap': initialOfficial.nama_lengkap,
-            // 'gelar_depan' => $request->input('official.gelar_depan'),
-            'gelar_depan': initialOfficial.gelar_depan,
-            // 'gelar_belakang' => $request->input('official.gelar_belakang'),
-            'gelar_belakang': initialOfficial.gelar_belakang,
-            // 'tempat_lahir' => $request->input('official.tempat_lahir'),
-            'tempat_lahir': initialOfficial.tempat_lahir,
-            // 'tanggal_lahir' => $request->input('official.tanggal_lahir'),
-            'tanggal_lahir': initialOfficial.tanggal_lahir,
-            // 'jenis_kelamin' => $request->input('official.jenis_kelamin'),
-            'jenis_kelamin': initialOfficial.jenis_kelamin,
-
-            // 'rt' => $request->input('official.rt'),
-            'rt': initialOfficial.addresses.rt,
-            // 'rw' => $request->input('official.rw'),
-            'rw': initialOfficial.addresses.rw,
-            // 'kode_pos' => $request->input('official.postal'),
-            'kode_pos': initialOfficial.addresses.postal,
-            // 'alamat' => $request->input('official.alamat'),
-            'alamat': initialOfficial.addresses.alamat,
-            // 'province_code' => $request->input('official.province_code'),
-            'province_code': initialOfficial.addresses.province_code,
-            // 'province_name' => $request->input('official.province_name'),
-            'province_name': initialOfficial.addresses.province_name,
-            // 'regency_code' => $request->input('official.regency_code'),
-            'regency_code': initialOfficial.addresses.regency_code,
-            // 'regency_name' => $request->input('official.regency_name'),
-            'regency_name': initialOfficial.addresses.regency_name,
-            // 'district_code' => $request->input('official.district_code'),
-            'district_code': initialOfficial.addresses.district_code,
-            // 'district_name' => $request->input('official.district_name'),
-            'district_name': initialOfficial.addresses.district_name,
-            // 'village_code' => $request->input('official.village_code'),
-            'village_code': initialOfficial.addresses.village_code,
-            // 'village_name' => $request->input('official.village_name'),
-            'village_name': initialOfficial.addresses.village_name,
-
-            // 'handphone' => $request->input('official.handphone'),
-            'handphone': initialOfficial.contacts.handphone,
-
-            // 'gol_darah' => $request->input('official.gol_darah') ?? null,
-            'gol_darah': initialOfficial.identities.gol_darah,
-            // 'pendidikan' => $request->input('official.pendidikan') ?? null,
-            'pendidikan': initialOfficial.identities.pendidikan,
-            // 'bpjs_kesehatan' => $request->input('official.bpjs_kesehatan') ?? null,
-            'bpjs_kesehatan': initialOfficial.identities.bpjs_kesehatan,
-            // 'bpjs_ketenagakerjaan' => $request->input('official.bpjs_ketenagakerjaan') ?? null,
-            'bpjs_ketenagakerjaan': initialOfficial.identities.bpjs_ketenagakerjaan,
-            // 'npwp' => $request->input('official.npwp') ?? null,
-            'npwp': initialOfficial.identities.npwp,
-        }
-    );
+    const [official, setOfficial] = useState([]);
 
     // State untuk data Tempat Kerja (dinamis)
-    const [officialTempatKerja, setOfficialTempatKerja] = useState({
-        // 'rt' => $request->input('tempat_kerja.rt'),
-        'rt': initialOfficial.work_place.rt,
-        // 'rw' => $request->input('tempat_kerja.rw'),
-        'rw': initialOfficial.work_place.rw,
-        // 'kode_pos' => $request->input('tempat_kerja.postal'),
-        'postal': initialOfficial.work_place.kode_pos,
-        // 'alamat' => $request->input('tempat_kerja.alamat'),
-        'alamat': initialOfficial.work_place.alamat,
-        // 'regency_id' => $regency->id,
-        'regency_code': "",
-        // 'district_id' => $district->id,
-        'district_code': "",
-        // 'village_id' => $village->id
-        'village_code': "",
-    });
+    const [officialTempatKerja, setOfficialTempatKerja] = useState([]);
 
     // State untuk data studies (dinamis)
-    const [officialStudies, setOfficialStudies] = useState(
-        initialStudies
-    );
+    const [officialStudies, setOfficialStudies] = useState([]);
 
     // State untuk data positions (dinamis)
     const [officialPosition, setOfficialPosition] = useState([]);
 
     // State untuk data trainings (dinamis)
-    const [officialTrainings, setOfficialTrainings] = useState(
-        initialTrainings
-    );
+    const [officialTrainings, setOfficialTrainings] = useState([]);
 
     // State untuk data organizations (dinamis)
-    const [officialOrganizations, setOfficialOrganizations] = useState(
-        initialOrganizations
-    );
+    const [officialOrganizations, setOfficialOrganizations] = useState([]);
 
-    const [orangTua, setOrangTua] = useState(
-        initialOrangtua
-    );
-    const [hubungan, setHubungan] = useState(
-        initialPasangan || {}
-    );
-    const [anak, setAnak] = useState(
-        initialAnak
-    );
+    const [orangTua, setOrangTua] = useState([]);
+    const [hubungan, setHubungan] = useState([]);
+    const [anak, setAnak] = useState([]);
 
     // State untuk loading dan error
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
     // Handle submit form
-    const handleSubmit = async (e, position, id) => {
+    const handleSubmit = async (e, position) => {
         e.preventDefault();
         setIsLoading(true);
 
         const formData = new FormData();
+
 
         // Add official data
         for (const key in official) {
@@ -266,7 +173,7 @@ export default function UpdateOfficial({
 
         try {
             const response = await axios.post(
-                `/village/official/${position}/${id}/Edit`,
+                `/village/official/${position}/store`,
                 formData,
                 {
                     headers: {
@@ -313,7 +220,7 @@ export default function UpdateOfficial({
                 className="p-4"
             >
                 <form
-                    onSubmit={(e) => handleSubmit(e, position, id)}
+                    onSubmit={(e) => handleSubmit(e, position)}
                     className="space-y-8"
                 >
                     {/* A. Identitas */}
