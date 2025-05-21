@@ -178,7 +178,7 @@ export default function Official({ initialOfficials, officials, role, position }
     };
 
     // Handle delete official
-    const handleDelete = (id) => {
+    const handleDelete = (official, role) => {
         Swal.fire({
             title: "Are you sure?",
             text: "This data will be deleted!",
@@ -189,7 +189,7 @@ export default function Official({ initialOfficials, officials, role, position }
             confirmButtonText: "Yes, delete it!",
         }).then((result) => {
             if (result.isConfirmed) {
-                router.delete(`/village/official/${role}/${id}`, {
+                router.delete(`/village/official/${role}/${official.nik}/delete`, {
                     headers: {
                         'X-CSRF-TOKEN': csrfToken, // Sertakan token CSRF
                     },

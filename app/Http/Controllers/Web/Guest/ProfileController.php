@@ -152,7 +152,7 @@ class ProfileController extends Controller
             foreach ($educationLevels as $id => $education) {
                 $educationTotals[$education] = $district->villages()
                     ->with(['officials.identities' => function ($query) use ($id) {
-                        $query->where('pendidikan', $id);
+                        $query->where('pendidikan_terakhir', $id);
                     }])
                     ->get()
                     ->sum(function ($village) {
@@ -237,7 +237,7 @@ class ProfileController extends Controller
             foreach ($educationLevels as $id => $education) {
                 $educationTotals[$education] = $village->officials()
                     ->whereHas('identities', function ($query) use ($id) {
-                        $query->where('pendidikan', $id);
+                        $query->where('pendidikan_terakhir', $id);
                     })
                     ->where('status', 'validasi')
                     ->count();

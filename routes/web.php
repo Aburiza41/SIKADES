@@ -247,8 +247,8 @@ Route::prefix('/village')->name('village.')->group(function () {
         Route::post('/store', 'store')->name('store');
         Route::get('/{id}', 'show')->name('show');
         Route::get('/{id}/edit', 'edit')->name('edit');
-        Route::put('/{id}/edit', 'update')->name('update');
-        Route::delete('/{id}', 'destroy')->name('destroy');
+        Route::post('/{id}/edit', 'update')->name('update');
+        Route::delete('/{id}/delete', 'destroy')->name('destroy');
 
         // Route::prefix('/export')->name('export.')->controller(AdminOfficialExportController::class)->group(function () {
         //     Route::get('/json', 'json')->name('json');

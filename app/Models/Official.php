@@ -51,7 +51,7 @@ class Official extends Model
 
     public function positionOfficial()
     {
-        return $this->hasMany(PositionOfficial::class);
+        return $this->hasOne(PositionOfficial::class);
     }
 
     public function officialOrganizations()
@@ -73,7 +73,6 @@ class Official extends Model
     {
         return $this->belongsTo(Regency::class, 'user_regency_id');
     }
-
 
     public function addresses()
     {
@@ -113,5 +112,24 @@ class Official extends Model
         return $this->hasMany(OfficialStatusLog::class);
     }
 
+    // Tempat Bekerja
+    public function work_place()
+    {
+        return $this->hasOne(WorkPlaceOfficial::class);
+    }
 
+    public function children()
+    {
+        return $this->hasMany(ChildrenOfficial::class);
+    }
+
+    public function parents()
+    {
+        return $this->hasMany(ParentOfficial::class);
+    }
+
+    public function spouse()
+    {
+        return $this->hasOne(SpouseOfficial::class);
+    }
 }

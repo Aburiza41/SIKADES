@@ -22,4 +22,25 @@ class WorkPlaceOfficial extends Model
         'regency_id',
         'district_id',
     ];
+
+    // Relasi
+    public function official()
+    {
+        return $this->belongsTo(Official::class, 'official_id');
+    }
+
+    public function village()
+    {
+        return $this->belongsTo(Village::class, 'village_id');
+    }
+
+    public function regency()
+    {
+        return $this->belongsTo(Regency::class, 'regency_id');
+    }
+
+    public function district()
+    {
+        return $this->belongsTo(District::class, 'district_id');
+    }
 }
