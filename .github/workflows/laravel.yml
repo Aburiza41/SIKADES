@@ -16,15 +16,18 @@ jobs:
           - 3306:3306
         options: --health-cmd="mysqladmin ping -uroot -prootpassword" --health-interval=10s --health-timeout=5s --health-retries=5
 
+    env:
+      SSL_CERT_FILE: /usr/local/share/ca-certificates/cacert.pem
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Setup CA Certificate
         run: |
-          sudo cp cacert.pem /usr/local/share/ca-certificates/
+          sudo mkdir -p /usr/local/share/ca-certificates/
+          sudo cp cacert.pem /usr/local/share/ca-certificates/cacert.pem
           sudo update-ca-certificates
-          export SSL_CERT_FILE=/usr/local/share/ca-certificates/cacert.pem
           echo "SSL_CERT_FILE=/usr/local/share/ca-certificates/cacert.pem" >> $GITHUB_ENV
 
       - name: Setup PHP
@@ -35,8 +38,6 @@ jobs:
           ini-values: memory_limit=512M
           coverage: none
           tools: composer:v2
-        env:
-          SSL_CERT_FILE: ${{ env.SSL_CERT_FILE }}
 
       - name: Get Composer Cache Directory
         id: composer-cache
@@ -53,7 +54,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer config --global cafile /usr/local/share/ca-certificates/cacert.pem
+          composer config --global cafile $SSL_CERT_FILE
           composer validate --no-check-all --no-check-publish
           composer install --no-progress --prefer-dist --optimize-autoloader
 
