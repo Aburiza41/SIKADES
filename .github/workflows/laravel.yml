@@ -11,9 +11,13 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: ${{ secrets.DB_PASSWORD }}
           MYSQL_DATABASE: sikades
+          MYSQL_USER: root
+          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: --health-cmd="mysqladmin ping -uroot -p${{ secrets.DB_PASSWORD }}" --health-interval=10s --health-timeout=5s --health-retries=5
+        volumes:
+          - mysql-data:/var/lib/mysql
 
     steps:
       - name: Checkout code
