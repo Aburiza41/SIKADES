@@ -1,4 +1,4 @@
-name: Laravel Docker CI/CD
+name: Laravel CI/CD
 
 on:
   push:
@@ -6,80 +6,50 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  DOCKER_IMAGE_NAME: your-dockerhub-username/laravel-app
-  DOCKER_TAG: latest
-
 jobs:
   test:
     runs-on: ubuntu-latest
-
     services:
       mysql:
-        image: mysql:5.7
+        image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: secret
-          MYSQL_DATABASE: laravel
-          MYSQL_USER: laravel
-          MYSQL_PASSWORD: secret
+          MYSQL_DATABASE: sikades_testing
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: --health-cmd="mysqladmin ping -psecret" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.4'
-        extensions: mbstring, xml, mysql, pdo, tokenizer, ctype, json, bcmath, openssl, gd, zip, intl
-        coverage: none
+    - name: Setup Docker
+      uses: docker/setup-buildx-action@v2
 
-    - name: Copy .env
+    - name: Build and run containers
       run: |
-        cp .env.example .env
-        sed -i 's/DB_HOST=.*/DB_HOST=mysql/' .env
-        sed -i 's/DB_DATABASE=.*/DB_DATABASE=laravel/' .env
-        sed -i 's/DB_USERNAME=.*/DB_USERNAME=laravel/' .env
-        sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=secret/' .env
-        echo "SSL_CA=/usr/local/etc/ssl/certs/cacert.pem" >> .env
+        docker-compose -f docker-compose.ci.yml up -d --build
+        docker ps -a
 
-    - name: Install dependencies
+    - name: Run tests
       run: |
-        composer config -g disable-tls true
-        composer install --prefer-dist --no-interaction
-        php artisan key:generate
+        docker-compose -f docker-compose.ci.yml exec app php artisan test
 
-    - name: Run migrations
-      run: php artisan migrate --force
-
-    - name: Execute tests
-      run: php artisan test
-
-  build-and-push:
+  deploy:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        tags: ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
-        file: ./Dockerfile
-        secrets: |
-          "GIT_AUTH_TOKEN=${{ secrets.GIT_AUTH_TOKEN }}"
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: yourusername/sikades:latest
