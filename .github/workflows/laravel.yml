@@ -15,9 +15,16 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: secret
           MYSQL_DATABASE: sikades_testing
+          MYSQL_ROOT_HOST: '%'
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping -psecret" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: >-
+          --health-cmd="mysqladmin ping -uroot -psecret"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=5
+        volumes:
+          - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
 
     steps:
     - uses: actions/checkout@v4
@@ -35,7 +42,7 @@ jobs:
       run: |
         cp .env.example .env
         echo "APP_ENV=testing" >> .env
-        echo "DB_HOST=mysql" >> .env
+        echo "DB_HOST=127.0.0.1" >> .env  # Using localhost since we're using services
         echo "DB_PORT=3306" >> .env
         echo "DB_DATABASE=sikades_testing" >> .env
         echo "DB_USERNAME=root" >> .env
@@ -43,25 +50,47 @@ jobs:
         echo "APP_KEY=base64:$(openssl rand -base64 32)" >> .env
         cat .env
 
-    - name: Build and run containers
-      run: |
-        docker-compose -f docker-compose.ci.yml up -d --build
-        docker ps -a
-        sleep 15 # Beri waktu lebih untuk inisialisasi
+    - name: Build containers
+      run: docker-compose -f docker-compose.ci.yml build
 
     - name: Wait for MySQL to be ready
+      timeout-minutes: 5
       run: |
-        docker-compose -f docker-compose.ci.yml exec app bash -c "while ! mysqladmin ping -hmysql -uroot -psecret --silent; do sleep 2; echo 'Waiting for MySQL...'; done"
+        for i in {1..30}; do
+          if mysqladmin ping -h127.0.0.1 -uroot -psecret --silent; then
+            echo 'MySQL is ready!'
+            exit 0
+          fi
+          echo "Waiting for MySQL... ($i/30)"
+          sleep 2
+        done
+        echo "MySQL did not become ready in time"
+        exit 1
+
+    - name: Run containers
+      run: docker-compose -f docker-compose.ci.yml up -d
+
+    - name: Verify services
+      run: |
+        docker-compose ps
+        docker-compose exec -T app php --version
+        docker-compose exec -T mysql mysql -uroot -psecret -e "SHOW DATABASES;"
+
+    - name: Install dependencies
+      run: docker-compose exec -T app composer install --no-interaction --prefer-dist --optimize-autoloader
 
     - name: Run migrations and generate key
       run: |
-        docker-compose -f docker-compose.ci.yml exec app php artisan key:generate --force
-        docker-compose -f docker-compose.ci.yml exec app php artisan config:clear
-        docker-compose -f docker-compose.ci.yml exec app php artisan migrate --force
+        docker-compose exec -T app php artisan key:generate --force
+        docker-compose exec -T app php artisan config:clear
+        docker-compose exec -T app php artisan migrate --force
 
     - name: Run tests
-      run: |
-        docker-compose -f docker-compose.ci.yml exec app php artisan test
+      run: docker-compose exec -T app php artisan test
+
+    - name: Clean up
+      if: always()
+      run: docker-compose down -v
 
   deploy:
     needs: test

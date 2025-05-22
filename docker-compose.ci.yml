@@ -23,10 +23,10 @@ services:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_DATABASE: sikades_testing
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-psecret"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-psecret"]
       interval: 5s
       timeout: 10s
-      retries: 3
+      retries: 10
     networks:
       - laravel-test
 
