@@ -47,10 +47,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        # Download CA bundle terbaru dari curl
-        curl -sS https://curl.se/ca/cacert.pem -o cacert.pem
-        # Atau gunakan yang sudah ada di repo Anda
-        composer config -g cafile $(pwd)/cacert.pem
+        composer config -g disable-tls true
         composer install --prefer-dist --no-interaction
         php artisan key:generate
 
