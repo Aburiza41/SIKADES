@@ -1,1 +1,0 @@
-import{r as o,e as i}from"./app-CVPon-in.js";const a=()=>{const[t,e]=o.useState([]),r=async()=>{try{const s=await i.get("/api/positions");e(s.data)}catch(s){console.error("Error fetching positions:",s)}};return o.useEffect(()=>{r()},[]),{positions:t}};export{a as default};
