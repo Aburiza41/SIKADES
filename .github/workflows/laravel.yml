@@ -31,15 +31,36 @@ jobs:
         sudo chmod +x /usr/local/bin/docker-compose
         docker-compose --version
 
+    - name: Setup environment
+      run: |
+        cp .env.example .env
+        echo "APP_ENV=testing" >> .env
+        echo "DB_HOST=mysql" >> .env
+        echo "DB_PORT=3306" >> .env
+        echo "DB_DATABASE=sikades_testing" >> .env
+        echo "DB_USERNAME=root" >> .env
+        echo "DB_PASSWORD=secret" >> .env
+        echo "APP_KEY=base64:$(openssl rand -base64 32)" >> .env
+        cat .env
+
     - name: Build and run containers
       run: |
         docker-compose -f docker-compose.ci.yml up -d --build
         docker ps -a
-        sleep 10 # Tunggu service ready
+        sleep 15 # Beri waktu lebih untuk inisialisasi
 
-    - name: Run migrations and tests
+    - name: Wait for MySQL to be ready
       run: |
+        docker-compose -f docker-compose.ci.yml exec app bash -c "while ! mysqladmin ping -hmysql -uroot -psecret --silent; do sleep 2; echo 'Waiting for MySQL...'; done"
+
+    - name: Run migrations and generate key
+      run: |
+        docker-compose -f docker-compose.ci.yml exec app php artisan key:generate --force
+        docker-compose -f docker-compose.ci.yml exec app php artisan config:clear
         docker-compose -f docker-compose.ci.yml exec app php artisan migrate --force
+
+    - name: Run tests
+      run: |
         docker-compose -f docker-compose.ci.yml exec app php artisan test
 
   deploy:
@@ -60,4 +81,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: yourusername/sikades:latest
+          tags: aburiza/sikades:latest
