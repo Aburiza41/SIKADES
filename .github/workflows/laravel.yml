@@ -47,13 +47,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        # Set CA file untuk Composer
-        composer config -g cafile $(pwd)/cacert.pem
-        # Verifikasi file CA ada
-        if [ ! -f cacert.pem ]; then
-          echo "Error: cacert.pem not found!"
-          exit 1
-        fi
+        # Gunakan CA certificate sistem
+        composer config -g --unset cafile
         composer install --prefer-dist --no-interaction
         php artisan key:generate
 
