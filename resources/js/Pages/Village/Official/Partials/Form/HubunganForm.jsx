@@ -36,7 +36,7 @@ export default function HubunganForm({
                         }
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                         placeholder="Contoh: John Doe"
-                        required
+
                     />
                 </div>
 
@@ -57,7 +57,7 @@ export default function HubunganForm({
                             }
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                             placeholder="Contoh: Jakarta"
-                            required
+
                         />
                         <input
                             type="date"
@@ -69,7 +69,7 @@ export default function HubunganForm({
                                 })
                             }
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                            required
+
                         />
                     </div>
                 </div>
@@ -89,7 +89,7 @@ export default function HubunganForm({
                             })
                         }
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                        required
+
                     />
                 </div>
 
@@ -107,7 +107,7 @@ export default function HubunganForm({
                             })
                         }
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                        required
+
                     >
                         <option value="">Pilih Pendidikan</option>
                         <option value="SD/MI">SD/MI</option>
@@ -139,7 +139,7 @@ export default function HubunganForm({
                         }
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                         placeholder="Contoh: Pegawai Negeri"
-                        required
+
                     />
                 </div>
             </div>

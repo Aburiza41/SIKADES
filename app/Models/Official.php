@@ -44,7 +44,17 @@ class Official extends Model
         return $this->hasMany(OfficialTraining::class);
     }
 
+    public function trainings()
+    {
+        return $this->hasMany(OfficialTraining::class);
+    }
+
     public function officialStudies()
+    {
+        return $this->hasMany(OfficialStudy::class);
+    }
+
+    public function studies()
     {
         return $this->hasMany(OfficialStudy::class);
     }
@@ -59,6 +69,10 @@ class Official extends Model
         return $this->hasMany(OfficialOrganization::class);
     }
 
+    public function organizations()
+    {
+        return $this->hasMany(OfficialOrganization::class);
+    }
     public function userVillage()
     {
         return $this->belongsTo(Village::class, 'user_village_id');
@@ -89,12 +103,13 @@ class Official extends Model
         return $this->hasOne(OfficialIdentity::class);
     }
 
-    public function studies()
-    {
-        return $this->hasMany(StudyOfficial::class);
-    }
 
     public function positions()
+    {
+        return $this->hasOne(PositionOfficial::class);
+    }
+
+    public function position()
     {
         return $this->hasOne(PositionOfficial::class);
     }

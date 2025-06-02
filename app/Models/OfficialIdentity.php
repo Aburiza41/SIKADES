@@ -19,6 +19,7 @@ class OfficialIdentity extends Model
         'bpjs_kesehatan',
         'bpjs_ketenagakerjaan',
         'npwp',
+        'foto'
     ];
 
     public function official()

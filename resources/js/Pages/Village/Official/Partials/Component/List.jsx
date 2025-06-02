@@ -458,13 +458,13 @@ export default function List({
                                     </th>
                                 )
                             } */}
-                            <th
+                            {/* <th
                                 scope="col"
                                 className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 style={{ width: "120px" }}
                             >
                                 Proses
-                            </th>
+                            </th> */}
                             <th
                                 scope="col"
                                 className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -502,7 +502,7 @@ export default function List({
                                         {row.nipd}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row.identities.pendidikan || "-"}
+                                        {row.identities.pendidikan_terakhir || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.name_bps || "-"}
@@ -517,13 +517,13 @@ export default function List({
                                     <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
                                         <CustomBadge role={row.status} />
                                     </td>
-                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    {/* <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
                                         <Procces
                                             row={row}
                                             onAccept={onAccept}
                                             onReject={onReject}
                                         />
-                                    </td>
+                                    </td> */}
                                     <td className="px-2 py-2 border whitespace-nowrap">
                                         <Actions
                                             row={row}

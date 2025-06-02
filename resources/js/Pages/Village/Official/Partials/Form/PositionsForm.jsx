@@ -1,7 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import Select from "react-select";
-import { FaUserTie, FaFileSignature, FaCalendarAlt, FaFilePdf, FaTrash  } from "react-icons/fa";
+import {
+    FaUserTie,
+    FaFileSignature,
+    FaCalendarAlt,
+    FaFilePdf,
+    FaTrash,
+} from "react-icons/fa";
 import { HiInformationCircle } from "react-icons/hi";
 
 export default function PositionsForm({
@@ -10,7 +16,9 @@ export default function PositionsForm({
     setOfficialPosition,
     officialPosition,
 }) {
-    const [selectedPosition, setSelectedPosition] = useState(null);
+    // console.log(position);
+    position = position?.position?.slug || null;
+    const [selectedPosition, setSelectedPosition] = useState(position || null);
 
     // Animation variants
     const sectionVariants = {
@@ -52,37 +60,34 @@ export default function PositionsForm({
     const positionOptions = positions.map((pos) => ({
         value: pos.id,
         label: pos.name,
-        slug: pos.slug // include slug for matching
+        slug: pos.slug, // include slug for matching
     }));
 
     // Find the initial position based on the slug prop
     useEffect(() => {
         if (position && positions.length > 0) {
-            const foundPosition = positions.find(pos => pos.slug === position);
+            const foundPosition = positions.find(
+                (pos) => pos.slug === position
+            );
             if (foundPosition) {
                 const selectedOption = {
                     value: foundPosition.id,
                     label: foundPosition.name,
-                    slug: foundPosition.slug
+                    slug: foundPosition.slug,
                 };
                 setSelectedPosition(selectedOption);
                 // Update official positions if needed
                 setOfficialPosition({
                     ...officialPosition,
                     namaJabatan: foundPosition.name,
-                    jabatanId: foundPosition.id
+                    jabatanId: foundPosition.id,
                 });
             }
         }
     }, [position, positions]);
 
-    const {
-        penetap,
-        nomorSk,
-        tanggalSk,
-        period,
-        tmtJabatan
-    } = officialPosition;
+    const { penetap, nomorSk, tanggalSk, period, tmtJabatan } =
+        officialPosition;
 
     return (
         <motion.div
@@ -106,7 +111,8 @@ export default function PositionsForm({
                             </h1>
                             <p className="text-sm text-gray-600 mt-1 flex items-center">
                                 <HiInformationCircle className="mr-1 text-blue-500" />
-                                Formulir ini digunakan untuk mengisi jabatan pejabat desa.
+                                Formulir ini digunakan untuk mengisi jabatan
+                                pejabat desa.
                             </p>
                         </div>
                     </div>
@@ -119,100 +125,131 @@ export default function PositionsForm({
                     animate="visible"
                 >
                     <motion.div
-  className="col-span-2 grid grid-cols-1 gap-4 mb-6"
-  variants={sectionVariants}
-  initial="hidden"
-  animate="visible"
->
-  <motion.div variants={rowVariants}>
-    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-      <FaUserTie className="mr-2 text-blue-500" /> 1. File
-    </label>
-    <input
-      type="file"
-      onChange={(e) => {
-        if (e.target.files && e.target.files.length > 0) {
-          const selectedFile = e.target.files[0];
+                        className="col-span-2 grid grid-cols-1 gap-4 mb-6"
+                        variants={sectionVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
+                        <motion.div variants={rowVariants}>
+                            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                <FaUserTie className="mr-2 text-blue-500" /> 1.
+                                File
+                            </label>
+                            <input
+                                type="file"
+                                onChange={(e) => {
+                                    if (
+                                        e.target.files &&
+                                        e.target.files.length > 0
+                                    ) {
+                                        const selectedFile = e.target.files[0];
 
-          // Validate file type (example: allow only images and PDFs)
-          const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-          if (!allowedTypes.includes(selectedFile.type)) {
-            alert('Hanya file gambar (JPEG, PNG, GIF) atau PDF yang diizinkan');
-            e.target.value = ''; // Clear the input
-            return;
-          }
+                                        // Validate file type (example: allow only images and PDFs)
+                                        const allowedTypes = [
+                                            "image/jpeg",
+                                            "image/png",
+                                            "image/gif",
+                                            "application/pdf",
+                                        ];
+                                        if (
+                                            !allowedTypes.includes(
+                                                selectedFile.type
+                                            )
+                                        ) {
+                                            alert(
+                                                "Hanya file gambar (JPEG, PNG, GIF) atau PDF yang diizinkan"
+                                            );
+                                            e.target.value = ""; // Clear the input
+                                            return;
+                                        }
 
-          // Validate file size (example: max 5MB)
-          const maxSize = 5 * 1024 * 1024; // 5MB
-          if (selectedFile.size > maxSize) {
-            alert('Ukuran file maksimal 5MB');
-            e.target.value = ''; // Clear the input
-            return;
-          }
+                                        // Validate file size (example: max 5MB)
+                                        const maxSize = 5 * 1024 * 1024; // 5MB
+                                        if (selectedFile.size > maxSize) {
+                                            alert("Ukuran file maksimal 5MB");
+                                            e.target.value = ""; // Clear the input
+                                            return;
+                                        }
 
-          setOfficialPosition({
-            ...officialPosition,
-            file: selectedFile
-          });
-        }
-      }}
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-      accept="image/*,.pdf" // This shows only image and PDF files in file selector
-      required
-    />
-  </motion.div>
+                                        setOfficialPosition({
+                                            ...officialPosition,
+                                            file: selectedFile,
+                                        });
+                                    }
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                accept="image/*,.pdf" // This shows only image and PDF files in file selector
+                                required
+                            />
+                        </motion.div>
 
-  {officialPosition.file && (
-    <div className="mt-2 flex flex-col items-start">
-      {/* Show preview for images */}
-      {officialPosition.file.type.startsWith('image/') ? (
-        <img
-          src={URL.createObjectURL(officialPosition.file)}
-          alt="Preview"
-          className="h-20 object-cover rounded mb-2"
-        />
-      ) : (
-        <div className="flex items-center p-3 bg-gray-100 rounded-lg">
-          <FaFilePdf className="text-red-500 mr-2 text-xl" />
-          <span>{officialPosition.file.name}</span>
-        </div>
-      )}
+                        {officialPosition.file && (
+                            <div className="mt-2 flex flex-col items-start">
+                                {/* Show preview for images */}
+                                {officialPosition.file.type.startsWith(
+                                    "image/"
+                                ) ? (
+                                    <img
+                                        src={URL.createObjectURL(
+                                            officialPosition.file
+                                        )}
+                                        alt="Preview"
+                                        className="h-20 object-cover rounded mb-2"
+                                    />
+                                ) : (
+                                    <div className="flex items-center p-3 bg-gray-100 rounded-lg">
+                                        <FaFilePdf className="text-red-500 mr-2 text-xl" />
+                                        <span>
+                                            {officialPosition.file.name}
+                                        </span>
+                                    </div>
+                                )}
 
-      {/* File info */}
-      <div className="text-xs text-gray-500 mt-1">
-        {officialPosition.file.name} • {(officialPosition.file.size / 1024 / 1024).toFixed(2)} MB
-      </div>
+                                {/* File info */}
+                                <div className="text-xs text-gray-500 mt-1">
+                                    {officialPosition.file.name} •{" "}
+                                    {(
+                                        officialPosition.file.size /
+                                        1024 /
+                                        1024
+                                    ).toFixed(2)}{" "}
+                                    MB
+                                </div>
 
-      {/* Remove button */}
-      <button
-        type="button"
-        onClick={() => {
-          setOfficialPosition({
-            ...officialPosition,
-            file: null
-          });
-          // You might need to add a ref to clear the input value
-        }}
-        className="mt-2 text-sm text-red-600 hover:text-red-800"
-      >
-        <FaTrash className="inline mr-1" /> Hapus File
-      </button>
-    </div>
-  )}
-</motion.div>
+                                {/* Remove button */}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setOfficialPosition({
+                                            ...officialPosition,
+                                            file: null,
+                                        });
+                                        // You might need to add a ref to clear the input value
+                                    }}
+                                    className="mt-2 text-sm text-red-600 hover:text-red-800"
+                                >
+                                    <FaTrash className="inline mr-1" /> Hapus
+                                    File
+                                </button>
+                            </div>
+                        )}
+                    </motion.div>
 
                     {/* Pejabat yang Menetapkan */}
                     <motion.div variants={rowVariants}>
                         <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                            <FaUserTie className="mr-2 text-blue-500" /> Pejabat yang Menetapkan
+                            <FaUserTie className="mr-2 text-blue-500" /> Pejabat
+                            yang Menetapkan
                         </label>
                         <motion.input
                             type="text"
-                            value={penetap || ''}
-                            onChange={(e) => setOfficialPosition({
-                                ...officialPosition,
-                                penetap: e.target.value
-                            })}
+                            value={penetap || ""}
+                            onChange={(e) =>
+                                setOfficialPosition({
+                                    ...officialPosition,
+                                    penetap: e.target.value,
+                                })
+                            }
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             placeholder="Pejabat yang Menetapkan"
                             whileFocus="focus"
@@ -223,16 +260,19 @@ export default function PositionsForm({
                     {/* SK Pelantikan */}
                     <motion.div variants={rowVariants}>
                         <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                            <FaFileSignature className="mr-2 text-blue-500" /> SK Pelantikan
+                            <FaFileSignature className="mr-2 text-blue-500" />{" "}
+                            SK Pelantikan
                         </label>
                         <div className="flex gap-2">
                             <motion.input
                                 type="text"
-                                value={nomorSk || ''}
-                                onChange={(e) => setOfficialPosition({
-                                    ...officialPosition,
-                                    nomorSk: e.target.value
-                                })}
+                                value={nomorSk || ""}
+                                onChange={(e) =>
+                                    setOfficialPosition({
+                                        ...officialPosition,
+                                        nomorSk: e.target.value,
+                                    })
+                                }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="Nomor SK"
                                 whileFocus="focus"
@@ -240,11 +280,13 @@ export default function PositionsForm({
                             />
                             <motion.input
                                 type="date"
-                                value={tanggalSk || ''}
-                                onChange={(e) => setOfficialPosition({
-                                    ...officialPosition,
-                                    tanggalSk: e.target.value
-                                })}
+                                value={tanggalSk || ""}
+                                onChange={(e) =>
+                                    setOfficialPosition({
+                                        ...officialPosition,
+                                        tanggalSk: e.target.value,
+                                    })
+                                }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 whileFocus="focus"
                                 variants={inputVariants}
@@ -255,7 +297,8 @@ export default function PositionsForm({
                     {/* Nama Jabatan */}
                     <motion.div variants={rowVariants}>
                         <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                            <FaUserTie className="mr-2 text-blue-500" /> Nama Jabatan
+                            <FaUserTie className="mr-2 text-blue-500" /> Nama
+                            Jabatan
                         </label>
                         <motion.div whileFocus="focus" variants={inputVariants}>
                             <Select
@@ -266,7 +309,7 @@ export default function PositionsForm({
                                     setOfficialPosition({
                                         ...officialPosition,
                                         namaJabatan: selectedOption.label,
-                                        jabatanId: selectedOption.value
+                                        jabatanId: selectedOption.value,
                                     });
                                 }}
                                 placeholder="Pilih Jabatan"
@@ -276,17 +319,18 @@ export default function PositionsForm({
                                 styles={{
                                     control: (base) => ({
                                         ...base,
-                                        minHeight: '42px',
-                                        borderColor: '#d1d5db',
-                                        '&:hover': {
-                                            borderColor: '#d1d5db'
+                                        minHeight: "42px",
+                                        borderColor: "#d1d5db",
+                                        "&:hover": {
+                                            borderColor: "#d1d5db",
                                         },
-                                        boxShadow: 'none',
-                                        '&:focus-within': {
-                                            boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.5)',
-                                            borderColor: 'transparent'
-                                        }
-                                    })
+                                        boxShadow: "none",
+                                        "&:focus-within": {
+                                            boxShadow:
+                                                "0 0 0 2px rgba(59, 130, 246, 0.5)",
+                                            borderColor: "transparent",
+                                        },
+                                    }),
                                 }}
                             />
                         </motion.div>
@@ -299,11 +343,13 @@ export default function PositionsForm({
                         </label>
                         <motion.input
                             type="text"
-                            value={period || ''}
-                            onChange={(e) => setOfficialPosition({
-                                ...officialPosition,
-                                period: e.target.value
-                            })}
+                            value={period || ""}
+                            onChange={(e) =>
+                                setOfficialPosition({
+                                    ...officialPosition,
+                                    period: e.target.value,
+                                })
+                            }
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             placeholder="Period ke-"
                             whileFocus="focus"
@@ -314,15 +360,18 @@ export default function PositionsForm({
                     {/* TMT Jabatan */}
                     <motion.div variants={rowVariants}>
                         <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                            <FaCalendarAlt className="mr-2 text-blue-500" /> TMT Jabatan
+                            <FaCalendarAlt className="mr-2 text-blue-500" /> TMT
+                            Jabatan
                         </label>
                         <motion.input
                             type="date"
-                            value={tmtJabatan || ''}
-                            onChange={(e) => setOfficialPosition({
-                                ...officialPosition,
-                                tmtJabatan: e.target.value
-                            })}
+                            value={tmtJabatan || ""}
+                            onChange={(e) =>
+                                setOfficialPosition({
+                                    ...officialPosition,
+                                    tmtJabatan: e.target.value,
+                                })
+                            }
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             whileFocus="focus"
                             variants={inputVariants}

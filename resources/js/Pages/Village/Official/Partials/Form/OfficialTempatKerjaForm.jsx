@@ -262,7 +262,7 @@ export default function OfficialTempatKerjaForm({
                 </motion.div>
 
                 {/* Provinsi, Kabupaten, Kecamatan, Desa */}
-                <motion.div
+                {/* <motion.div
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
                     variants={sectionVariants}
                     initial="hidden"
@@ -366,7 +366,7 @@ export default function OfficialTempatKerjaForm({
                             ))}
                         </motion.select>
                     </motion.div>
-                </motion.div>
+                </motion.div> */}
             </div>
         </motion.div>
     );

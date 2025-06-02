@@ -188,7 +188,6 @@ export default function OrangTuaForm({ orang_tua = [], setOrangTua = () => {} })
               onChange={(e) => handleChange(e, parentType, 'nama')}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               placeholder={`Nama ${parentLabel}`}
-              required
             />
           </div>
 
@@ -201,7 +200,6 @@ export default function OrangTuaForm({ orang_tua = [], setOrangTua = () => {} })
               onChange={(e) => handleChange(e, parentType, 'tempat_lahir')}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               placeholder="Tempat Lahir"
-              required
             />
           </div>
 
@@ -214,7 +212,6 @@ export default function OrangTuaForm({ orang_tua = [], setOrangTua = () => {} })
                 value={parentData.tanggal_lahir}
                 onChange={(e) => handleChange(e, parentType, 'tanggal_lahir')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                required
               />
               <FaCalendarAlt className="absolute right-3 top-3 text-gray-400" />
             </div>
@@ -229,7 +226,6 @@ export default function OrangTuaForm({ orang_tua = [], setOrangTua = () => {} })
               onChange={(e) => handleChange(e, parentType, 'pekerjaan')}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               placeholder="Pekerjaan"
-              required
             />
           </div>
         </div>
@@ -250,7 +246,6 @@ export default function OrangTuaForm({ orang_tua = [], setOrangTua = () => {} })
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               placeholder="Contoh: Jl. Merdeka No. 123"
               rows={3}
-              required
             />
           </div>
 
@@ -264,7 +259,6 @@ export default function OrangTuaForm({ orang_tua = [], setOrangTua = () => {} })
                 onChange={(e) => handleChange(e, parentType, 'rt')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 placeholder="001"
-                required
               />
             </div>
             <div className="form-group">
@@ -275,7 +269,6 @@ export default function OrangTuaForm({ orang_tua = [], setOrangTua = () => {} })
                 onChange={(e) => handleChange(e, parentType, 'rw')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 placeholder="002"
-                required
               />
             </div>
             <div className="form-group md:col-span-2">
@@ -299,7 +292,6 @@ export default function OrangTuaForm({ orang_tua = [], setOrangTua = () => {} })
                 value={parentData.province_code}
                 onChange={(e) => handleWilayahChange('province', parentType, e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                required
               >
                 <option value="">Pilih Provinsi</option>
                 {provinces.map(province => (
@@ -318,7 +310,6 @@ export default function OrangTuaForm({ orang_tua = [], setOrangTua = () => {} })
                 onChange={(e) => handleWilayahChange('regency', parentType, e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 disabled={!parentData.province_code}
-                required
               >
                 <option value="">Pilih Kabupaten</option>
                 {regencies[parentType]?.map(regency => (
@@ -337,7 +328,6 @@ export default function OrangTuaForm({ orang_tua = [], setOrangTua = () => {} })
                 onChange={(e) => handleWilayahChange('district', parentType, e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 disabled={!parentData.regency_code}
-                required
               >
                 <option value="">Pilih Kecamatan</option>
                 {districts[parentType]?.map(district => (
@@ -356,7 +346,6 @@ export default function OrangTuaForm({ orang_tua = [], setOrangTua = () => {} })
                 onChange={(e) => handleWilayahChange('village', parentType, e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 disabled={!parentData.district_code}
-                required
               >
                 <option value="">Pilih Desa</option>
                 {villages[parentType]?.map(village => (

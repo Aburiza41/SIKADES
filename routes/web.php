@@ -46,6 +46,7 @@ use App\Http\Middleware\Custom\AdminMiddleware;
 
 // Export
 use App\Exports\UsersExport;
+use Illuminate\Support\Facades\File;
 use Maatwebsite\Excel\Excel;
 
 // Test
@@ -478,5 +479,15 @@ Route::prefix('/village')->name('village.')->group(function () {
         }
     });
 });
+
+// routes/web.php
+Route::get('/private-images/officials/{filename}', function($filename){
+    // dd($filename);
+    $path = storage_path('app/private/public/officials/'.$filename);
+    // dd($path);
+    if(!File::exists($path)) abort(404);
+
+    return response()->file($path);
+})->middleware('auth'); // Tambahkan middleware sesuai kebutuhan
 
 require __DIR__ . '/auth.php';

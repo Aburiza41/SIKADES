@@ -24,15 +24,16 @@ export default function UpdateOfficial({
     official: initialOfficial,
     studies: initialStudies,
     initialPositions,
-    organizations: initialOrganizations,
     position,
+    organizations: initialOrganizations,
+    currentPosition,
     anak: initialAnak,
     trainings: initialTrainings,
     orang_tua: initialOrangtua,
     pasangan: initialPasangan,
     id
 }) {
-    // console.log('official',initialOfficial);
+    console.log('official', currentPosition);
 
     // State untuk data utama (Official Form)
     // const [official, setOfficial] = useState(
@@ -147,7 +148,9 @@ export default function UpdateOfficial({
     );
 
     // State untuk data positions (dinamis)
-    const [officialPosition, setOfficialPosition] = useState([]);
+    const [officialPosition, setOfficialPosition] = useState(
+        currentPosition
+    );
 
     // State untuk data trainings (dinamis)
     const [officialTrainings, setOfficialTrainings] = useState(
@@ -266,7 +269,7 @@ export default function UpdateOfficial({
 
         try {
             const response = await axios.post(
-                `/village/official/${position}/${id}/Edit`,
+                `/village/official/${position.position.slug}/${id}/edit`,
                 formData,
                 {
                     headers: {
@@ -291,14 +294,14 @@ export default function UpdateOfficial({
         <AuthenticatedLayout
             header={(
                 <div className="text-2xl font-semibold leading-tight">
-                    Tambah Pejabat Desa
+                    Ubah Pejabat Desa {official.nama_lengkap}
                     <p className="text-sm font-thin mt-1">
-                        Formulir Penambahan Data Pejabat Desa
+                        Formulir Perubahan Data Pejabat Desa
                     </p>
                 </div>
             )}
             breadcrumb={[{
-                name: "Tambah Official",
+                name: "Ubah Pejabat Desa",
                 path: `/village/official/create`,
                 active: true,
                 icon: <HiUsers className="w-5 h-5 mr-3" />,
