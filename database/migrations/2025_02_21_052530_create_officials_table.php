@@ -14,18 +14,22 @@ return new class extends Migration
         // Tabel untuk menyimpan data utama pejabat
         Schema::create('officials', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('village_id')->constrained('villages')->onDelete('cascade'); // Relasi ke tabel villages
-            $table->string('nik', 16)->unique(); // Nomor Induk Kependudukan (NIK)
-            $table->bigInteger('nipd')->unique(); // Nomor Induk Administrasi Desa
-            $table->string('nama_lengkap'); // Nama lengkap pejabat
+            $table->foreignId('village_id')->nullable()->constrained('villages')->onDelete('cascade'); // Relasi ke tabel villages
+            // $table->string('nik')->unique()->nullable(); // Nomor Induk Kependudukan (NIK)
+            // $table->string('code_ident')->unique()->nullable(); // Nomor Induk Kependudukan (NIK)
+            // $table->string('nipd')->unique()->nullable(); // Nomor Induk Administrasi Desa
+            $table->string('nik')->nullable(); // Nomor Induk Kependudukan (NIK)
+            $table->string('code_ident')->unique()->nullable(); // Nomor Induk Kependudukan (NIK)
+            $table->string('nipd')->nullable(); // Nomor Induk Administrasi Desa
+            $table->string('nama_lengkap')->nullable(); // Nama lengkap pejabat
             $table->string('gelar_depan')->nullable(); // Gelar di depan nama
             $table->string('gelar_belakang')->nullable(); // Gelar di belakang nama
-            $table->string('tempat_lahir'); // Tempat lahir
-            $table->date('tanggal_lahir'); // Tanggal lahir
-            $table->enum('jenis_kelamin', ['L', 'P']); // Jenis kelamin
-            $table->enum('agama', ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'])->nullable(); // Agama
-            $table->enum('status_perkawinan', ['Belum Kawin', 'Kawin', 'Duda', 'Janda'])->default('Kawin'); // Status perkawinan
-            $table->enum('status', ['daftar', 'proses', 'validasi', 'tolak'])->default('daftar'); // Status administrasi
+            $table->string('tempat_lahir')->nullable(); // Tempat lahir
+            $table->date('tanggal_lahir')->nullable(); // Tanggal lahir
+            $table->enum('jenis_kelamin', ['L', 'P', 'Kosong'])->default('Kosong')->nullable(); // Jenis kelamin
+            $table->enum('agama', ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Kosong'])->default('Kosong')->nullable(); // Agama
+            $table->enum('status_perkawinan', ['Belum Kawin', 'Kawin', 'Duda', 'Janda', 'Kosong'])->default('Kosong')->nullable(); // Status perkawinan
+            $table->enum('status', ['daftar', 'proses', 'validasi', 'tolak'])->default('daftar')->nullable(); // Status administrasi
             $table->foreignId('user_village_id')->nullable()->constrained('users')->onDelete('set null'); // Verifikasi oleh admin desa
             // $table->foreignId('user_district_id')->nullable()->constrained('users')->onDelete('set null'); // Verifikasi oleh admin kecamatan
             $table->foreignId('user_regency_id')->nullable()->constrained('users')->onDelete('set null'); // Verifikasi oleh admin kabupaten

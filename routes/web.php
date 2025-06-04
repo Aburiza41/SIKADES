@@ -50,9 +50,7 @@ use Illuminate\Support\Facades\File;
 use Maatwebsite\Excel\Excel;
 
 // Test
-Route::get('/test', function(Excel $excel) {
-    // return $excel->download(new UsersExport, 'users.xlsx');
-});
+Route::get('/test', [\App\Http\Controllers\TestController::class, 'index']);
 
 Route::name('guest.')->group(function () {
 
