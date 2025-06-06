@@ -51,6 +51,7 @@ use Maatwebsite\Excel\Excel;
 
 // Test
 Route::get('/test', [\App\Http\Controllers\TestController::class, 'index']);
+Route::get('/workplace', [\App\Http\Controllers\TestController::class, 'workplace']);
 
 Route::name('guest.')->group(function () {
 
