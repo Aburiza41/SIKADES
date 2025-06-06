@@ -17,15 +17,27 @@ class SyncBpsData extends Command
                         {--retries=3 : Number of retry attempts}
                         {--timeout=30 : Timeout in seconds}
                         {--test : Test connection without saving data}
-                        {--verify : Verify data completeness after sync}';
+                        {--verify : Verify data completeness after sync}
+                        {--force : Force sync even if data exists}';
 
-    protected $description = 'Synchronize regional data from BPS API to local database with complete West Kalimantan coverage';
+    protected $description = 'Synchronize complete West Kalimantan regional data from BPS API to local database';
 
-    // Expected counts for West Kalimantan (61)
-    protected $expectedCounts = [
-        'regencies' => 14, // 12 kabupaten + 2 kota
-        'districts' => 174,
-        'villages' => 2031
+    // Complete list of West Kalimantan regencies with their codes
+    protected $westKalimantanRegencies = [
+        '6101' => 'KABUPATEN SAMBAS',
+        '6102' => 'KABUPATEN BENGKAYANG',
+        '6103' => 'KABUPATEN LANDAK',
+        '6104' => 'KABUPATEN MEMPAWAH',
+        '6105' => 'KABUPATEN SANGGAU',
+        '6106' => 'KABUPATEN KETAPANG',
+        '6107' => 'KABUPATEN SINTANG',
+        '6108' => 'KABUPATEN KAPUAS HULU',
+        '6109' => 'KABUPATEN SEKADAU',
+        '6110' => 'KABUPATEN MELAWI',
+        '6111' => 'KABUPATEN KAYONG UTARA',
+        '6112' => 'KABUPATEN KUBU RAYA',
+        '6171' => 'KOTA PONTIANAK',
+        '6172' => 'KOTA SINGKAWANG'
     ];
 
     public function handle()
@@ -50,7 +62,7 @@ class SyncBpsData extends Command
     {
         $this->line('');
         $this->line('┌──────────────────────────────────────────┐');
-        $this->line('│   🚀 ENHANCED BPS DATA SYNC (KALBAR)      │');
+        $this->line('│   🚀 COMPLETE KALBAR DATA SYNC            │');
         $this->line('└──────────────────────────────────────────┘');
         $this->line('');
         $this->info('🔧 Configuration:');
@@ -86,28 +98,55 @@ class SyncBpsData extends Command
         $provinceCode = config('services.bps.kode_provinsi', '61');
         $baseUrl = config('services.bps.base_url');
 
-        // 1. Sync Regencies
-        $regencies = $this->fetchApiData($baseUrl, 'kabupaten', $provinceCode);
-        $this->syncRegencies($regencies);
+        // 1. Ensure all regencies exist first
+        $this->ensureAllRegenciesExist();
 
-        // 2. Sync Districts for each regency
-        $regencyCodes = collect($regencies)->pluck('kode_bps');
-        foreach ($regencyCodes as $regencyCode) {
+        // 2. Sync data for each regency
+        foreach ($this->westKalimantanRegencies as $regencyCode => $regencyName) {
+            $this->info("\n🔵 Processing regency: {$regencyName} ({$regencyCode})");
+
+            // Get districts for this regency
             $districts = $this->fetchApiData($baseUrl, 'kecamatan', $regencyCode);
             $this->syncDistricts($districts, $regencyCode);
 
-            // 3. Sync Villages for each district
-            $districtCodes = collect($districts)->pluck('kode_bps');
-            foreach ($districtCodes as $districtCode) {
-                $villages = $this->fetchApiData($baseUrl, 'desa', $districtCode);
-                $this->syncVillages($villages, $districtCode);
+            // Get villages for each district
+            foreach ($districts as $district) {
+                $villages = $this->fetchApiData($baseUrl, 'desa', $district['kode_bps']);
+                $this->syncVillages($villages, $district['kode_bps']);
+            }
+        }
+    }
+
+    protected function ensureAllRegenciesExist(): void
+    {
+        $this->info("\n🔍 Verifying all West Kalimantan regencies exist...");
+
+        foreach ($this->westKalimantanRegencies as $code => $name) {
+            $regency = Regency::firstOrCreate(
+                ['code_bps' => $code],
+                [
+                    'name_bps' => $name,
+                    'code_dagri' => '61.' . substr($code, 2),
+                    'name_dagri' => str_replace('KABUPATEN ', '', $name)
+                ]
+            );
+
+            if ($regency->wasRecentlyCreated) {
+                $this->line("➕ Created regency: {$name} ({$code})");
+            } elseif ($this->option('force')) {
+                $regency->update([
+                    'name_bps' => $name,
+                    'code_dagri' => '61.' . substr($code, 2),
+                    'name_dagri' => str_replace('KABUPATEN ', '', $name)
+                ]);
+                $this->line("🔄 Updated regency: {$name} ({$code})");
             }
         }
     }
 
     protected function fetchApiData(string $baseUrl, string $level, string $parentCode): array
     {
-        $this->info("\n🔍 Fetching {$level} data for parent {$parentCode}...");
+        $this->info("🔍 Fetching {$level} for parent {$parentCode}...");
 
         try {
             $response = Http::withOptions([
@@ -133,7 +172,7 @@ class SyncBpsData extends Command
             }
 
             if (empty($data)) {
-                $this->warn("⚠ No {$level} data received");
+                $this->warn("⚠ No {$level} data received for {$parentCode}");
                 return $this->getFallbackData($level, $parentCode);
             }
 
@@ -146,56 +185,16 @@ class SyncBpsData extends Command
         }
     }
 
-    protected function syncRegencies(array $regencies): void
-    {
-        if (empty($regencies)) {
-            $this->warn("No regency data to process");
-            return;
-        }
-
-        $bar = $this->output->createProgressBar(count($regencies));
-        $bar->start();
-
-        $successCount = 0;
-        $failCount = 0;
-
-        foreach ($regencies as $regency) {
-            try {
-                $this->validateData($regency, ['kode_bps', 'nama_bps']);
-
-                Regency::updateOrCreate(
-                    ['code_bps' => $regency['kode_bps']],
-                    [
-                        'name_bps' => $regency['nama_bps'],
-                        'code_dagri' => $regency['kode_dagri'] ?? null,
-                        'name_dagri' => $regency['nama_dagri'] ?? null,
-                    ]
-                );
-                $successCount++;
-            } catch (\Exception $e) {
-                Log::error("Regency sync failed", [
-                    'data' => $regency,
-                    'error' => $e->getMessage()
-                ]);
-                $failCount++;
-            }
-            $bar->advance();
-        }
-
-        $bar->finish();
-        $this->info("\n✅ Regencies: {$successCount} succeeded, {$failCount} failed");
-    }
-
     protected function syncDistricts(array $districts, string $regencyCode): void
     {
         if (empty($districts)) {
-            $this->warn("No district data to process for regency {$regencyCode}");
+            $this->warn("No district data received for regency {$regencyCode}");
             return;
         }
 
         $regency = Regency::where('code_bps', $regencyCode)->first();
         if (!$regency) {
-            $this->warn("⚠ Regency {$regencyCode} not found in database");
+            $this->error("Regency {$regencyCode} not found!");
             return;
         }
 
@@ -206,7 +205,7 @@ class SyncBpsData extends Command
             try {
                 $this->validateData($district, ['kode_bps', 'nama_bps']);
 
-                District::updateOrCreate(
+                $operation = District::updateOrCreate(
                     ['code_bps' => $district['kode_bps']],
                     [
                         'regency_id' => $regency->id,
@@ -215,6 +214,7 @@ class SyncBpsData extends Command
                         'name_dagri' => $district['nama_dagri'] ?? null,
                     ]
                 );
+
                 $successCount++;
             } catch (\Exception $e) {
                 Log::error("District sync failed", [
@@ -222,6 +222,7 @@ class SyncBpsData extends Command
                     'error' => $e->getMessage()
                 ]);
                 $failCount++;
+                $this->error("Failed to sync district: " . $e->getMessage());
             }
         }
 
@@ -231,13 +232,13 @@ class SyncBpsData extends Command
     protected function syncVillages(array $villages, string $districtCode): void
     {
         if (empty($villages)) {
-            $this->warn("No village data to process for district {$districtCode}");
+            $this->warn("No village data received for district {$districtCode}");
             return;
         }
 
         $district = District::where('code_bps', $districtCode)->first();
         if (!$district) {
-            $this->warn("⚠ District {$districtCode} not found in database");
+            $this->error("District {$districtCode} not found!");
             return;
         }
 
@@ -257,6 +258,7 @@ class SyncBpsData extends Command
                         'name_dagri' => $village['nama_dagri'] ?? null,
                     ]
                 );
+
                 $successCount++;
             } catch (\Exception $e) {
                 Log::error("Village sync failed", [
@@ -264,6 +266,7 @@ class SyncBpsData extends Command
                     'error' => $e->getMessage()
                 ]);
                 $failCount++;
+                $this->error("Failed to sync village: " . $e->getMessage());
             }
         }
 
@@ -282,11 +285,8 @@ class SyncBpsData extends Command
             }
         }
 
-        // Additional validation for BPS codes
-        if (isset($data['kode_bps'])) {
-            if (!preg_match('/^\d+$/', $data['kode_bps'])) {
-                throw new \Exception("Invalid BPS code format: " . $data['kode_bps']);
-            }
+        if (isset($data['kode_bps']) && !preg_match('/^\d+$/', $data['kode_bps'])) {
+            throw new \Exception("Invalid BPS code format: " . $data['kode_bps']);
         }
     }
 
@@ -294,111 +294,60 @@ class SyncBpsData extends Command
     {
         $this->info("\n🔎 Verifying data completeness for West Kalimantan...");
 
-        // Verify regencies
-        $actualRegencies = Regency::where('code_bps', 'like', '61%')->count();
-        $this->checkCount('regencies', $actualRegencies, $this->expectedCounts['regencies']);
+        // Verify all regencies exist
+        $this->verifyRegencies();
 
-        // Verify districts
-        $actualDistricts = District::whereHas('regency', function($q) {
-            $q->where('code_bps', 'like', '61%');
-        })->count();
-        $this->checkCount('districts', $actualDistricts, $this->expectedCounts['districts']);
-
-        // Verify villages
-        $actualVillages = Village::whereHas('district.regency', function($q) {
-            $q->where('code_bps', 'like', '61%');
-        })->count();
-        $this->checkCount('villages', $actualVillages, $this->expectedCounts['villages']);
+        // Verify districts for each regency
+        foreach ($this->westKalimantanRegencies as $code => $name) {
+            $this->verifyDistrictsForRegency($code);
+        }
 
         $this->info("\n✅ Data verification completed");
     }
 
-    protected function checkCount(string $type, int $actual, int $expected): void
+    protected function verifyRegencies(): void
     {
-        if ($actual < $expected) {
-            $this->warn("⚠ {$type}: {$actual}/{$expected} (missing " . ($expected - $actual) . ")");
-            $this->logMissingData($type);
-        } elseif ($actual > $expected) {
-            $this->warn("⚠ {$type}: {$actual}/{$expected} (extra " . ($actual - $expected) . ")");
-        } else {
-            $this->info("✓ {$type}: Complete ({$actual}/{$expected})");
-        }
-    }
+        $missing = [];
 
-    protected function logMissingData(string $type): void
-    {
-        switch ($type) {
-            case 'regencies':
-                $expectedCodes = $this->getExpectedRegencyCodes();
-                $existingCodes = Regency::where('code_bps', 'like', '61%')
-                    ->pluck('code_bps')
-                    ->toArray();
-                $missing = array_diff($expectedCodes, $existingCodes);
-                break;
-
-            case 'districts':
-                // Similar logic for districts
-                break;
-
-            case 'villages':
-                // Similar logic for villages
-                break;
+        foreach ($this->westKalimantanRegencies as $code => $name) {
+            if (!Regency::where('code_bps', $code)->exists()) {
+                $missing[] = $code;
+            }
         }
 
         if (!empty($missing)) {
-            Log::warning("Missing {$type}", ['codes' => $missing]);
-            $this->warn("Missing codes: " . implode(', ', $missing));
+            $this->error("Missing regencies: " . implode(', ', $missing));
+        } else {
+            $this->info("✓ All 14 regencies exist");
         }
     }
 
-    protected function getExpectedRegencyCodes(): array
+    protected function verifyDistrictsForRegency(string $regencyCode): void
     {
-        return [
-            '6101', // Kabupaten Sambas
-            '6102', // Kabupaten Bengkayang
-            '6103', // Kabupaten Landak
-            '6104', // Kabupaten Mempawah
-            '6105', // Kabupaten Sanggau
-            '6106', // Kabupaten Ketapang
-            '6107', // Kabupaten Sintang
-            '6108', // Kabupaten Kapuas Hulu
-            '6109', // Kabupaten Sekadau
-            '6110', // Kabupaten Melawi
-            '6111', // Kabupaten Kayong Utara
-            '6112', // Kabupaten Kubu Raya
-            '6171', // Kota Pontianak
-            '6172', // Kota Singkawang
-        ];
+        $districts = District::whereHas('regency', function($q) use ($regencyCode) {
+            $q->where('code_bps', $regencyCode);
+        })->count();
+
+        if ($districts === 0) {
+            $this->warn("⚠ No districts found for regency {$regencyCode}");
+        } else {
+            $this->info("✓ Regency {$regencyCode} has {$districts} districts");
+        }
     }
 
     protected function getFallbackData(string $level, string $parentCode): array
     {
-        $this->warn("🔄 Using fallback data for {$level} with parent {$parentCode}...");
-
         $fallbackFile = storage_path("bps_fallback/{$parentCode}_{$level}.json");
 
         if (file_exists($fallbackFile)) {
             $data = json_decode(file_get_contents($fallbackFile), true);
             if (json_last_error() === JSON_ERROR_NONE) {
-                $this->info("Loaded " . count($data) . " fallback records");
+                $this->info("Using fallback data with " . count($data) . " records");
                 return $data;
             }
         }
 
-        // Minimal fallback for demo purposes
-        if ($level === 'kabupaten' && $parentCode === '61') {
-            return [
-                [
-                    'kode_bps' => '6101',
-                    'nama_bps' => 'KABUPATEN SAMBAS',
-                    'kode_dagri' => '61.01',
-                    'nama_dagri' => 'SAMBAS'
-                ],
-                // Add all West Kalimantan regencies here
-            ];
-        }
-
-        $this->warn("⚠ No fallback data available for {$level} with parent {$parentCode}");
+        $this->warn("No fallback data available for {$level} with parent {$parentCode}");
         return [];
     }
 
@@ -430,8 +379,7 @@ class SyncBpsData extends Command
             'error' => $th->getMessage(),
             'file' => $th->getFile(),
             'line' => $th->getLine(),
-            'trace' => $th->getTraceAsString(),
-            'config' => config('services.bps')
+            'trace' => $th->getTraceAsString()
         ]);
 
         $this->error("\n📛 Error Details:");
@@ -441,6 +389,6 @@ class SyncBpsData extends Command
         $this->line("- Check internet connection");
         $this->line("- Verify API URL in .env (BPS_API_URL)");
         $this->line("- Check complete log at storage/logs/laravel.log");
-        $this->line("- Consider using --verify option to check data completeness");
+        $this->line("- Try with --force option to overwrite existing data");
     }
 }

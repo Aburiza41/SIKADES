@@ -17,8 +17,7 @@ class TestController extends Controller
 {
     protected $bpsBaseUrl;
     protected $agamaOptions = [
-        'Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Khonghucu',
-        'Protestan', 'Budha', 'Kepercayaan' // Common variations
+        'Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Khonghucu'
     ];
 
     public function __construct()
@@ -50,46 +49,51 @@ class TestController extends Controller
             }
 
             try {
-                // Validate and clean row data first
-                $cleanData = $this->cleanRowData($row);
+                // Convert row to array and clean data
+                $rowData = $this->cleanRowData($row->toArray());
 
-                if (!$cleanData['valid']) {
-                    throw new \Exception($cleanData['error']);
+                // Validate village_id
+                if (empty($rowData['village_id']) || strlen((string)$rowData['village_id']) !== 10) {
+                    throw new \Exception("Invalid village_id format");
                 }
 
-                // Handle village
-                $villageCode = $this->convertVillageId($cleanData['village_id']);
+                $villageCode = $this->convertVillageId($rowData['village_id']);
                 if (!$villageCode) {
-                    throw new \Exception("Invalid village_id format: {$cleanData['village_id']}");
+                    throw new \Exception("Invalid village_id conversion");
                 }
 
+                // Handle village creation if not exists
                 $village = Village::where('code_dagri', $villageCode)->first();
-
                 if (!$village) {
-                    $village = $this->findOrCreateVillage($villageCode, $cleanData['village_id']);
+                    $village = $this->findOrCreateVillage($villageCode, $rowData['village_id']);
                     if (!$village) {
-                        throw new \Exception("Failed to find or create village");
+                        throw new \Exception("Failed to create village");
                     }
                 }
 
-                // Prepare official data
+                // Prepare official data with proper validation
                 $officialData = [
                     'village_id' => $village->id,
-                    'nik' => $cleanData['nik'] ?? null,
-                    'code_ident' => $cleanData['id_ident'] ?? null,
-                    'nipd' => $cleanData['no_induk'] ?? null,
-                    'nama_lengkap' => $cleanData['nama_lengkap'] ?? null,
-                    'gelar_depan' => $this->cleanString($cleanData['gelar_dpn'] ?? null),
-                    'gelar_belakang' => $this->cleanString($cleanData['gelar_blkng'] ?? null),
-                    'tempat_lahir' => $cleanData['tmpt_lahir'] ?? null,
-                    'tanggal_lahir' => $cleanData['tgl_lahir'] ?? null,
-                    'jenis_kelamin' => $this->mapGender($cleanData['jenis_kelamin']),
-                    'agama' => $this->validateAgama($cleanData['agama']),
-                    'status_perkawinan' => $this->mapMaritalStatus($cleanData['status_perkawinan']),
+                    'nik' => $this->cleanNumber($rowData['nik'] ?? null),
+                    'code_ident' => $this->cleanString($rowData['id_ident'] ?? null),
+                    'nipd' => $this->cleanString($rowData['no_induk'] ?? null),
+                    'nama_lengkap' => $this->cleanString($rowData['nama_lengkap'] ?? null),
+                    'gelar_depan' => $this->cleanString($rowData['gelar_dpn'] ?? null),
+                    'gelar_belakang' => $this->cleanString($rowData['gelar_blkng'] ?? null),
+                    'tempat_lahir' => $this->cleanString($rowData['tmpt_lahir'] ?? null),
+                    'tanggal_lahir' => $this->parseDate($rowData['tgl_lahir'] ?? null),
+                    'jenis_kelamin' => $this->mapGender($rowData['jenis_kelamin'] ?? null),
+                    'agama' => $this->validateAgama($rowData['agama'] ?? null),
+                    'status_perkawinan' => $this->mapMaritalStatus($rowData['status_perkawinan'] ?? null),
                     'status' => 'daftar',
                     'created_at' => now(),
                     'updated_at' => now()
                 ];
+
+                // Validate required fields
+                if (empty($officialData['nama_lengkap']) || empty($officialData['nik'])) {
+                    throw new \Exception("Missing required fields (nama_lengkap or nik)");
+                }
 
                 DB::table('officials')->insert($officialData);
                 $successCount++;
@@ -107,65 +111,77 @@ class TestController extends Controller
         return $this->generateImportReport($totalData, $successCount, $failedData);
     }
 
-    protected function cleanRowData($row)
+    protected function cleanRowData(array $rowData)
     {
-        $result = [
-            'valid' => true,
-            'error' => null
-        ];
+        // Remove any empty or malformed values
+        return array_map(function ($value) {
+            if (is_string($value)) {
+                $value = trim($value);
+                return $value === '' ? null : $value;
+            }
+            return $value;
+        }, $rowData);
+    }
+
+    protected function cleanString($value)
+    {
+        if ($value === null) return null;
+
+        // Remove any special characters that might cause SQL issues
+        $value = trim($value);
+        $value = str_replace(["'", "\"", "\\", "\0"], "", $value);
+
+        return empty($value) ? null : $value;
+    }
+
+    protected function cleanNumber($value)
+    {
+        if ($value === null) return null;
+
+        // Remove any non-numeric characters
+        $value = preg_replace('/[^0-9]/', '', $value);
+        return empty($value) ? null : $value;
+    }
+
+    protected function parseDate($dateValue)
+    {
+        if (empty($dateValue)) return null;
 
         try {
-            // Convert all values to array and clean
-            $data = $row->toArray();
-
-            // Handle date conversion
-            if (isset($data['tgl_lahir'])) {
-                if ($data['tgl_lahir'] === '0000-00-00' || empty($data['tgl_lahir'])) {
-                    $data['tgl_lahir'] = null;
-                } elseif (is_numeric($data['tgl_lahir'])) {
-                    try {
-                        $data['tgl_lahir'] = Date::excelToDateTimeObject($data['tgl_lahir']);
-                    } catch (\Exception $e) {
-                        $data['tgl_lahir'] = null;
-                    }
-                }
+            // Handle Excel date values
+            if (is_numeric($dateValue)) {
+                return Date::excelToDateTimeObject($dateValue);
             }
 
-            // Clean village_id
-            if (empty($data['village_id']) || strlen((string)$data['village_id']) !== 10) {
-                throw new \Exception("Invalid village_id");
+            // Handle string dates
+            if (is_string($dateValue)) {
+                // Skip invalid dates like "0000-00-00"
+                if ($dateValue === '0000-00-00') return null;
+
+                return Carbon::parse($dateValue);
             }
 
-            // Clean agama
-            if (isset($data['agama'])) {
-                $data['agama'] = $this->validateAgama($data['agama']);
-            }
-
-            $result = array_merge($data, ['valid' => true]);
-
+            return null;
         } catch (\Exception $e) {
-            $result = [
-                'valid' => false,
-                'error' => $e->getMessage()
-            ];
+            return null;
         }
-
-        return $result;
     }
 
     protected function validateAgama($agama)
     {
+        if (empty($agama)) return 'Lainnya';
+
         $agama = ucfirst(strtolower(trim($agama)));
 
         // Handle common variations
-        $mapping = [
+        $variations = [
             'Budha' => 'Buddha',
             'Protestan' => 'Kristen',
             'Khonghucu' => 'Konghucu'
         ];
 
-        if (array_key_exists($agama, $mapping)) {
-            return $mapping[$agama];
+        if (array_key_exists($agama, $variations)) {
+            $agama = $variations[$agama];
         }
 
         if (!in_array($agama, $this->agamaOptions)) {
@@ -177,6 +193,8 @@ class TestController extends Controller
 
     protected function mapGender($gender)
     {
+        if (empty($gender)) return null;
+
         $gender = strtolower(trim($gender));
         if (strpos($gender, 'laki') !== false) return 'L';
         if (strpos($gender, 'perempuan') !== false) return 'P';
@@ -185,24 +203,21 @@ class TestController extends Controller
 
     protected function mapMaritalStatus($status)
     {
+        if (empty($status)) return null;
+
         $status = strtolower(trim($status));
         if (strpos($status, 'kawin') !== false) return 'Kawin';
         if (strpos($status, 'belum') !== false) return 'Belum Kawin';
+        if (strpos($status, 'duda') !== false) return 'Duda';
+        if (strpos($status, 'janda') !== false) return 'Janda';
         return $status;
-    }
-
-    protected function cleanString($value)
-    {
-        if ($value === null) return null;
-        $value = trim($value);
-        return empty($value) ? null : $value;
     }
 
     protected function findOrCreateVillage(string $villageCode, string $originalId)
     {
         $parts = explode('.', $villageCode);
         if (count($parts) !== 4) {
-            throw new \Exception("Invalid village code format: {$villageCode}");
+            throw new \Exception("Invalid village code format");
         }
 
         [$provinceCode, $regencyCode, $districtCode, $villageLocalCode] = $parts;
@@ -226,13 +241,16 @@ class TestController extends Controller
         }
 
         // 3. Handle Village
-        $village = Village::where('code_dagri', $villageCode)->first();
-        if (!$village) {
-            $village = $this->fetchAndCreateVillage($district, $villageLocalCode, $originalId);
-            if (!$village) {
-                throw new \Exception("Failed to create village");
-            }
-        }
+        $village = Village::updateOrCreate(
+            ['code_dagri' => $villageCode],
+            [
+                'district_id' => $district->id,
+                'code_bps' => $district->code_bps . substr($villageLocalCode, 0, 4),
+                'name_bps' => 'UNKNOWN',
+                'name_dagri' => 'UNKNOWN',
+                'original_id' => $originalId
+            ]
+        );
 
         return $village;
     }
@@ -247,13 +265,12 @@ class TestController extends Controller
                 'parent' => $provinceCode
             ]);
 
-            $regencyData = null;
-
+            $name = 'UNKNOWN';
             if ($response->successful()) {
-                $regencies = $response->json();
-                foreach ($regencies as $r) {
-                    if ($r['kode_bps'] == $bpsCode) {
-                        $regencyData = $r;
+                $data = $response->json();
+                foreach ($data as $item) {
+                    if ($item['kode_bps'] == $bpsCode) {
+                        $name = $item['nama_bps'] ?? 'UNKNOWN';
                         break;
                     }
                 }
@@ -261,9 +278,9 @@ class TestController extends Controller
 
             return Regency::create([
                 'code_bps' => $bpsCode,
-                'name_bps' => $regencyData['nama_bps'] ?? 'UNKNOWN',
+                'name_bps' => $name,
                 'code_dagri' => "{$provinceCode}.{$regencyCode}",
-                'name_dagri' => $regencyData['nama_dagri'] ?? 'UNKNOWN'
+                'name_dagri' => $name
             ]);
 
         } catch (\Exception $e) {
@@ -275,21 +292,19 @@ class TestController extends Controller
     protected function fetchAndCreateDistrict(Regency $regency, $districtCode)
     {
         try {
-            $bpsParentCode = $regency->code_bps;
-            $bpsCode = $bpsParentCode . substr($districtCode, 0, 3);
+            $bpsCode = $regency->code_bps . substr($districtCode, 0, 3);
 
             $response = Http::get($this->bpsBaseUrl, [
                 'level' => 'kecamatan',
-                'parent' => $bpsParentCode
+                'parent' => $regency->code_bps
             ]);
 
-            $districtData = null;
-
+            $name = 'UNKNOWN';
             if ($response->successful()) {
-                $districts = $response->json();
-                foreach ($districts as $d) {
-                    if ($d['kode_bps'] == $bpsCode) {
-                        $districtData = $d;
+                $data = $response->json();
+                foreach ($data as $item) {
+                    if ($item['kode_bps'] == $bpsCode) {
+                        $name = $item['nama_bps'] ?? 'UNKNOWN';
                         break;
                     }
                 }
@@ -298,9 +313,9 @@ class TestController extends Controller
             return District::create([
                 'regency_id' => $regency->id,
                 'code_bps' => $bpsCode,
-                'name_bps' => $districtData['nama_bps'] ?? 'UNKNOWN',
+                'name_bps' => $name,
                 'code_dagri' => $regency->code_dagri . '.' . $districtCode,
-                'name_dagri' => $districtData['nama_dagri'] ?? 'UNKNOWN'
+                'name_dagri' => $name
             ]);
 
         } catch (\Exception $e) {
@@ -309,45 +324,7 @@ class TestController extends Controller
         }
     }
 
-    protected function fetchAndCreateVillage(District $district, $villageCode, $originalId)
-    {
-        try {
-            $bpsParentCode = $district->code_bps;
-            $bpsCode = $bpsParentCode . substr($villageCode, 0, 4);
-
-            $response = Http::get($this->bpsBaseUrl, [
-                'level' => 'desa',
-                'parent' => $bpsParentCode
-            ]);
-
-            $villageData = null;
-
-            if ($response->successful()) {
-                $villages = $response->json();
-                foreach ($villages as $v) {
-                    if ($v['kode_bps'] == $bpsCode) {
-                        $villageData = $v;
-                        break;
-                    }
-                }
-            }
-
-            return Village::create([
-                'district_id' => $district->id,
-                'code_bps' => $bpsCode,
-                'name_bps' => $villageData['nama_bps'] ?? 'UNKNOWN',
-                'code_dagri' => $district->code_dagri . '.' . $villageCode,
-                'name_dagri' => $villageData['nama_dagri'] ?? 'UNKNOWN',
-                'original_id' => $originalId
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error("Village creation failed: " . $e->getMessage());
-            return null;
-        }
-    }
-
-    private function convertVillageId($villageId)
+    protected function convertVillageId($villageId)
     {
         if (empty($villageId)) return null;
 
@@ -362,7 +339,7 @@ class TestController extends Controller
         ]);
     }
 
-    private function saveFailedData(array $failedData)
+    protected function saveFailedData(array $failedData)
     {
         if (!empty($failedData)) {
             $fileName = 'failed_imports_' . date('Ymd_His') . '.json';
@@ -370,7 +347,7 @@ class TestController extends Controller
         }
     }
 
-    private function generateImportReport($total, $success, $failed)
+    protected function generateImportReport($total, $success, $failed)
     {
         $report = [
             'status' => 'completed',
@@ -388,7 +365,7 @@ class TestController extends Controller
         return response()->json($report);
     }
 
-    private function analyzeErrors($failedData)
+    protected function analyzeErrors($failedData)
     {
         $errorCounts = [];
         foreach ($failedData as $failed) {
