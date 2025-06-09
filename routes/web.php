@@ -50,8 +50,29 @@ use Illuminate\Support\Facades\File;
 use Maatwebsite\Excel\Excel;
 
 // Test
-Route::get('/test', [\App\Http\Controllers\TestController::class, 'index']);
-Route::get('/workplace', [\App\Http\Controllers\TestController::class, 'workplace']);
+// Route::get('/test', [\App\Http\Controllers\TestController::class, 'index']);
+
+// Insert
+Route::prefix('/insert')->name('insert.')->group(function () {
+    // Identitas
+    Route::get('/identitas', [\App\Http\Controllers\Web\Insert\IdentityController::class, 'index'])->name('identitas');
+    // WorkPlace
+    Route::get('/work-place', [\App\Http\Controllers\Web\Insert\WorkPlaceController::class, 'index'])->name('work-place');
+    // Position
+    Route::get('/position', [\App\Http\Controllers\Web\Insert\PositionController::class, 'index'])->name('position');
+    // Organization
+    Route::get('/organization', [\App\Http\Controllers\Web\Insert\OrganizationController::class, 'index'])->name('organization');
+    // Study
+    Route::get('/study', [\App\Http\Controllers\Web\Insert\StudyController::class, 'index'])->name('study');
+    // Training
+    Route::get('/training', [\App\Http\Controllers\Web\Insert\TrainingController::class, 'index'])->name('training');
+    // Parent
+    Route::get('/parent/{parent}', [\App\Http\Controllers\Web\Insert\ParentController::class, 'index'])->name('parent', [\App\Http\Controllers\Web\Insert\ParentController::class, 'index'])->name('parent');
+    // Spouse
+    Route::get('/spouse', [\App\Http\Controllers\Web\Insert\SpouseController::class, 'index'])->name('spouse');
+    // Child
+    Route::get('/child', [\App\Http\Controllers\Web\Insert\ChildController::class, 'index'])->name('child');
+});
 
 Route::name('guest.')->group(function () {
 

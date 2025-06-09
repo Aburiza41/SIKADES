@@ -12,6 +12,7 @@ class Official extends Model
 
     protected $fillable = [
         'village_id',
+        'code_ident',
         'nik',
         'nipd',
         'nama_lengkap',

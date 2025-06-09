@@ -18,6 +18,7 @@ class Village extends Model
         'logo_path',
         'description',
         'website',
+        'code'
     ];
 
     // Relasi ke District

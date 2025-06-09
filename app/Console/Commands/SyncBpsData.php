@@ -127,7 +127,8 @@ class SyncBpsData extends Command
                 [
                     'name_bps' => $name,
                     'code_dagri' => '61.' . substr($code, 2),
-                    'name_dagri' => str_replace('KABUPATEN ', '', $name)
+                    'name_dagri' => str_replace('KABUPATEN ', '', $name),
+                    'code' => str_replace('.', '', '61.' . substr($code, 2))
                 ]
             );
 
@@ -137,7 +138,8 @@ class SyncBpsData extends Command
                 $regency->update([
                     'name_bps' => $name,
                     'code_dagri' => '61.' . substr($code, 2),
-                    'name_dagri' => str_replace('KABUPATEN ', '', $name)
+                    'name_dagri' => str_replace('KABUPATEN ', '', $name),
+                    'code' => str_replace('.', '', '61.' . substr($code, 2))
                 ]);
                 $this->line("🔄 Updated regency: {$name} ({$code})");
             }
@@ -212,6 +214,7 @@ class SyncBpsData extends Command
                         'name_bps' => $district['nama_bps'],
                         'code_dagri' => $district['kode_dagri'] ?? null,
                         'name_dagri' => $district['nama_dagri'] ?? null,
+                        'code' => isset($district['kode_dagri']) ? str_replace('.', '', $district['kode_dagri']) : null
                     ]
                 );
 
@@ -256,6 +259,7 @@ class SyncBpsData extends Command
                         'name_bps' => $village['nama_bps'],
                         'code_dagri' => $village['kode_dagri'] ?? null,
                         'name_dagri' => $village['nama_dagri'] ?? null,
+                        'code' => isset($village['kode_dagri']) ? str_replace('.', '', $village['kode_dagri']) : null,
                     ]
                 );
 

@@ -502,17 +502,17 @@ export default function List({
                                         {row.nipd}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row.identities.pendidikan || "-"}
+                                        {row?.identities?.pendidikan_terakhir || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row.village.name_bps || "-"}
+                                        {row.village.name_dagri || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row.village.district.name_bps || "-"}
+                                        {row.village.district.name_dagri || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.district.regency
-                                            .name_bps || "-"}
+                                            .name_dagri || "-"}
                                     </td>
                                     <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
                                         <CustomBadge role={row.status} />

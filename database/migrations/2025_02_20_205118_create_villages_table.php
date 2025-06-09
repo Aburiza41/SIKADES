@@ -13,15 +13,16 @@ return new class extends Migration
     {
         Schema::create('villages', function (Blueprint $table) {
             $table->id(); // Primary key
-            $table->foreignId('district_id')->constrained('districts')->onDelete('cascade');
-            $table->string('code_bps')->unique();
-            $table->string('name_bps');
-            $table->string('code_dagri')->unique();
-            $table->string('name_dagri');
-            $table->string('logo_path')->nullable(); // Store file path instead of longText
-            $table->longText('description')->nullable();
-            $table->string('website')->nullable();
-            $table->boolean('active')->default(false);
+            $table->foreignId('district_id')->constrained('districts')->onDelete('cascade')->nullable();
+            $table->string('code_bps')->unique()->nullable();
+            $table->string('name_bps')->nullable();
+            $table->string('code_dagri')->unique()->nullable();
+            $table->string('name_dagri')->nullable();
+            $table->string('logo_path')->nullable()->nullable(); // Store file path instead of longText
+            $table->longText('description')->nullable()->nullable();
+            $table->string('website')->nullable()->nullable();
+            $table->boolean('active')->default(false)->nullable();
+            $table->string('code')->nullable();
             $table->timestamps();
         });
 
