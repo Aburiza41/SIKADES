@@ -202,10 +202,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('official_id')->constrained('officials')->onDelete('cascade'); // Relasi ke tabel officials
             $table->string('nama'); // Nama anak pejabat
+            $table->enum('jenis_kelamin', ['L', 'P', 'Kosong'])->default('Kosong')->nullable(); // Jenis kelamin
             // Tempat Lahir
             $table->string('tempat_lahir')->nullable();
             // Tanggal Lahir
             $table->date('tanggal_lahir')->nullable();
+
             // Status
             $table->enum('status', ['Anak Kandung', 'Anak Tiri', 'Anak Angkat'])->nullable();
             // Pendidikan Umum

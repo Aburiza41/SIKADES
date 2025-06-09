@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Log;
 
 class SpouseController extends Controller
 {
-    public function index($parent)
+    public function index()
     {
         ini_set('memory_limit', '-1');
         set_time_limit(0);
@@ -35,7 +35,7 @@ class SpouseController extends Controller
         //     $filePath = public_path('data/Data_Ayah.xlsx');
         // }
         $data = Excel::toCollection(new TestImport, $filePath)->first();
-        dd($data[0], count($data));
+        // dd($data[0], count($data));
         // Prepare official data
         $success_count = 0;
         $failed_count = 0;
@@ -71,7 +71,7 @@ class SpouseController extends Controller
                 // dd($jabatan);
 
                 // 3. Insert Work Place
-                $this->insert($official, $v_position, $parent);
+                $this->insert($official, $v_position);
                 $success_count++;
             } catch (\Throwable $th) {
                 dd($th);
@@ -117,12 +117,13 @@ class SpouseController extends Controller
     /**
      * Insert data tempat kerja
      */
-    protected function insert($official, $data, $parent)
+    protected function insert($official, $data)
     {
         try {
             // Konversi tanggal dengan validasi
             // $tmtJabatan = $this->parseDateString($data['tmtjabatan'] ?? null);
-            $tanggal = $this->parseDateString($data['tanggal'] ?? null);
+            $tanggal_nikah = $this->parseDateString($data['tanggalnikah'] ?? null);
+            $tanggal_lahir = $this->parseDateString($data['tanggallahir'] ?? null);
 
             // Validasi tanggal wajib
             // if (!$tmtJabatan) {
@@ -130,28 +131,24 @@ class SpouseController extends Controller
             // }
 
             // $pelatihan = $this->mapPelatihan($data['idjenispelatihan']);
+            $pendidikan = $this->mapEducation($data['pendidikan']);
 
+            $spouse = $official->jenis_kelamin == 'L' ? 'Istri' : 'Suami';
 
             $workPlaceInsert = [
                 'official_id' => $official->id,
-                'hubungan' => $parent,
+                'hubungan' => $spouse,
                 'nama' => $data['nama'],
+                'tanggal_nikah' => $tanggal_nikah ? $tanggal_nikah->format('Y-m-d') : null,
                 'tempat_lahir' => $data['tempat'],
-                'tanggal_lahir' => $tanggal ? $tanggal->format('Y-m-d') : null,
+                'tanggal_lahir' => $tanggal_lahir ? $tanggal_lahir->format('Y-m-d') : null,
+                'pendidikan_umum' => $pendidikan,
                 'pekerjaan' => $data['pekerjaan'],
-                'alamat' => $data['alamat'],
-                'rt' => $data['rt'],
-                'rw' => $data['rw'],
-                'kode_pos' => $data['pos'],
-                'province_name' => $data['prov'],
-                'regency_name' => $data['kab'],
-                'district_name' => $data['kec'],
-                'village_name' => $data['desa'],
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ];
 
-            DB::table('parent_officials')->insert($workPlaceInsert);
+            DB::table('spouse_officials')->insert($workPlaceInsert);
         } catch (\Exception $e) {
             Log::error("Gagal insert data jabatan: " . $e->getMessage());
             throw $e; // Re-throw untuk ditangkap di loop utama
