@@ -6,12 +6,12 @@ export default function Actions({ row, onEdit, onDelete, onView, onPrint }) {
             <button onClick={() => onView(row)} className="text-blue-500 hover:text-blue-700">
                 <FiEye size={16} />
             </button>
-            <button onClick={() => onEdit(row)} className="text-yellow-500 hover:text-yellow-700">
+            {/* <button onClick={() => onEdit(row)} className="text-yellow-500 hover:text-yellow-700">
                 <FiEdit size={16} />
-            </button>
-            <button onClick={() => onDelete(row.id)} className="text-red-500 hover:text-red-700">
+            </button> */}
+            {/* <button onClick={() => onDelete(row.id)} className="text-red-500 hover:text-red-700">
                 <FiTrash size={16} />
-            </button>
+            </button> */}
             <button onClick={() => onPrint(row)} className="text-green-500 hover:text-green-700">
                 <FiPrinter size={16} />
             </button>

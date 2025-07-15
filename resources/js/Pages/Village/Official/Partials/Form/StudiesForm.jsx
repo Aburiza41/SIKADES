@@ -223,8 +223,15 @@ export default function StudiesForm({ officialStudies = [], setOfficialStudies }
                         <div className="flex items-center">
                           <span className="mr-2">{study.nomorIjazah || 'No.Ijazah'}</span>
                           <a
-                            href={URL.createObjectURL(study.dokumenIjazah)}
+                            href={
+                              study.dokumenIjazah instanceof File
+                                ? URL.createObjectURL(study.dokumenIjazah)
+                                : typeof study.dokumenIjazah === "string"
+                                ? study.dokumenIjazah
+                                : "#"
+                            }
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="text-blue-500 hover:underline flex items-center"
                           >
                             <HiDocumentText className="mr-1" /> Lihat
@@ -307,7 +314,6 @@ export default function StudiesForm({ officialStudies = [], setOfficialStudies }
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  {/* Tingkat Pendidikan */}
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -323,7 +329,7 @@ export default function StudiesForm({ officialStudies = [], setOfficialStudies }
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       required
-                      whileFocus="focus"
+
                     >
                       <option value="">Pilih Pendidikan</option>
                       {pendidikanOptions.map(option => (
@@ -350,7 +356,7 @@ export default function StudiesForm({ officialStudies = [], setOfficialStudies }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       placeholder="Nama Sekolah"
                       required
-                      whileFocus="focus"
+
                     />
                   </motion.div>
 
@@ -370,7 +376,7 @@ export default function StudiesForm({ officialStudies = [], setOfficialStudies }
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       placeholder="Tempat"
-                      whileFocus="focus"
+
                     />
                   </motion.div>
 
@@ -390,7 +396,7 @@ export default function StudiesForm({ officialStudies = [], setOfficialStudies }
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       placeholder="Nomor Ijazah"
-                      whileFocus="focus"
+
                     />
                   </motion.div>
 
@@ -409,7 +415,7 @@ export default function StudiesForm({ officialStudies = [], setOfficialStudies }
                       value={formData.tanggalIjazah}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      whileFocus="focus"
+
                     />
                   </motion.div>
 
@@ -429,7 +435,7 @@ export default function StudiesForm({ officialStudies = [], setOfficialStudies }
                         onChange={handleFileUpload}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                         accept=".pdf,.jpg,.jpeg,.png"
-                        whileFocus="focus"
+
                       />
                       {formData.dokumenIjazah && (
                         <button

@@ -24,13 +24,14 @@ class UserController extends Controller
             'districts.villages.officials'
         ])->first();
 
-        
+
+
 
         // Debug request
         Log::info('Request parameters:', $request->all());
 
         // Query utama
-        $users = User::with(['user_regency.regency', 'user_village.village'])
+        $users = User::with(['user_regency.regency', 'user_village.village.district.regency'])
             ->where('role', '!=', 'admin')
             ->where('role', '!=', 'regency')
             ->when($request->has('search') && $request->search !== '', function ($query) use ($request) {
@@ -42,6 +43,19 @@ class UserController extends Controller
             })
             ->when($request->filled('filters'), function ($query) use ($request) {
                 $query->where('role', $request->filters);
+            })
+            ->when($regency, function ($query) use ($regency) {
+                $query->whereHas('user_village.village.district.regency', function ($q) use ($regency) {
+                    // foreach ($regency->districts as $k_district => $v_district) {
+                        # code...
+
+                        // foreach ($v_district->villages as $k_village => $v_village) {
+                            // dd($v_village);
+                            # code...
+                            $q->where('id', $regency->id); // Filter berdasarkan ID village
+                    //     }
+                    // }
+                });
             })
             ->orderBy(
                 in_array($request->sort_field, ['id', 'name', 'email', 'role', 'created_at', 'updated_at']) ? $request->sort_field : 'id',

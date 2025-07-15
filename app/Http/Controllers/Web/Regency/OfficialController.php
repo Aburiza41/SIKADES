@@ -70,6 +70,12 @@ class OfficialController extends Controller
         // Debug nid
         Log::info('Request parameters:', $request->all());
 
+
+        $regency = Auth::user()->user_regency->regency ?? null;
+        // dd($village);
+        // $district = $village->district;
+        // $regency = $district->regency;
+
         // dd(Official::with(['position_current.position'])->first());
         // Query utama untuk officials dengan filter dan sorting
         $officials = Official::with(['village.district.regency', 'addresses', 'contacts', 'identities', 'studies.study', 'positions.position', 'officialTrainings', 'officialOrganizations', 'position_current.position'])
@@ -83,6 +89,11 @@ class OfficialController extends Controller
             ->when($request->filled('filters'), function ($query) use ($request) {
                 $query->whereHas('identities', function ($q) use ($request) {
                     $q->where('pendidikan_terakhir', $request->filters); // Filter berdasarkan ID village
+                });
+            })
+            ->when($regency->id, function ($query) use ($regency) {
+                $query->whereHas('village.district.regency', function ($q) use ($regency) {
+                    $q->where('id', $regency->id); // Filter berdasarkan ID village
                 });
             })
             ->when($role, function ($query) use ($role) {

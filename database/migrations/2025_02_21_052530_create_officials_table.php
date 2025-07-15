@@ -112,19 +112,19 @@ return new class extends Migration
         });
 
         // Tabel untuk menyimpan relasi antara pejabat dan pelatihan
-        Schema::create('official_trainings', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('official_id')->constrained('officials')->onDelete('cascade'); // Relasi ke tabel officials
-            $table->string('nama')->nullable(); // Nama peserta pelatihan
-            $table->string('alamat')->nullable(); // Jabatan peserta
-            $table->string('pelatihan')->nullable(); // Alamat peserta
-            $table->string('penyelenggara')->nullable(); // Jabatan peserta
-            $table->string('nomor_sertifikat')->nullable(); // Nomor sertifikat
-            $table->string('tanggal_sertifikat')->nullable(); // Nomor ijazah
-            $table->text('keterangan')->nullable(); // Keterangan tambahan
-            $table->longText('doc_scan')->nullable(); // Dokumen pendukung (sertifikat, dll)
-            $table->timestamps(); // Kolom created_at dan updated_at
-        });
+        // Schema::create('official_trainings', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->foreignId('official_id')->constrained('officials')->onDelete('cascade'); // Relasi ke tabel officials
+        //     $table->string('nama')->nullable(); // Nama peserta pelatihan
+        //     $table->string('alamat')->nullable(); // Jabatan peserta
+        //     $table->string('pelatihan')->nullable(); // Alamat peserta
+        //     $table->string('penyelenggara')->nullable(); // Jabatan peserta
+        //     $table->string('nomor_sertifikat')->nullable(); // Nomor sertifikat
+        //     $table->string('tanggal_sertifikat')->nullable(); // Nomor ijazah
+        //     $table->text('keterangan')->nullable(); // Keterangan tambahan
+        //     $table->longText('doc_scan')->nullable(); // Dokumen pendukung (sertifikat, dll)
+        //     $table->timestamps(); // Kolom created_at dan updated_at
+        // });
 
         // Tabel untuk menyimpan riwayat jabatan pejabat
         Schema::create('position_officials', function (Blueprint $table) {

@@ -13,10 +13,11 @@ class OfficialTraining extends Model
 
     // HasFactory
     protected $fillable = [
+        'training_id',
         'official_id',
         'nama',
         'alamat',
-        'pelatihan',
+        // 'pelatihan',
         'penyelenggara',
         'nomor_sertifikat',
         'tanggal_sertifikat',

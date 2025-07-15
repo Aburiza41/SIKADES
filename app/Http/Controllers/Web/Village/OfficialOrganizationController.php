@@ -30,6 +30,7 @@ class OfficialOrganizationController extends Controller
      */
     public function store(Request $request)
 {
+    // dd($request);
     // Validasi input
     $validator = Validator::make($request->all(), [
         'title' => 'required|string|max:255|unique:organizations,title', // Pastikan nama posisi unik

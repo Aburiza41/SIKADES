@@ -43,7 +43,7 @@ class OfficialController extends Controller
             })
             ->when($request->filled('filters'), function ($query) use ($request) {
                 $query->whereHas('identities', function ($q) use ($request) {
-                    $q->where('pendidikan', $request->filters); // Filter berdasarkan ID village
+                    $q->where('pendidikan_terakhir', $request->filters); // Filter berdasarkan ID village
                 });
             })
             ->when($role, function ($query) use ($role) {

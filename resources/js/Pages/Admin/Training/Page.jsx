@@ -10,7 +10,7 @@ import TrainingPDF from "./Partials/Component/PDF";
 // Ambil token CSRF
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-export default function Training({ initialTrainings, trainings }) {
+export default function Training({ initialTrainings }) {
     const { flash } = usePage().props;
     const [trainingsData, setTrainingsData] = useState(initialTrainings);
     const [loading, setLoading] = useState(false);
@@ -223,7 +223,7 @@ export default function Training({ initialTrainings, trainings }) {
                 </button>
                 <TrainingList
                     official_trainings={trainingsData}
-                    trainings={trainings}
+                    // trainings={trainings}
                     fetchData={fetchData}
                     loading={loading}
                     onEdit={handleEdit}

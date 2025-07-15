@@ -502,7 +502,7 @@ export default function List({
                                         {row.nipd}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row.identities.pendidikan_terakhir || "-"}
+                                        {row?.identities?.pendidikan_terakhir || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.name_bps || "-"}

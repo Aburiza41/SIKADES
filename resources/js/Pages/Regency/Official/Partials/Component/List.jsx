@@ -442,9 +442,9 @@ export default function List({
                             <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Kecamatan
                             </th>
-                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {/* <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Kabupaten
-                            </th>
+                            </th> */}
                             <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Status
                             </th>
@@ -502,7 +502,7 @@ export default function List({
                                         {row.nipd}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row.identities.pendidikan || "-"}
+                                        {row?.identities?.pendidikan || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.name_bps || "-"}
@@ -510,10 +510,10 @@ export default function List({
                                     <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.district.name_bps || "-"}
                                     </td>
-                                    <td className="px-2 py-2 border whitespace-nowrap">
+                                    {/* <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.district.regency
                                             .name_bps || "-"}
-                                    </td>
+                                    </td> */}
                                     <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
                                         <CustomBadge role={row.status} />
                                     </td>

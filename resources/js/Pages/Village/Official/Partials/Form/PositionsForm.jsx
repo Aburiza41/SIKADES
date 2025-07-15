@@ -11,12 +11,13 @@ import {
 import { HiInformationCircle } from "react-icons/hi";
 
 export default function PositionsForm({
+    jabatan,
     position, // slug of the position (e.g. 'kepala-desa')
     positions, // array of position objects
     setOfficialPosition,
     officialPosition,
 }) {
-    // console.log(position);
+    // console.log(position, jabatan);
     position = position?.position?.slug || null;
     const [selectedPosition, setSelectedPosition] = useState(position || null);
 
@@ -65,26 +66,30 @@ export default function PositionsForm({
 
     // Find the initial position based on the slug prop
     useEffect(() => {
+        // Pilih berdasarkan slug (position) atau nama jabatan (jabatan.name)
+        let foundPosition = null;
         if (position && positions.length > 0) {
-            const foundPosition = positions.find(
-                (pos) => pos.slug === position
-            );
-            if (foundPosition) {
-                const selectedOption = {
-                    value: foundPosition.id,
-                    label: foundPosition.name,
-                    slug: foundPosition.slug,
-                };
-                setSelectedPosition(selectedOption);
-                // Update official positions if needed
-                setOfficialPosition({
-                    ...officialPosition,
-                    namaJabatan: foundPosition.name,
-                    jabatanId: foundPosition.id,
-                });
-            }
+            foundPosition = positions.find((pos) => pos.slug === position);
         }
-    }, [position, positions]);
+        if (!foundPosition && jabatan?.name && positions.length > 0) {
+            foundPosition = positions.find(
+                (pos) => pos.name.toLowerCase() === jabatan.name.toLowerCase()
+            );
+        }
+        if (foundPosition) {
+            const selectedOption = {
+                value: foundPosition.id,
+                label: foundPosition.name,
+                slug: foundPosition.slug,
+            };
+            setSelectedPosition(selectedOption);
+            setOfficialPosition({
+                ...officialPosition,
+                namaJabatan: foundPosition.name,
+                jabatanId: foundPosition.id,
+            });
+        }
+    }, [position, jabatan, positions]);
 
     const { penetap, nomorSk, tanggalSk, period, tmtJabatan } =
         officialPosition;
@@ -107,11 +112,11 @@ export default function PositionsForm({
                         </motion.div>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-800">
-                                C. JABATAN SAAT INI
+                                C. JABATAN SAAT INI {jabatan.name.toUpperCase()}
                             </h1>
                             <p className="text-sm text-gray-600 mt-1 flex items-center">
                                 <HiInformationCircle className="mr-1 text-blue-500" />
-                                Formulir ini digunakan untuk mengisi jabatan
+                                Formulir {jabatan.name} ini digunakan untuk mengisi jabatan
                                 pejabat desa.
                             </p>
                         </div>
@@ -131,7 +136,7 @@ export default function PositionsForm({
                         animate="visible"
                     >
                         <motion.div variants={rowVariants}>
-                            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                            <label className="text-sm font-medium text-gray-700 mb-1 flex items-center">
                                 <FaUserTie className="mr-2 text-blue-500" /> 1.
                                 File
                             </label>
@@ -186,7 +191,8 @@ export default function PositionsForm({
                         {officialPosition.file && (
                             <div className="mt-2 flex flex-col items-start">
                                 {/* Show preview for images */}
-                                {officialPosition.file.type.startsWith(
+                                {officialPosition.file.type &&
+                                officialPosition.file.type.startsWith(
                                     "image/"
                                 ) ? (
                                     <img
@@ -228,8 +234,8 @@ export default function PositionsForm({
                                     }}
                                     className="mt-2 text-sm text-red-600 hover:text-red-800"
                                 >
-                                    <FaTrash className="inline mr-1" /> Hapus
-                                    File
+                                    <FaTrash className="inline mr-1" /> HAPUS
+                                    FILE
                                 </button>
                             </div>
                         )}
@@ -238,12 +244,12 @@ export default function PositionsForm({
                     {/* Pejabat yang Menetapkan */}
                     <motion.div variants={rowVariants}>
                         <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                            <FaUserTie className="mr-2 text-blue-500" /> Pejabat
-                            yang Menetapkan
+                            <FaUserTie className="mr-2 text-blue-500" /> PEJABAT
+                            YANG MENETAPKAN
                         </label>
                         <motion.input
                             type="text"
-                            value={penetap || ""}
+                            value={penetap ? penetap.toUpperCase() : ""}
                             onChange={(e) =>
                                 setOfficialPosition({
                                     ...officialPosition,
@@ -251,8 +257,8 @@ export default function PositionsForm({
                                 })
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                            placeholder="Pejabat yang Menetapkan"
-                            whileFocus="focus"
+                            placeholder="PEJABAT YANG MENETAPKAN"
+
                             variants={inputVariants}
                         />
                     </motion.div>
@@ -261,12 +267,12 @@ export default function PositionsForm({
                     <motion.div variants={rowVariants}>
                         <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                             <FaFileSignature className="mr-2 text-blue-500" />{" "}
-                            SK Pelantikan
+                            SK PELANTIKAN
                         </label>
                         <div className="flex gap-2">
                             <motion.input
                                 type="text"
-                                value={nomorSk || ""}
+                                value={nomorSk ? nomorSk.toUpperCase() : ""}
                                 onChange={(e) =>
                                     setOfficialPosition({
                                         ...officialPosition,
@@ -274,8 +280,8 @@ export default function PositionsForm({
                                     })
                                 }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                placeholder="Nomor SK"
-                                whileFocus="focus"
+                                placeholder="NOMOR SK"
+
                                 variants={inputVariants}
                             />
                             <motion.input
@@ -288,7 +294,7 @@ export default function PositionsForm({
                                     })
                                 }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </div>
@@ -297,13 +303,25 @@ export default function PositionsForm({
                     {/* Nama Jabatan */}
                     <motion.div variants={rowVariants}>
                         <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                            <FaUserTie className="mr-2 text-blue-500" /> Nama
-                            Jabatan
+                            <FaUserTie className="mr-2 text-blue-500" /> NAMA
+                            JABATAN
                         </label>
-                        <motion.div whileFocus="focus" variants={inputVariants}>
+                        <motion.div  variants={inputVariants}>
                             <Select
-                                options={positionOptions}
-                                value={selectedPosition}
+                                options={positionOptions.map(opt => ({
+                                    ...opt,
+                                    label: opt.label.toUpperCase(),
+                                }))}
+                                value={
+                                    selectedPosition
+                                        ? {
+                                              ...selectedPosition,
+                                              label: selectedPosition.label
+                                                  ? selectedPosition.label.toUpperCase()
+                                                  : "",
+                                          }
+                                        : null
+                                }
                                 onChange={(selectedOption) => {
                                     setSelectedPosition(selectedOption);
                                     setOfficialPosition({
@@ -312,7 +330,7 @@ export default function PositionsForm({
                                         jabatanId: selectedOption.value,
                                     });
                                 }}
-                                placeholder="Pilih Jabatan"
+                                placeholder="PILIH JABATAN"
                                 isClearable
                                 isSearchable
                                 className="mt-0"
@@ -339,11 +357,11 @@ export default function PositionsForm({
                     {/* Period */}
                     <motion.div variants={rowVariants}>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Period ke-
+                            PERIOD KE-
                         </label>
                         <motion.input
                             type="text"
-                            value={period || ""}
+                            value={period ? period.toUpperCase() : ""}
                             onChange={(e) =>
                                 setOfficialPosition({
                                     ...officialPosition,
@@ -351,8 +369,8 @@ export default function PositionsForm({
                                 })
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                            placeholder="Period ke-"
-                            whileFocus="focus"
+                            placeholder="PERIOD KE-"
+
                             variants={inputVariants}
                         />
                     </motion.div>
@@ -361,7 +379,7 @@ export default function PositionsForm({
                     <motion.div variants={rowVariants}>
                         <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                             <FaCalendarAlt className="mr-2 text-blue-500" /> TMT
-                            Jabatan
+                            JABATAN
                         </label>
                         <motion.input
                             type="date"
@@ -373,7 +391,7 @@ export default function PositionsForm({
                                 })
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                            whileFocus="focus"
+
                             variants={inputVariants}
                         />
                     </motion.div>

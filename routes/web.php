@@ -46,6 +46,7 @@ use App\Http\Middleware\Custom\AdminMiddleware;
 
 // Export
 use App\Exports\UsersExport;
+use App\Http\Controllers\TemporaryFileController;
 use Illuminate\Support\Facades\File;
 use Maatwebsite\Excel\Excel;
 
@@ -67,7 +68,7 @@ Route::prefix('/insert')->name('insert.')->group(function () {
     // Training
     Route::get('/training', [\App\Http\Controllers\Web\Insert\TrainingController::class, 'index'])->name('training');
     // Parent
-    Route::get('/parent/{parent}', [\App\Http\Controllers\Web\Insert\ParentController::class, 'index'])->name('parent', [\App\Http\Controllers\Web\Insert\ParentController::class, 'index'])->name('parent');
+    Route::get('/parent/{parent}', [\App\Http\Controllers\Web\Insert\ParentController::class, 'index'])->name('parent');
     // Spouse
     Route::get('/spouse', [\App\Http\Controllers\Web\Insert\SpouseController::class, 'index'])->name('spouse');
     // Child
@@ -303,14 +304,14 @@ Route::prefix('/village')->name('village.')->group(function () {
     //     });
     // });
 
-    Route::prefix('/official/{role}')->name('official.')->controller(VillageOfficialController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/create', 'create')->name('create');
-        Route::post('/store', 'store')->name('store');
-        Route::get('/{id}', 'show')->name('show');
-        Route::get('/{id}/edit', 'edit')->name('edit');
-        Route::post('/{id}/edit', 'update')->name('update');
-        Route::delete('/{id}/delete', 'destroy')->name('destroy');
+    Route::prefix('/official')->name('official.')->controller(VillageOfficialController::class)->group(function () {
+        Route::get('/{role}/', 'index')->name('index');
+        Route::get('/{role}/create', 'create')->name('create');
+        Route::post('/{role}/store', 'store')->name('store');
+        Route::get('/{role}/{id}', 'show')->name('show');
+        Route::get('/{role}/{id}/edit', 'edit')->name('edit');
+        Route::post('/{role}/{id}/edit', 'update')->name('update');
+        Route::delete('/{role}/{id}/delete', 'destroy')->name('destroy');
 
         // Route::prefix('/export')->name('export.')->controller(AdminOfficialExportController::class)->group(function () {
         //     Route::get('/json', 'json')->name('json');
@@ -510,4 +511,8 @@ Route::get('/private-images/officials/{filename}', function($filename){
     return response()->file($path);
 })->middleware('auth'); // Tambahkan middleware sesuai kebutuhan
 
+Route::prefix('temporary-files')->group(function () {
+    Route::post('/', [TemporaryFileController::class, 'store']);
+    Route::delete('/', [TemporaryFileController::class, 'destroy']);
+});
 require __DIR__ . '/auth.php';

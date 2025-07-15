@@ -188,7 +188,7 @@ export default function OfficialTempatKerjaForm({
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             placeholder="Contoh: Jl. Merdeka No. 123"
                             required
-                            whileFocus="focus"
+
                             variants={inputVariants}
                             rows={3}
                         />
@@ -217,7 +217,7 @@ export default function OfficialTempatKerjaForm({
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             placeholder="Contoh: 001"
-                            whileFocus="focus"
+
                             variants={inputVariants}
                         />
                     </motion.div>
@@ -236,7 +236,7 @@ export default function OfficialTempatKerjaForm({
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             placeholder="Contoh: 002"
-                            whileFocus="focus"
+
                             variants={inputVariants}
                         />
                     </motion.div>
@@ -255,7 +255,7 @@ export default function OfficialTempatKerjaForm({
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             placeholder="Contoh: 12345"
-                            whileFocus="focus"
+
                             variants={inputVariants}
                         />
                     </motion.div>
@@ -277,7 +277,7 @@ export default function OfficialTempatKerjaForm({
                             onChange={handleProvinceChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             required
-                            whileFocus="focus"
+
                             variants={inputVariants}
                         >
                             <option value="">Pilih Provinsi</option>
@@ -302,7 +302,7 @@ export default function OfficialTempatKerjaForm({
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             required
                             disabled={!tempat_kerja.province_code}
-                            whileFocus="focus"
+
                             variants={inputVariants}
                         >
                             <option value="">Pilih Kabupaten</option>
@@ -327,7 +327,7 @@ export default function OfficialTempatKerjaForm({
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             required
                             disabled={!tempat_kerja.regency_code}
-                            whileFocus="focus"
+
                             variants={inputVariants}
                         >
                             <option value="">Pilih Kecamatan</option>
@@ -352,7 +352,7 @@ export default function OfficialTempatKerjaForm({
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             required
                             disabled={!tempat_kerja.district_code}
-                            whileFocus="focus"
+
                             variants={inputVariants}
                         >
                             <option value="">Pilih Desa</option>

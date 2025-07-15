@@ -224,7 +224,6 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 }}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 required
-                                whileFocus="focus"
                                 variants={inputVariants}
                             />
                         </motion.div>
@@ -269,7 +268,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="Masukkan 16 digit NIK"
                                 required
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                             {official.nik && official.nik.length < 16 && (
@@ -308,7 +307,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="Masukkan NIPD"
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </motion.div>
@@ -340,7 +339,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="Masukkan nama lengkap"
                                 required
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </motion.div>
@@ -368,7 +367,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="Gelar depan (contoh: Dr.)"
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </motion.div>
@@ -387,7 +386,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="Gelar belakang (contoh: S.T.)"
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </motion.div>
@@ -419,7 +418,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="Masukkan tempat lahir"
                                 required
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </motion.div>
@@ -439,7 +438,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 required
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </motion.div>
@@ -628,7 +627,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="JALAN..."
                                 required
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                                 rows={3}
                             />
@@ -651,7 +650,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="RT"
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </motion.div>
@@ -670,7 +669,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="RW"
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </motion.div>
@@ -689,7 +688,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="Kode Pos"
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </motion.div>
@@ -710,7 +709,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 onChange={handleProvinceChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 required
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             >
                                 <option value="">Pilih Provinsi</option>
@@ -735,7 +734,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 required
                                 disabled={!official.province_code}
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             >
                                 <option value="">Pilih Kabupaten</option>
@@ -760,7 +759,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 required
                                 disabled={!official.regency_code}
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             >
                                 <option value="">Pilih Kecamatan</option>
@@ -785,7 +784,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 required
                                 disabled={!official.district_code}
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             >
                                 <option value="">Pilih Desa</option>
@@ -874,7 +873,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="Masukkan nomor handphone"
                                 required
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </motion.div>
@@ -903,7 +902,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 required
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             >
                                 <option value="">Pilih Pendidikan</option>
@@ -948,7 +947,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 }}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="Masukkan nomor BPJS Kesehatan"
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </motion.div>
@@ -980,7 +979,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 }}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="Masukkan nomor BPJS Ketenagakerjaan"
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </motion.div>
@@ -1012,7 +1011,7 @@ export default function OfficialIdentifyForm({ official, setOfficial }) {
                                 }}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="Masukkan NPWP"
-                                whileFocus="focus"
+
                                 variants={inputVariants}
                             />
                         </motion.div>

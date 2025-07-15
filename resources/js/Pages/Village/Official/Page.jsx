@@ -6,9 +6,7 @@ import OfficialList from "./Partials/Component/List";
 import { HiUsers } from "react-icons/hi";
 import Modal from "./Partials/Section/Modal";
 import OfficialPDF from "./Partials/Component/PDF";
-{
-    /* Modal untuk View */
-}
+
 import { motion, AnimatePresence } from "framer-motion";
 import {
     FiUser,
@@ -120,6 +118,7 @@ export default function Official({
             }
         );
     };
+
     // console.log(officialsData);
     // Handle add official
     const handleAdd = () => {
@@ -547,10 +546,10 @@ export default function Official({
                                 className="relative group cursor-pointer"
                             >
                                 {/* <img
-            src={selectedOfficial.identities.foto}
-            alt={`Foto ${selectedOfficial.nama_lengkap}`}
-            className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-white shadow-lg"
-          /> */}
+                                    src={selectedOfficial.identities.foto}
+                                    alt={`Foto ${selectedOfficial.nama_lengkap}`}
+                                    className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-white shadow-lg"
+                                /> */}
                                 <img
                                     src={`/private-images/${selectedOfficial?.identities?.foto}`}
                                     alt={`Foto ${selectedOfficial.nama_lengkap}`}

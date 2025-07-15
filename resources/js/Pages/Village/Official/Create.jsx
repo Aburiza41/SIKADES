@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, router } from "@inertiajs/react";
-import { HiUsers, HiSave } from "react-icons/hi";
+import { HiUsers, HiSave, HiTrash } from "react-icons/hi";
 import { motion } from "framer-motion";
 import axios from "axios";
 import OfficialIdentifyForm from "./Partials/Form/OfficialIdentifyForm";
@@ -11,73 +11,133 @@ import OfficialTempatKerjaForm from "./Partials/Form/OfficialTempatKerjaForm";
 import OrangTuaForm from "./Partials/Form/OrangTuaForm";
 import HubunganForm from "./Partials/Form/HubunganForm";
 import AnakForm from "./Partials/Form/AnakForm";
-// import OfficialIdentityForm from "./Partials/Form/OfficialIdentityForm";
 import PositionsForm from "./Partials/Form/PositionsForm";
 import TrainingsForm from "./Partials/Form/TrainingsForm";
 import OrganizationsForm from "./Partials/Form/OrganizationsForm";
+
 
 // Ambil token CSRF
 const csrfToken =
     document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
-export default function UpdateOfficial({
+export default function CreateOfficial({
     initialPositions,
     initialOrganizations,
-    position
+    initialTrainings,
+    position,
+    jabatan
 }) {
+    // Fungsi untuk mendapatkan data dari localStorage
+    const getSavedData = (key, defaultValue) => {
+        const saved = localStorage.getItem(`officialForm_${key}`);
+        return saved ? JSON.parse(saved) : defaultValue;
+    };
+
+    // Fungsi untuk menyimpan data ke localStorage
+    const saveDataToLocal = (key, data) => {
+        localStorage.setItem(`officialForm_${key}`, JSON.stringify(data));
+    };
+
     // State untuk data utama (Official Form)
-    // const [official, setOfficial] = useState(
-    //     {
-    //         nik: "",
-    //         nipd: "",
-    //         nama_lengkap: "",
-    //         gelar_depan: "",
-    //         gelar_belakang: "",
-    //         tempat_lahir: "",
-    //         tanggal_lahir: "",
-    //         jenis_kelamin: "",
-    //         agama: "",
-    //         status_perkawinan: "",
-    //         alamat: "",
-    //         rt: "",
-    //         rw: "",
-    //         postal: "",
-    //         province: "",
-    //         regency: "",
-    //         district: "",
-    //         village: "",
-    //         gol_darah: "",
-    //         handphone: "",
-    //         pendidikan: "",
-    //         bpjs_kesehatan: "",
-    //         bpjs_ketenagakerjaan: "",
-    //         npwp: "",
-    //     }
-    // );
-    const [official, setOfficial] = useState([]);
-
+    const [official, setOfficial] = useState(getSavedData('official', []));
     // State untuk data Tempat Kerja (dinamis)
-    const [officialTempatKerja, setOfficialTempatKerja] = useState([]);
-
+    const [officialTempatKerja, setOfficialTempatKerja] = useState(getSavedData('officialTempatKerja', []));
     // State untuk data studies (dinamis)
-    const [officialStudies, setOfficialStudies] = useState([]);
-
+    const [officialStudies, setOfficialStudies] = useState(getSavedData('officialStudies', []));
     // State untuk data positions (dinamis)
-    const [officialPosition, setOfficialPosition] = useState([]);
-
+    const [officialPosition, setOfficialPosition] = useState(getSavedData('officialPosition', []));
     // State untuk data trainings (dinamis)
-    const [officialTrainings, setOfficialTrainings] = useState([]);
-
+    const [officialTrainings, setOfficialTrainings] = useState(getSavedData('officialTrainings', []));
     // State untuk data organizations (dinamis)
-    const [officialOrganizations, setOfficialOrganizations] = useState([]);
-
-    const [orangTua, setOrangTua] = useState([]);
-    const [hubungan, setHubungan] = useState([]);
-    const [anak, setAnak] = useState([]);
+    const [officialOrganizations, setOfficialOrganizations] = useState(getSavedData('officialOrganizations', []));
+    const [orangTua, setOrangTua] = useState(getSavedData('orangTua', []));
+    const [hubungan, setHubungan] = useState(getSavedData('hubungan', []));
+    const [anak, setAnak] = useState(getSavedData('anak', []));
 
     // State untuk loading dan error
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState({});
+
+    // Effect untuk menyimpan data ke localStorage setiap ada perubahan
+    useEffect(() => {
+        saveDataToLocal('official', official);
+    }, [official]);
+
+    useEffect(() => {
+        saveDataToLocal('officialTempatKerja', officialTempatKerja);
+    }, [officialTempatKerja]);
+
+    useEffect(() => {
+        saveDataToLocal('officialStudies', officialStudies);
+    }, [officialStudies]);
+
+    useEffect(() => {
+        saveDataToLocal('officialPosition', officialPosition);
+    }, [officialPosition]);
+
+    useEffect(() => {
+        saveDataToLocal('officialTrainings', officialTrainings);
+    }, [officialTrainings]);
+
+    useEffect(() => {
+        saveDataToLocal('officialOrganizations', officialOrganizations);
+    }, [officialOrganizations]);
+
+    useEffect(() => {
+        saveDataToLocal('orangTua', orangTua);
+    }, [orangTua]);
+
+    useEffect(() => {
+        saveDataToLocal('hubungan', hubungan);
+    }, [hubungan]);
+
+    useEffect(() => {
+        saveDataToLocal('anak', anak);
+    }, [anak]);
+
+    // Effect untuk menangani beforeunload
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            // Cek apakah ada data yang sudah diisi
+            const hasData =
+                Object.keys(official).length > 0 ||
+                Object.keys(officialTempatKerja).length > 0 ||
+                officialStudies.length > 0 ||
+                Object.keys(officialPosition).length > 0 ||
+                officialTrainings.length > 0 ||
+                officialOrganizations.length > 0 ||
+                orangTua.length > 0 ||
+                Object.keys(hubungan).length > 0 ||
+                anak.length > 0;
+
+            if (hasData) {
+                e.preventDefault();
+                e.returnValue = 'Anda memiliki data yang belum tersimpan. Apakah Anda yakin ingin meninggalkan halaman ini?';
+                return e.returnValue;
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [official, officialTempatKerja, officialStudies, officialPosition, officialTrainings, officialOrganizations, orangTua, hubungan, anak]);
+
+    // Fungsi untuk membersihkan data dari localStorage
+    const clearLocalData = () => {
+        [
+            'official',
+            'officialTempatKerja',
+            'officialStudies',
+            'officialPosition',
+            'officialTrainings',
+            'officialOrganizations',
+            'orangTua',
+            'hubungan',
+            'anak'
+        ].forEach(key => localStorage.removeItem(`officialForm_${key}`));
+    };
 
     // Handle submit form
     const handleSubmit = async (e, position) => {
@@ -86,10 +146,8 @@ export default function UpdateOfficial({
 
         const formData = new FormData();
 
-
         // Add official data
         for (const key in official) {
-            // formData.append(`official[${key}]`, official[key]);
             if (key === "foto" && official[key] instanceof File) {
                 formData.append(`official[${key}]`, official[key]);
             } else {
@@ -135,7 +193,6 @@ export default function UpdateOfficial({
             }
         });
 
-
         // Add trainings data
         officialTrainings.forEach((training, index) => {
             for (const key in training) {
@@ -147,16 +204,13 @@ export default function UpdateOfficial({
             }
         });
 
-
-        // Add orang tua data
         // Add orang tua data
         orangTua.forEach((orang_tua, index) => {
-        for (const key in orang_tua) {
-            // Skip if value is undefined or null
-            if (orang_tua[key] !== undefined && orang_tua[key] !== null) {
-            formData.append(`orang_tua[${index}][${key}]`, orang_tua[key]);
+            for (const key in orang_tua) {
+                if (orang_tua[key] !== undefined && orang_tua[key] !== null) {
+                    formData.append(`orang_tua[${index}][${key}]`, orang_tua[key]);
+                }
             }
-        }
         });
 
         // add Hubungan data
@@ -182,6 +236,9 @@ export default function UpdateOfficial({
                 }
             );
 
+            // Bersihkan data dari localStorage setelah submit berhasil
+            clearLocalData();
+
             Swal.fire("Success", "Data berhasil diperbarui.", "success");
         } catch (error) {
             Swal.fire(
@@ -194,16 +251,54 @@ export default function UpdateOfficial({
         }
     };
 
+    // Fungsi untuk reset semua form dan reload halaman
+    const handleResetForm = () => {
+        Swal.fire({
+            title: 'Bersihkan Form?',
+            text: "Semua data yang belum tersimpan akan dihapus. Anda yakin?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Reset semua state
+                setOfficial([]);
+                setOfficialTempatKerja([]);
+                setOfficialStudies([]);
+                setOfficialPosition([]);
+                setOfficialTrainings([]);
+                setOfficialOrganizations([]);
+                setOrangTua([]);
+                setHubungan([]);
+                setAnak([]);
+
+                // Bersihkan localStorage
+                clearLocalData();
+
+                Swal.fire(
+                    'Dihapus!',
+                    'Form telah berhasil dibersihkan.',
+                    'success'
+                ).then(() => {
+                    window.location.reload();
+                });
+            }
+        });
+    };
+
     return (
         <AuthenticatedLayout
-            header={(
+            header={
                 <div className="text-2xl font-semibold leading-tight">
-                    Tambah Pejabat Desa
+                    Tambah {jabatan.name}
                     <p className="text-sm font-thin mt-1">
-                        Formulir Penambahan Data Pejabat Desa
+                        Tambah pejabat desa dengan jabatan {jabatan.name}
                     </p>
                 </div>
-            )}
+            }
             breadcrumb={[{
                 name: "Tambah Official",
                 path: `/village/official/create`,
@@ -237,6 +332,7 @@ export default function UpdateOfficial({
                     />
 
                     <PositionsForm
+                        jabatan = {jabatan}
                         position={position}
                         positions={initialPositions}
                         officialPosition={officialPosition}
@@ -256,6 +352,8 @@ export default function UpdateOfficial({
                     />
 
                     <TrainingsForm
+                    trainings={initialTrainings}
+                        setTrainings={setOfficialTrainings}
                         officialTrainings={officialTrainings}
                         setOfficialTrainings={setOfficialTrainings}
                     />
@@ -285,6 +383,18 @@ export default function UpdateOfficial({
                         transition={{ delay: 0.8 }}
                         className="flex justify-end mt-8"
                     >
+                        <motion.button
+                            type="button"
+                            onClick={handleResetForm}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center"
+                            disabled={isLoading}
+                        >
+                            <HiTrash className="mr-2" /> {/* Tambahkan import HiTrash dari react-icons/hi */}
+                            Reset Form
+                        </motion.button>
+
                         <motion.button
                             type="submit"
                             whileHover={{ scale: 1.05 }}

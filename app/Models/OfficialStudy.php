@@ -20,4 +20,8 @@ class OfficialStudy extends Model
         'dokumen',
     ];
 
+    public function study()
+    {
+        return $this->belongsTo(Study::class);
+    }
 }

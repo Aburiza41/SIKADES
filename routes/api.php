@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\BpsController;
+use App\Http\Controllers\TemporaryFileController;
 use App\Models\Village;
 use App\Models\District;
 use App\Models\Regency;
@@ -280,4 +281,9 @@ Route::get('/organization', function () {
         'success' => true,
         'data' => Organization::get()
     ]);
+});
+
+Route::prefix('temporary-files')->group(function () {
+    Route::post('/', [TemporaryFileController::class, 'store']);
+    Route::delete('/', [TemporaryFileController::class, 'destroy']);
 });

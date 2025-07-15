@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
 import Actions from "./Actions";
 
-export default function List({ official_trainings, trainings, fetchData, loading, onEdit, onDelete, onView, onPrint }) {
+export default function List({ official_trainings, fetchData, loading, onEdit, onDelete, onView, onPrint }) {
     // State untuk pencarian
     const [filterText, setFilterText] = useState("");
 
@@ -93,7 +93,7 @@ export default function List({ official_trainings, trainings, fetchData, loading
         },
         { name: "Nama", selector: (row) => row.official.nama_lengkap, sortable: true, width: "200px" },
         // { name: "Desa", selector: (row) => row.official.village.name_bps, sortable: true, width: "150px" },
-        { name: "Jenis", selector: (row) => row.training.title, sortable: true, },
+        { name: "Jenis", selector: (row) => row.title, sortable: true, },
         { name: "Pelatihan", selector: (row) => row.nama, sortable: true,  },
         // { name: "Mulai", selector: (row) => row.mulai, sortable: true, width: "120px" },
         // { name: "Selesai", selector: (row) => row.selesai, sortable: true, width: "120px" },
@@ -130,7 +130,7 @@ export default function List({ official_trainings, trainings, fetchData, loading
                 />
 
                 {/* Filter Training */}
-                <select
+                {/* <select
                     name="training"
                     value={trainingFilter}
                     onChange={(e) => setTrainingFilter(e.target.value)}
@@ -142,7 +142,7 @@ export default function List({ official_trainings, trainings, fetchData, loading
                             {training.title}
                         </option>
                     ))}
-                </select>
+                </select> */}
 
                 {/* Tombol aksi (Export JSON, Export Excel) */}
                 <div className="flex gap-2 w-full md:w-auto justify-end">

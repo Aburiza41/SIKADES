@@ -40,6 +40,8 @@ class OfficialController extends Controller
         // Debug nid
         Log::info('Request parameters:', $request->all());
 
+        $village = Auth::user()->user_village->village ?? null;
+
         // dd(Official::with(['position_current.position'])->first());
         // Query utama untuk officials dengan filter dan sorting
         $officials = Official::with(['village.district.regency', 'addresses', 'contacts', 'identities', 'studies', 'positions.position', 'officialTrainings', 'officialOrganizations', 'position_current.position'])
@@ -53,6 +55,11 @@ class OfficialController extends Controller
             ->when($request->filled('filters'), function ($query) use ($request) {
                 $query->whereHas('identities', function ($q) use ($request) {
                     $q->where('pendidikan_terakhir', $request->filters); // Filter berdasarkan ID village
+                });
+            })
+            ->when($village->id, function ($query) use ($village) {
+                $query->whereHas('village', function ($q) use ($village) {
+                    $q->where('id', $village->id); // Filter berdasarkan ID village
                 });
             })
             ->when($role, function ($query) use ($role) {
@@ -116,11 +123,12 @@ class OfficialController extends Controller
 
         return Inertia::render('Village/Official/Create', [
             'initialPositions' => \App\Models\Position::all()->toArray(),
-            // 'trainings' => \App\Models\Training::all()->toArray(),
+            'initialTrainings' => \App\Models\Training::all()->toArray(),
             // 'organizations' => \App\Models\Organization::all()->toArray(),
             // Dummy data organizations
             'initialOrganizations' => Organization::all()->toArray(),
             'position' => $role,
+            'jabatan' => Position::where('slug', $role)->first(),
         ]);
     }
 
@@ -131,6 +139,7 @@ class OfficialController extends Controller
 
     public function store(Request $request, string $role)
     {
+        // dd($request->all());
         // Jika User role adalah village maka akan ada data village
         if (Auth::user()->role == 'village') {
             $village = Auth::user()->user_village->village;
@@ -286,19 +295,33 @@ class OfficialController extends Controller
             PositionOfficial::create($positionOfficial);
 
             try {
-                // Simpan data trainings (pelatihan)
-                $trainings = $request->input('trainings');
+                $trainings = $request->input('trainings', []);
+
                 foreach ($trainings as $index => $training) {
+                    // Validate required fields
+                    // if (empty($training['pelatihan_title'])) {
+                    //     continue; // or throw an exception
+                    // }
+
+                    // Find or create training
+                    $trainingModel = Training::firstOrCreate(
+                        ['title' => $training['pelatihan_title']],
+                        ['description' => $training['description'] ?? null]
+                    );
+
+                    // Prepare training data
                     $trainingInput = [
                         'official_id' => $official->id,
-                        'nama' => $training['nama'],
-                        'alamat' => $training['tempat'],
-                        'pelatihan' => $training['pelatihan'],
-                        'penyelenggara' => $training['penyelenggara'],
-                        'nomor_sertifikat' => $training['nomor'],
-                        'tanggal_sertifikat' => $training['tanggal'],
+                        'training_id' => $trainingModel->id,
+                        'nama' => $training['nama'] ?? null,
+                        'alamat' => $training['tempat'] ?? null,
+                        'penyelenggara' => $training['penyelenggara'] ?? null,
+                        'nomor_sertifikat' => $training['nomor'] ?? null,
+                        'tanggal_sertifikat' => $training['tanggal'] ?? null,
+                        'keterangan' => $training['keterangan'] ?? null,
                     ];
-                    // Simpan file dokumen jika ada
+
+                    // Handle file upload
                     if ($request->hasFile("trainings.{$index}.docScan")) {
                         $file = $request->file("trainings.{$index}.docScan");
                         $fileName = time() . '_' . $file->getClientOriginalName();
@@ -309,26 +332,41 @@ class OfficialController extends Controller
                     OfficialTraining::create($trainingInput);
                 }
             } catch (\Throwable $th) {
-                //throw $th;
+                // Log the error properly
+                \Log::error('Error saving training data: ' . $th->getMessage());
+
+                // You might want to rethrow or handle differently
+                throw new \Exception('Failed to save training data. Please try again.');
             }
 
             try {
-                // Simpan data organizations (organisasi)
-                $organizations = $request->input('organizations');
+                $organizations = $request->input('organizations', []);
+
                 foreach ($organizations as $index => $organization) {
+                    // Validate required fields
+                    // if (empty($organization['organization_id']) || empty($organization['nama'])) {
+                    //     continue; // or throw an exception
+                    // }
+
+                    $organizationModel = Training::firstOrCreate(
+                        ['title' => $organization['pelatihan_title']],
+                        ['description' => $organization['pelatihan_title'] ?? null]
+                    );
+
+                    // Prepare organization data with null safety
                     $organizationInput = [
                         'official_id' => $official->id,
-                        'organization_id' => $organization['organization_id'],
-                        'nama' => $organization['nama'],
-                        'posisi' => $organization['posisi'],
-                        'mulai' => $organization['mulai'],
-                        'selesai' => $organization['selesai'],
-                        'pimpinan' => $organization['pimpinan'],
-                        'alamat' => $organization['tempat'],
-
-
+                        'organization_id' => $organizationModel->id,
+                        'nama' => $organization['nama'] ?? null,
+                        'posisi' => $organization['posisi'] ?? null,
+                        'mulai' => $organization['mulai'] ?? null,
+                        'selesai' => $organization['selesai'] ?? null,
+                        'pimpinan' => $organization['pimpinan'] ?? null,
+                        'alamat' => $organization['tempat'] ?? null,
+                        'keterangan' => $organization['keterangan'] ?? null,
                     ];
-                    // Simpan file dokumen jika ada
+
+                    // Handle file upload
                     if ($request->hasFile("organizations.{$index}.doc_scan")) {
                         $file = $request->file("organizations.{$index}.doc_scan");
                         $fileName = time() . '_' . $file->getClientOriginalName();
@@ -339,7 +377,11 @@ class OfficialController extends Controller
                     OfficialOrganization::create($organizationInput);
                 }
             } catch (\Throwable $th) {
-                //throw $th;
+                // Log the error properly
+                \Log::error('Error saving organization data: ' . $th->getMessage());
+
+                // Provide more meaningful error handling
+                throw new \Exception('Failed to save organization data. Please try again.');
             }
 
             try {
