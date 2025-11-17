@@ -105,6 +105,7 @@ public function store(Request $request)
     try {
         // Simpan data user ke database
         $user = User::create([
+            'username' => $validated['name'],
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role' => $validated['role'],
@@ -139,8 +140,9 @@ public function store(Request $request)
             ->with('success', 'User berhasil ditambahkan.');
     } catch (\Exception $e) {
         Log::error($e->getMessage());
-        // dd($e->getMessage());
+
         DB::rollBack();
+        dd($e->getMessage());
         return redirect()->back()
             ->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data.'])
             ->withInput();

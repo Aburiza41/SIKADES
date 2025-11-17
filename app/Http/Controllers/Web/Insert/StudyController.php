@@ -2,25 +2,15 @@
 
 namespace App\Http\Controllers\Web\Insert;
 
-
 use App\Http\Controllers\Controller;
 use App\Imports\TestImport;
-use App\Models\Regency;
-use App\Models\District;
 use App\Models\Official;
-use App\Models\OfficialAddress;
-use App\Models\OfficialContact;
-use App\Models\OfficialIdentity;
-use App\Models\OfficialStatusLog;
-use App\Models\Position;
-use App\Models\Village;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
-use Illuminate\Support\Facades\Log;
 
 class StudyController extends Controller
 {
@@ -31,154 +21,189 @@ class StudyController extends Controller
 
         $filePath = public_path('data/Data_Pendidikan.xlsx');
         $data = Excel::toCollection(new TestImport, $filePath)->first();
-        // dd($data[0], count($data));
-        // Prepare official data
+
+        // Prepare result data
         $success_count = 0;
         $failed_count = 0;
         $not_found = [
-            'officials' => [],
-            'positions' => []
+            'officials' => []
         ];
 
         foreach ($data as $k_position => $v_position) {
+            // Stop looping if IDIdentitas is empty
+            if (empty($v_position['idpendidikan'])) {
+                Log::warning("Stopping loop at row {$k_position}: Empty IDIdentitas detected");
+                echo "Stopping loop at row {$k_position}: Empty IDIdentitas detected<br>";
+                break;
+            }
+
             try {
-                // 1. Find Official
+                // 1. Validate data
+                $validationResult = $this->validateStudyData($v_position);
+                if (!$validationResult['valid']) {
+                    $not_found['officials'][] = [
+                        'row' => $k_position,
+                        'id_identitas' => $v_position['ididentitas'],
+                        'reason' => $validationResult['reason']
+                    ];
+                    Log::warning("Failed at row {$k_position}: ID {$v_position['ididentitas']} - {$validationResult['reason']}");
+                    echo "Failed at row {$k_position}: ID {$v_position['ididentitas']} - {$validationResult['reason']}<br>";
+                    $failed_count++;
+                    continue;
+                }
+
+                // 2. Find Official
                 $official = $this->findOfficial($v_position['ididentitas']);
                 if (!$official) {
                     $not_found['officials'][] = [
                         'row' => $k_position,
-                        'id_identitas' => $v_position['ididentitas']
+                        'id_identitas' => $v_position['ididentitas'],
+                        'reason' => 'Official not found'
                     ];
+                    Log::warning("Failed at row {$k_position}: ID {$v_position['ididentitas']} - Official not found");
+                    echo "Failed at row {$k_position}: ID {$v_position['ididentitas']} - Official not found<br>";
+                    $failed_count++;
                     continue;
                 }
 
-                // 2. Find Village
-                // $jabatan = $this->findJabatan($v_position['namajabatan']);
-                // // dd($jabatan);
-                // if (!$jabatan) {
-                //     $not_found['positions'][] = [
-                //         'row' => $k_position,
-                //         'kantor' => $v_position['namajabatan']
-                //     ];
-                //     continue;
-                // }
+                // 3. Map Education Level
                 $pendidikan = $this->mapEducation($v_position['tingkatpendidikan']);
 
-                // dd($jabatan);
-
-                // 3. Insert Work Place
+                // 4. Insert Study Data
                 $this->insert($official, $pendidikan, $v_position);
                 $success_count++;
+                Log::info("Success at row {$k_position}: ID {$v_position['ididentitas']} - Study data created successfully (Pendidikan: {$pendidikan}" . ($pendidikan === 'Lainnya' ? ", Keterangan: {$v_position['tingkatpendidikan']})" : ")"));
+                echo "Success at row {$k_position}: ID {$v_position['ididentitas']} - Study data created successfully (Pendidikan: {$pendidikan}" . ($pendidikan === 'Lainnya' ? ", Keterangan: {$v_position['tingkatpendidikan']})" : ")") . "<br>";
+
             } catch (\Throwable $th) {
-                dd($th);
-                Log::error("Error processing row {$k_position}: " . $th->getMessage());
+                Log::error("Error processing row {$k_position}: {$th->getMessage()}", [
+                    'id_identitas' => $v_position['ididentitas'],
+                    'data' => $v_position,
+                    'official' => isset($official) ? $official->toArray() : null
+                ]);
+                echo "Failed at row {$k_position}: ID {$v_position['ididentitas']} - Error: {$th->getMessage()}<br>";
                 $failed_count++;
                 continue;
             }
         }
 
-        // Tampilkan hasil proses
+        // Display results
         echo "<h2>Import Result</h2>";
         echo "<p>Success: {$success_count}</p>";
         echo "<p>Failed: {$failed_count}</p>";
 
-        // Tampilkan data yang tidak ditemukan
+        // Display not found data
         $this->displayNotFound($not_found);
     }
 
     /**
-     * Mencari official berdasarkan ID identitas
+     * Validate study data from Excel
+     */
+    protected function validateStudyData($data)
+    {
+        if (empty($data['ididentitas'])) {
+            return [
+                'valid' => false,
+                'reason' => 'Missing IDIdentitas'
+            ];
+        }
+
+        if (empty($data['tingkatpendidikan'])) {
+            return [
+                'valid' => false,
+                'reason' => 'Missing TingkatPendidikan'
+            ];
+        }
+
+        return ['valid' => true];
+    }
+
+    /**
+     * Find official by identity code
      */
     protected function findOfficial($idIdentitas)
     {
+        if (empty($idIdentitas)) {
+            return null;
+        }
+
         $cleanId = trim(preg_replace('/\s+/', '', $idIdentitas));
         return Official::where('code_ident', 'like', '%' . $cleanId . '%')->first();
     }
 
     /**
-     * Mencari village berdasarkan nama kantor
+     * Insert study data
      */
-    protected function findJabatan($jabatan)
+    protected function insert($official, $pendidikan, $data)
     {
-        // dd($jabatan);
-        $cleanName = trim($jabatan);
-        // dd($cleanName);
-        return Position::where(function ($query) use ($cleanName) {
-            $query->where('name', 'like', '%' . $cleanName . '%')
-                ->orWhere('description', 'like', '%' . $cleanName . '%');
-        })
-            ->first();
-    }
-
-    /**
-     * Insert data tempat kerja
-     */
-    protected function insert($official, $jabatan, $data)
-    {
+        DB::enableQueryLog();
         try {
-            // Konversi tanggal dengan validasi
-            // $tmtJabatan = $this->parseDateString($data['tmtjabatan'] ?? null);
-            $tanggal = $this->parseDateString($data['tanggalijazah'] ?? null);
+            DB::transaction(function () use ($official, $pendidikan, $data) {
+                // Parse date with validation
+                $tanggal = $this->parseDateString($data['tanggalijazah'] ?? null);
 
-            // Validasi tanggal wajib
-            // if (!$tmtJabatan) {
-            //     throw new \Exception("Tanggal TMT Jabatan tidak valid");
-            // }
+                $workPlaceInsert = [
+                    'official_id' => $official->id,
+                    'pendidikan_umum' => $pendidikan ?? 'Lainnya',
+                    'nama_sekolah' => strtoupper(trim($data['namasekolah'] ?? '')) ?: null,
+                    'alamat_sekolah' => strtoupper(trim($data['tempat_sekolah'] ?? '')) ?: null,
+                    'nomor_ijazah' => trim($data['noijazah'] ?? '') ?: null,
+                    'tanggal' => $tanggal ? $tanggal->format('Y-m-d') : null,
+                    'dokumen' => $data['ijazah'] ?? null,
+                    'keterangan' => $pendidikan === 'Lainnya' ? trim($data['tingkatpendidikan'] ?? '-') : null,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
+                ];
 
-            $workPlaceInsert = [
-                'official_id' => $official->id,
-                'pendidikan_umum' => $jabatan ?? null,
-                'nama_sekolah' => $data['namasekolah'] ?? null,
-                'alamat_sekolah' => $data['tempat_sekolah'] ?? null,
-                'nomor_ijazah' => $data['noijazah'] ?? null,
-                'tanggal' => $tanggal,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ];
-
-            DB::table('study_officials')->insert($workPlaceInsert);
+                DB::table('study_officials')->insert($workPlaceInsert);
+            });
         } catch (\Exception $e) {
-            Log::error("Gagal insert data jabatan: " . $e->getMessage());
-            throw $e; // Re-throw untuk ditangkap di loop utama
+            Log::error('Insert study data failed', [
+                'error' => $e->getMessage(),
+                'queries' => DB::getQueryLog(),
+                'data' => $data,
+                'official' => $official->toArray(),
+                'pendidikan' => $pendidikan
+            ]);
+            throw $e;
         }
     }
 
     /**
-     * Helper untuk parsing tanggal dengan validasi ketat
+     * Helper for parsing date with strict validation
      */
     protected function parseDateString($dateString)
     {
-        if (empty($dateString)) {
+        if (empty($dateString) || $dateString === '0000-00-00') {
             return null;
         }
 
         $cleanDate = trim($dateString);
 
         try {
-            // Coba parsing sebagai tanggal Excel (numeric)
+            // Try parsing as Excel numeric date
             if (is_numeric($cleanDate)) {
                 $date = Date::excelToDateTimeObject($cleanDate);
                 return Carbon::instance($date);
             }
 
-            // Coba parsing sebagai string tanggal
+            // Try parsing as string date
             $parsedDate = Carbon::createFromFormat('Y-m-d', $cleanDate);
 
-            // Validasi range tanggal untuk MySQL
+            // Validate date range for MySQL
             if ($parsedDate->year < 1000 || $parsedDate->year > 9999) {
                 return null;
             }
 
             return $parsedDate;
         } catch (\Exception $e) {
-            Log::warning("Gagal parsing tanggal: {$cleanDate} - " . $e->getMessage());
+            Log::warning("Failed to parse date: {$cleanDate} - " . $e->getMessage());
             return null;
         }
     }
 
-
     /**
-     * Menampilkan data yang tidak ditemukan
+     * Display not found data
      */
     protected function displayNotFound($not_found)
     {
@@ -186,33 +211,36 @@ class StudyController extends Controller
             echo "<h3>Officials not found:</h3>";
             echo "<ul>";
             foreach ($not_found['officials'] as $item) {
-                echo "<li>Row {$item['row']}: {$item['id_identitas']}</li>";
-            }
-            echo "</ul>";
-        }
-
-        if (!empty($not_found['positions'])) {
-            echo "<h3>positions not found:</h3>";
-            echo "<ul>";
-            foreach ($not_found['positions'] as $item) {
-                echo "<li>Row {$item['row']}: {$item['kantor']}</li>";
+                echo "<li>Row {$item['row']}: {$item['id_identitas']} - {$item['reason']}</li>";
             }
             echo "</ul>";
         }
     }
 
+    /**
+     * Map education level to standardized values
+     */
     private function mapEducation($value)
     {
+        if (empty($value)) {
+            return 'Lainnya';
+        }
+
         $value = strtolower(trim($value));
 
         $mapping = [
+            // Basic education
             'sd' => 'SD/MI',
             'mi' => 'SD/MI',
-            'smp' => 'SMP/MTS',
-            'mts' => 'SMP/MTS',
-            'sma' => 'SMA/SMK/MA',
-            'smk' => 'SMA/SMK/MA',
-            'ma' => 'SMA/SMK/MA',
+            'sltp' => 'SMP/MTS/SLTP',  // Added SLTP variant
+            'smp' => 'SMP/MTS/SLTP',
+            'mts' => 'SMP/MTS/SLTP',
+            'slta' => 'SMA/SMK/MA/SLTA/SMU',  // Added SLTA variant
+            'sma' => 'SMA/SMK/MA/SLTA/SMU',
+            'smk' => 'SMA/SMK/MA/SLTA/SMU',
+            'ma' => 'SMA/SMK/MA/SLTA/SMU',
+
+            // Higher education
             'd1' => 'D1',
             'd2' => 'D2',
             'd3' => 'D3',
@@ -233,6 +261,6 @@ class StudyController extends Controller
             }
         }
 
-        return null;
+        return 'Lainnya';
     }
 }

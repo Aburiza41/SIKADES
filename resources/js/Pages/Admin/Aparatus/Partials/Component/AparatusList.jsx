@@ -104,7 +104,7 @@ export default function AparatusList({ aparatus }) {
                     whileHover={{ scale: 1.05 }} // Animasi saat hover
                 >
                     {/* Gambar (jika ada) */}
-                    {item.image ? (
+                    {/* {item.image ? (
                         <img
                             src={item.image}
                             alt={item.title}
@@ -112,9 +112,9 @@ export default function AparatusList({ aparatus }) {
                         />
                     ) : (
                         <div className="w-full h-60 bg-green-50 flex items-center justify-center rounded-lg mb-4 group-hover:bg-green-900 transition-colors duration-300">
-                            <FaImage className="text-green-900 text-6xl group-hover:text-white transition-colors duration-300" /> {/* Ikon default */}
+                            <FaImage className="text-green-900 text-6xl group-hover:text-white transition-colors duration-300" />
                         </div>
-                    )}
+                    )} */}
 
                     {/* Informasi */}
                     <h2 className="text-xl font-semibold text-gray-800 mb-0">{item.name_bps}</h2>

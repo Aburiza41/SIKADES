@@ -26,13 +26,14 @@ return new class extends Migration
             $table->string('gelar_belakang')->nullable(); // Gelar di belakang nama
             $table->string('tempat_lahir')->nullable(); // Tempat lahir
             $table->date('tanggal_lahir')->nullable(); // Tanggal lahir
-            $table->enum('jenis_kelamin', ['L', 'P', 'Kosong'])->default('Kosong')->nullable(); // Jenis kelamin
-            $table->enum('agama', ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Kosong'])->default('Kosong')->nullable(); // Agama
-            $table->enum('status_perkawinan', ['Belum Kawin', 'Kawin', 'Duda', 'Janda', 'Kosong'])->default('Kosong')->nullable(); // Status perkawinan
+            $table->enum('jenis_kelamin', ['L', 'P', 'Lainnya'])->default('Lainnya')->nullable(); // Jenis kelamin
+            $table->enum('agama', ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Lainnya'])->default('Lainnya')->nullable(); // Agama
+            $table->enum('status_perkawinan', ['Belum Kawin', 'Kawin', 'Duda', 'Janda', 'Lainnya'])->default('Lainnya')->nullable(); // Status perkawinan
             $table->enum('status', ['daftar', 'proses', 'validasi', 'tolak'])->default('daftar')->nullable(); // Status administrasi
             $table->foreignId('user_village_id')->nullable()->constrained('users')->onDelete('set null'); // Verifikasi oleh admin desa
             // $table->foreignId('user_district_id')->nullable()->constrained('users')->onDelete('set null'); // Verifikasi oleh admin kecamatan
             $table->foreignId('user_regency_id')->nullable()->constrained('users')->onDelete('set null'); // Verifikasi oleh admin kabupaten
+            $table->longText('keterangan')->nullable();
             $table->timestamps();
         });
 
@@ -40,9 +41,9 @@ return new class extends Migration
         Schema::create('official_addresses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('official_id')->constrained('officials')->onDelete('cascade'); // Relasi ke tabel officials
-            $table->text('alamat'); // Alamat lengkap
-            $table->tinyInteger('rt')->nullable(); // Nomor RT
-            $table->tinyInteger('rw')->nullable(); // Nomor RW
+            $table->longText('alamat')->nullable(); // Alamat lengkap
+            $table->integer('rt')->nullable(); // Nomor RT
+            $table->integer('rw')->nullable(); // Nomor RW
             $table->string('kode_pos')->nullable(); // Kode pos
             $table->string('province_code'); // Kode provinsi
             $table->string('province_name'); // Nama provinsi
@@ -52,6 +53,7 @@ return new class extends Migration
             $table->string('district_name'); // Nama kecamatan
             $table->string('village_code'); // Kode desa/kelurahan
             $table->string('village_name'); // Nama desa/kelurahan
+            $table->longText('keterangan')->nullable();
             $table->timestamps();
         });
 
@@ -61,6 +63,7 @@ return new class extends Migration
             $table->foreignId('official_id')->constrained('officials')->onDelete('cascade'); // Relasi ke tabel officials
             $table->string('handphone')->nullable(); // Nomor handphone
             $table->string('email')->nullable(); // Email (opsional)
+            $table->longText('keterangan')->nullable();
             $table->timestamps();
         });
 
@@ -68,12 +71,13 @@ return new class extends Migration
         Schema::create('official_identities', function (Blueprint $table) {
             $table->id();
             $table->foreignId('official_id')->constrained('officials')->onDelete('cascade'); // Relasi ke tabel officials
-            $table->enum('gol_darah', ['A', 'B', 'AB', 'O', 'Kosong'])->default('Kosong')->nullable(); // Golongan darah
-            $table->enum('pendidikan_terakhir', ['SD/MI', 'SMP/MTS', 'SMA/SMK/MA', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3', 'Kosong'])->default('Kosong')->nullable(); // Pendidikan terakhir
+            $table->enum('gol_darah', ['A', 'B', 'AB', 'O', 'Lainnya'])->default('Lainnya')->nullable(); // Golongan darah
+            $table->enum('pendidikan_terakhir', ['SD/MI', 'SMP/MTS/SLTP', 'SMA/SMK/MA/SLTA/SMU', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3', 'Lainnya'])->default('Lainnya')->nullable(); // Pendidikan terakhir
             $table->string('bpjs_kesehatan')->nullable(); // Nomor BPJS Kesehatan
             $table->string('bpjs_ketenagakerjaan')->nullable(); // Nomor BPJS Ketenagakerjaan
             $table->string('npwp')->nullable(); // Nomor NPWP
             $table->longText('foto')->nullable(); // Dokumen pendukung (scan KTP, KK, dll)
+            $table->longText('keterangan')->nullable();
             $table->timestamps();
         });
 
@@ -82,12 +86,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('official_id')->constrained('officials')->onDelete('cascade'); // Relasi ke tabel officials
             // $table->foreignId('study_id')->constrained('studies')->onDelete('cascade'); // Relasi ke tabel studies
-            $table->enum('pendidikan_umum', ['SD/MI', 'SMP/MTS', 'SMA/SMK/MA', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3'])->nullable(); // Pendidikan terakhir
+            $table->enum('pendidikan_umum', ['SD/MI', 'SMP/MTS/SLTP', 'SMA/SMK/MA/SLTA/SMU', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3', 'Lainnya'])->default('Lainnya')->nullable();
             $table->string('nama_sekolah')->nullable(); // Nama sekolah/universitas
             $table->string('alamat_sekolah')->nullable(); // Alamat sekolah/universitas
             $table->string('nomor_ijazah')->nullable(); // Jurusan (jika ada)
             $table->date('tanggal')->nullable(); // Tahun masuk
             $table->string('dokumen')->nullable(); // Dokumen pendukung (scan ijazah, transkrip, dll)
+            $table->longText('keterangan')->nullable();
             $table->timestamps();
         });
 
@@ -95,19 +100,19 @@ return new class extends Migration
         Schema::create('work_officials', function (Blueprint $table) {
             $table->id();
             $table->foreignId('official_id')->constrained('officials')->onDelete('cascade'); // Relasi ke tabel officials
-            $table->string('alamat')->nullable(); // Alamat perusahaan
-            // Rt
-            $table->string('rt')->nullable();
-            // Rw
-            $table->string('rw')->nullable(); // Kode provinsi
-            // Kode Pos
-            $table->string('kode_pos')->nullable(); // Nama provinsi
+            $table->longText('alamat')->nullable(); // Alamat lengkap
+            $table->integer('rt')->nullable(); // Nomor RT
+            $table->integer('rw')->nullable(); // Nomor RW
+            $table->string('kode_pos')->nullable(); // Kode pos
+            $table->boolean('village_status')->default(true); // Kode pos
+            $table->longText('village_name')->nullable(); // Kode pos
             // Desa
             $table->foreignId('village_id')->nullable()->constrained('villages')->onDelete('set null'); // Relasi ke tabel villages
             // Kecamatan
             $table->foreignId('district_id')->nullable()->constrained('districts')->onDelete('set null'); // Relasi ke tabel districts
             // Kabupaten
             $table->foreignId('regency_id')->nullable()->constrained('regencies')->onDelete('set null'); // Relasi ke tabel regencies
+            $table->longText('keterangan')->nullable();
             $table->timestamps();
         });
 
@@ -124,6 +129,7 @@ return new class extends Migration
         //     $table->text('keterangan')->nullable(); // Keterangan tambahan
         //     $table->longText('doc_scan')->nullable(); // Dokumen pendukung (sertifikat, dll)
         //     $table->timestamps(); // Kolom created_at dan updated_at
+        //     $table->longText('keterangan')->nullable();
         // });
 
         // Tabel untuk menyimpan riwayat jabatan pejabat
@@ -140,6 +146,7 @@ return new class extends Migration
             // Periode jabatan
             $table->string('periode')->nullable();
             $table->text('keterangan')->nullable(); // Keterangan tambahan
+            $table->boolean('status')->default(false); // Status jabatan (aktif/tidak aktif)
             $table->timestamps();
         });
 
@@ -156,14 +163,10 @@ return new class extends Migration
             $table->date('tanggal_lahir')->nullable();
             // Pekerjaan
             $table->string('pekerjaan')->nullable();
-            // Alamat
-            $table->string('alamat')->nullable();
-            // Rt
-            $table->string('rt')->nullable();
-            // Rw
-            $table->string('rw')->nullable();
-            // Kode Pos
-            $table->string('kode_pos')->nullable();
+            $table->longText('alamat')->nullable(); // Alamat lengkap
+            $table->integer('rt')->nullable(); // Nomor RT
+            $table->integer('rw')->nullable(); // Nomor RW
+            $table->string('kode_pos')->nullable(); // Kode pos
             $table->string('province_code')->nullable(); // Kode provinsi
             $table->string('province_name')->nullable(); // Nama provinsi
             $table->string('regency_code')->nullable(); // Kode kabupaten/kota
@@ -174,6 +177,7 @@ return new class extends Migration
             $table->string('village_name')->nullable(); // Nama desa/kelurahan
             // No Telepon
             $table->string('no_telepon')->nullable();
+            $table->longText('keterangan')->nullable();
             $table->timestamps();
         });
 
@@ -191,9 +195,10 @@ return new class extends Migration
             // Tanggal Menikah
             $table->date('tanggal_nikah')->nullable();
             // Pendidikan Umum
-            $table->enum('pendidikan_umum', ['SD/MI', 'SMP/MTS', 'SMA/SMK/MA', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3'])->nullable(); // Pendidikan terakhir
+            $table->enum('pendidikan_umum', ['SD/MI', 'SMP/MTS/SLTP', 'SMA/SMK/MA/SLTA/SMU', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3', 'Lainnya'])->default('Lainnya')->nullable();  // Pendidikan terakhir
             // Pekerjaan
             $table->string('pekerjaan')->nullable();
+            $table->longText('keterangan')->nullable();
             $table->timestamps();
         });
 
@@ -202,7 +207,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('official_id')->constrained('officials')->onDelete('cascade'); // Relasi ke tabel officials
             $table->string('nama'); // Nama anak pejabat
-            $table->enum('jenis_kelamin', ['L', 'P', 'Kosong'])->default('Kosong')->nullable(); // Jenis kelamin
+            $table->enum('jenis_kelamin', ['L', 'P', 'Lainnya'])->default('Lainnya')->nullable(); // Jenis kelamin
             // Tempat Lahir
             $table->string('tempat_lahir')->nullable();
             // Tanggal Lahir
@@ -211,9 +216,10 @@ return new class extends Migration
             // Status
             $table->enum('status', ['Anak Kandung', 'Anak Tiri', 'Anak Angkat'])->nullable();
             // Pendidikan Umum
-            $table->enum('pendidikan_umum', ['SD/MI', 'SMP/MTS', 'SMA/SMK/MA', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3'])->nullable(); // Pendidikan terakhir
+            $table->enum('pendidikan_umum', ['SD/MI', 'SMP/MTS/SLTP', 'SMA/SMK/MA/SLTA/SMU', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3', 'Lainnya'])->default('Lainnya')->nullable();  // Pendidikan terakhir
             // Pekerjaan
             $table->string('pekerjaan')->nullable();
+            $table->longText('keterangan')->nullable();
             $table->timestamps();
         });
 

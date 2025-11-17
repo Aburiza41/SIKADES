@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Web\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\OfficialTraining;
 use App\Models\Training;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class TrainingController extends Controller
 {
@@ -20,45 +21,32 @@ public function index(Request $request)
     // Debug request
     Log::info('Request parameters:', $request->all());
 
-    // Get all trainings untuk dropdown filter
-    // $trainings = Training::all();
-
-    // Query utama untuk official_trainings dengan filter dan sorting
-    $official_trainings = OfficialTraining::with(['official.village.district.regency', 'official'])
-        ->when($request->has('search') && $request->search !== '', function ($query) use ($request) {
+    // Query utama untuk trainings dengan filter dan sorting
+    $trainings = Training::when($request->filled('search'), function ($query) use ($request) {
             $query->where(function ($q) use ($request) {
-                // $q->whereHas('training', function ($q) use ($request) {
-                //     $q->where('title', 'like', '%' . $request->search . '%');
-                // })
-                $q->orWhere('nama', 'like', '%' . $request->search . '%');
+                $q->where('title', 'like', '%' . $request->search . '%')
+                  ->orWhere('description', 'like', '%' . $request->search . '%');
             });
         })
-        // ->when($request->filled('filters'), function ($query) use ($request) {
-        //     $query->whereHas('training', function ($q) use ($request) {
-        //         $q->where('id', $request->filters); // Filter berdasarkan ID training
-        //     });
-        // })
         ->orderBy(
-            in_array($request->sort_field, ['id', 'nama', 'mulai', 'selesai', 'created_at', 'updated_at']) ? $request->sort_field : 'id',
+            in_array($request->sort_field, ['id', 'title', 'description', 'created_at', 'updated_at']) ? $request->sort_field : 'id',
             in_array(strtolower($request->sort_direction), ['asc', 'desc']) ? strtolower($request->sort_direction) : 'asc'
         )
         ->paginate($request->per_page ?? 10);
 
     // Kembalikan data menggunakan Inertia
     return Inertia::render('Admin/Training/Page', [
-        // 'trainings' => $trainings, // Data untuk dropdown filter
-        'official_trainings' => [
-            'current_page' => $official_trainings->currentPage(),
-            'data' => $official_trainings->items(),
-            'total' => $official_trainings->total(),
-            'per_page' => $official_trainings->perPage(),
-            'last_page' => $official_trainings->lastPage(),
-            'from' => $official_trainings->firstItem(),
-            'to' => $official_trainings->lastItem(),
+        'trainings' => [
+            'current_page' => $trainings->currentPage(),
+            'data' => $trainings->items(),
+            'total' => $trainings->total(),
+            'per_page' => $trainings->perPage(),
+            'last_page' => $trainings->lastPage(),
+            'from' => $trainings->firstItem(),
+            'to' => $trainings->lastItem(),
         ],
-        'filters' => $request->filters, // Kirim filter yang aktif
-        'sort' => $request->only(['sort_field', 'sort_direction']), // Kirim sorting yang aktif
-        'search' => $request->search, // Kirim pencarian yang aktif
+        'sort' => $request->only(['sort_field', 'sort_direction']),
+        'search' => $request->search,
     ]);
 }
 
@@ -67,7 +55,7 @@ public function index(Request $request)
      */
     public function create()
     {
-        //
+        return Inertia::render('Admin/Training/Create');
     }
 
     /**
@@ -75,7 +63,37 @@ public function index(Request $request)
      */
     public function store(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255|unique:trainings,title',
+            'description' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $data = $request->only(['title', 'description']);
+
+            Training::create($data);
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Pelatihan berhasil ditambahkan.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error creating training: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menyimpan data.'
+            ], 500);
+        }
     }
 
     /**
@@ -83,7 +101,11 @@ public function index(Request $request)
      */
     public function show(string $id)
     {
-        //
+        $training = Training::findOrFail($id);
+
+        return Inertia::render('Admin/Training/Show', [
+            'training' => $training,
+        ]);
     }
 
     /**
@@ -91,7 +113,11 @@ public function index(Request $request)
      */
     public function edit(string $id)
     {
-        //
+        $training = Training::findOrFail($id);
+
+        return Inertia::render('Admin/Training/Edit', [
+            'training' => $training,
+        ]);
     }
 
     /**
@@ -99,7 +125,39 @@ public function index(Request $request)
      */
     public function update(Request $request, string $id)
     {
-        //
+        $training = Training::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255|unique:trainings,title,' . $id,
+            'description' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $data = $request->only(['title', 'description']);
+
+            $training->update($data);
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Pelatihan berhasil diperbarui.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error updating training: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memperbarui data.'
+            ], 500);
+        }
     }
 
     /**
@@ -107,6 +165,24 @@ public function index(Request $request)
      */
     public function destroy(string $id)
     {
-        //
+        $training = Training::findOrFail($id);
+
+        DB::beginTransaction();
+        try {
+            $training->delete();
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Pelatihan berhasil dihapus.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error deleting training: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus data.'
+            ], 500);
+        }
     }
 }

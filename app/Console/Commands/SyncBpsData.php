@@ -79,15 +79,12 @@ class SyncBpsData extends Command
             return $this->testConnection();
         }
 
-        DB::beginTransaction();
-
+        // Remove global transaction - use per-entity transactions instead
         try {
             $this->syncAllLevels();
-            DB::commit();
             $this->info("\n🎉 Synchronization completed successfully!");
             return 0;
         } catch (\Throwable $th) {
-            DB::rollBack();
             $this->error("\n💥 Synchronization failed: " . $th->getMessage());
             throw $th;
         }
@@ -102,17 +99,42 @@ class SyncBpsData extends Command
         $this->ensureAllRegenciesExist();
 
         // 2. Sync data for each regency
+        $totalRegencies = count($this->westKalimantanRegencies);
+        $processedRegencies = 0;
+
         foreach ($this->westKalimantanRegencies as $regencyCode => $regencyName) {
-            $this->info("\n🔵 Processing regency: {$regencyName} ({$regencyCode})");
+            $processedRegencies++;
+            $this->info("\n🔵 Processing regency {$processedRegencies}/{$totalRegencies}: {$regencyName} ({$regencyCode})");
 
-            // Get districts for this regency
-            $districts = $this->fetchApiData($baseUrl, 'kecamatan', $regencyCode);
-            $this->syncDistricts($districts, $regencyCode);
+            try {
+                // Get districts for this regency
+                $districts = $this->fetchApiData($baseUrl, 'kecamatan', $regencyCode);
+                $this->syncDistricts($districts, $regencyCode);
 
-            // Get villages for each district
-            foreach ($districts as $district) {
-                $villages = $this->fetchApiData($baseUrl, 'desa', $district['kode_bps']);
-                $this->syncVillages($villages, $district['kode_bps']);
+                // Get villages for each district
+                $totalDistricts = count($districts);
+                $processedDistricts = 0;
+
+                foreach ($districts as $district) {
+                    $processedDistricts++;
+                    $this->info("  📍 Processing district {$processedDistricts}/{$totalDistricts}: {$district['nama_bps']} ({$district['kode_bps']})");
+
+                    $villages = $this->fetchApiData($baseUrl, 'desa', $district['kode_bps']);
+                    $this->syncVillages($villages, $district['kode_bps']);
+                }
+
+                $this->info("✅ Regency {$regencyCode} completed successfully");
+
+            } catch (\Exception $e) {
+                $this->error("❌ Failed to process regency {$regencyCode}: " . $e->getMessage());
+                Log::error("Regency sync failed", [
+                    'regency_code' => $regencyCode,
+                    'regency_name' => $regencyName,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                // Continue with next regency instead of failing completely
+                continue;
             }
         }
     }
@@ -164,25 +186,60 @@ class SyncBpsData extends Command
                 ]);
 
             if ($response->failed()) {
-                throw new \Exception("API Error: {$response->status()} - {$response->body()}");
+                $errorMsg = "API Error: {$response->status()} - {$response->body()}";
+                Log::warning("API request failed", [
+                    'level' => $level,
+                    'parent_code' => $parentCode,
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+                throw new \Exception($errorMsg);
             }
 
             $data = $response->json();
 
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new \Exception("Invalid JSON: " . json_last_error_msg());
+                $errorMsg = "Invalid JSON: " . json_last_error_msg();
+                Log::error("JSON decode failed", [
+                    'level' => $level,
+                    'parent_code' => $parentCode,
+                    'json_error' => json_last_error_msg(),
+                    'response_body' => $response->body()
+                ]);
+                throw new \Exception($errorMsg);
             }
 
             if (empty($data)) {
                 $this->warn("⚠ No {$level} data received for {$parentCode}");
+                Log::info("Empty data received", [
+                    'level' => $level,
+                    'parent_code' => $parentCode
+                ]);
                 return $this->getFallbackData($level, $parentCode);
             }
 
             $this->info("📥 Received " . count($data) . " {$level} records");
+
+            // Log sample data for debugging
+            if (!empty($data)) {
+                Log::info("Sample data received", [
+                    'level' => $level,
+                    'parent_code' => $parentCode,
+                    'sample' => array_slice($data, 0, 3),
+                    'total_count' => count($data)
+                ]);
+            }
+
             return $data;
 
         } catch (\Exception $e) {
             $this->warn("⚠ Failed to fetch {$level} data: " . $e->getMessage());
+            Log::error("API fetch failed", [
+                'level' => $level,
+                'parent_code' => $parentCode,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return $this->getFallbackData($level, $parentCode);
         }
     }
@@ -202,34 +259,64 @@ class SyncBpsData extends Command
 
         $successCount = 0;
         $failCount = 0;
+        $skippedCount = 0;
 
         foreach ($districts as $district) {
             try {
-                $this->validateData($district, ['kode_bps', 'nama_bps']);
+                // More flexible validation - allow missing fields but log warnings
+                $validationErrors = $this->validateDataFlexible($district, ['kode_bps', 'nama_bps']);
+
+                if (!empty($validationErrors)) {
+                    $this->warn("⚠ District data incomplete: " . implode(', ', $validationErrors));
+                    Log::warning("District data validation warnings", [
+                        'district_data' => $district,
+                        'validation_errors' => $validationErrors,
+                        'regency_code' => $regencyCode
+                    ]);
+                    // Continue processing even with incomplete data
+                }
+
+                // Use individual transaction for each district
+                DB::beginTransaction();
 
                 $operation = District::updateOrCreate(
-                    ['code_bps' => $district['kode_bps']],
+                    ['code_bps' => $district['kode_bps'] ?? null],
                     [
                         'regency_id' => $regency->id,
-                        'name_bps' => $district['nama_bps'],
+                        'name_bps' => $district['nama_bps'] ?? null,
                         'code_dagri' => $district['kode_dagri'] ?? null,
                         'name_dagri' => $district['nama_dagri'] ?? null,
-                        'code' => isset($district['kode_dagri']) ? str_replace('.', '', $district['kode_dagri']) : null
+                        'code' => isset($district['kode_dagri']) ? str_replace('.', '', $district['kode_dagri']) : null,
+                        'active' => true
                     ]
                 );
 
+                DB::commit();
+
+                if ($operation->wasRecentlyCreated) {
+                    $this->line("  ➕ Created district: {$district['nama_bps']} ({$district['kode_bps']})");
+                } elseif ($this->option('force')) {
+                    $this->line("  🔄 Updated district: {$district['nama_bps']} ({$district['kode_bps']})");
+                } else {
+                    $skippedCount++;
+                }
+
                 $successCount++;
+
             } catch (\Exception $e) {
+                DB::rollBack();
                 Log::error("District sync failed", [
-                    'data' => $district,
-                    'error' => $e->getMessage()
+                    'district_data' => $district,
+                    'regency_code' => $regencyCode,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
                 ]);
                 $failCount++;
-                $this->error("Failed to sync district: " . $e->getMessage());
+                $this->error("  ❌ Failed to sync district: " . $e->getMessage());
             }
         }
 
-        $this->info("✅ Districts for {$regencyCode}: {$successCount} succeeded, {$failCount} failed");
+        $this->info("✅ Districts for {$regencyCode}: {$successCount} succeeded, {$failCount} failed, {$skippedCount} skipped");
     }
 
     protected function syncVillages(array $villages, string $districtCode): void
@@ -247,34 +334,64 @@ class SyncBpsData extends Command
 
         $successCount = 0;
         $failCount = 0;
+        $skippedCount = 0;
 
         foreach ($villages as $village) {
             try {
-                $this->validateData($village, ['kode_bps', 'nama_bps']);
+                // More flexible validation - allow missing fields but log warnings
+                $validationErrors = $this->validateDataFlexible($village, ['kode_bps', 'nama_bps']);
 
-                Village::updateOrCreate(
-                    ['code_bps' => $village['kode_bps']],
+                if (!empty($validationErrors)) {
+                    $this->warn("⚠ Village data incomplete: " . implode(', ', $validationErrors));
+                    Log::warning("Village data validation warnings", [
+                        'village_data' => $village,
+                        'validation_errors' => $validationErrors,
+                        'district_code' => $districtCode
+                    ]);
+                    // Continue processing even with incomplete data
+                }
+
+                // Use individual transaction for each village
+                DB::beginTransaction();
+
+                $operation = Village::updateOrCreate(
+                    ['code_bps' => $village['kode_bps'] ?? null],
                     [
                         'district_id' => $district->id,
-                        'name_bps' => $village['nama_bps'],
+                        'name_bps' => $village['nama_bps'] ?? null,
                         'code_dagri' => $village['kode_dagri'] ?? null,
                         'name_dagri' => $village['nama_dagri'] ?? null,
                         'code' => isset($village['kode_dagri']) ? str_replace('.', '', $village['kode_dagri']) : null,
+                        'active' => true
                     ]
                 );
 
+                DB::commit();
+
+                if ($operation->wasRecentlyCreated) {
+                    $this->line("    ➕ Created village: {$village['nama_bps']} ({$village['kode_bps']})");
+                } elseif ($this->option('force')) {
+                    $this->line("    🔄 Updated village: {$village['nama_bps']} ({$village['kode_bps']})");
+                } else {
+                    $skippedCount++;
+                }
+
                 $successCount++;
+
             } catch (\Exception $e) {
+                DB::rollBack();
                 Log::error("Village sync failed", [
-                    'data' => $village,
-                    'error' => $e->getMessage()
+                    'village_data' => $village,
+                    'district_code' => $districtCode,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
                 ]);
                 $failCount++;
-                $this->error("Failed to sync village: " . $e->getMessage());
+                $this->error("    ❌ Failed to sync village: " . $e->getMessage());
             }
         }
 
-        $this->info("✅ Villages for {$districtCode}: {$successCount} succeeded, {$failCount} failed");
+        $this->info("✅ Villages for {$districtCode}: {$successCount} succeeded, {$failCount} failed, {$skippedCount} skipped");
     }
 
     protected function validateData(array $data, array $requiredFields): void
@@ -292,6 +409,28 @@ class SyncBpsData extends Command
         if (isset($data['kode_bps']) && !preg_match('/^\d+$/', $data['kode_bps'])) {
             throw new \Exception("Invalid BPS code format: " . $data['kode_bps']);
         }
+    }
+
+    /**
+     * More flexible validation that returns warnings instead of throwing exceptions
+     */
+    protected function validateDataFlexible(array $data, array $requiredFields): array
+    {
+        $errors = [];
+
+        foreach ($requiredFields as $field) {
+            if (!array_key_exists($field, $data)) {
+                $errors[] = "Required field '{$field}' missing in data";
+            } elseif (empty($data[$field])) {
+                $errors[] = "Field '{$field}' is empty";
+            }
+        }
+
+        if (isset($data['kode_bps']) && !preg_match('/^\d+$/', $data['kode_bps'])) {
+            $errors[] = "Invalid BPS code format: " . $data['kode_bps'];
+        }
+
+        return $errors;
     }
 
     protected function verifyDataCompleteness(): void

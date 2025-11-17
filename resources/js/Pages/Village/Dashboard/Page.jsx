@@ -1,6 +1,6 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, usePage, router } from "@inertiajs/react";
-import { useState, useMemo } from "react";
+import { useState, useMemo,useEffect } from "react";
 import { Bar, Line, Pie, Doughnut } from "react-chartjs-2";
 import {
     Chart as ChartJS,
@@ -82,6 +82,32 @@ export default function Dashboard({
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isViewMode, setIsViewMode] = useState(false);
     const [selectedOfficial, setSelectedOfficial] = useState(null);
+    const [filters, setFilters] = useState({
+        search: "",
+        education: "",
+        position: "",
+        gender: "",
+        religion: "",
+        blood_type: "",
+        training: "",
+        organization: "",
+        status: "",
+    });
+    const [sortField, setSortField] = useState("");
+    const [sortDirection, setSortDirection] = useState("");
+
+    // Disable scroll when login form is open
+    useEffect(() => {
+        if (isModalOpen || isViewMode || modalOpen) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "auto";
+        }
+        // Cleanup to restore default scroll behavior
+        return () => {
+            document.body.style.overflow = "auto";
+        };
+    }, [isModalOpen || isViewMode || modalOpen]);
 
     // Data untuk chart pendidikan
     const educationData = {
@@ -105,12 +131,7 @@ export default function Dashboard({
             {
                 label: "Status",
                 data: status_pejabat,
-                backgroundColor: [
-                    "#4CAF50", // Daftar - Hijau
-                    "#FFC107", // Diproses - Kuning
-                    "#2196F3", // Tervalidasi - Biru
-                    "#F44336", // Ditolak - Merah
-                ],
+                backgroundColor: ["#4CAF50", "#FFC107", "#2196F3", "#F44336"],
                 borderColor: "#FFFFFF",
                 borderWidth: 2,
             },
@@ -145,21 +166,18 @@ export default function Dashboard({
             {
                 label: "Jumlah",
                 data: Object.values(trainings),
-                backgroundColor: generateColors(
-                    Object.keys(trainings).length,
-                    [
-                        "#4CAF50",
-                        "#FFC107",
-                        "#2196F3",
-                        "#F44336",
-                        "#9C27B0",
-                        "#00BCD4",
-                        "#FF9800",
-                        "#8BC34A",
-                        "#E91E63",
-                        "#607D8B",
-                    ]
-                ),
+                backgroundColor: generateColors(Object.keys(trainings).length, [
+                    "#4CAF50",
+                    "#FFC107",
+                    "#2196F3",
+                    "#F44336",
+                    "#9C27B0",
+                    "#00BCD4",
+                    "#FF9800",
+                    "#8BC34A",
+                    "#E91E63",
+                    "#607D8B",
+                ]),
                 borderColor: "#FFFFFF",
                 borderWidth: 2,
             },
@@ -173,21 +191,18 @@ export default function Dashboard({
             {
                 label: "Jumlah",
                 data: Object.values(organizations),
-                backgroundColor: generateColors(
-                    Object.keys(organizations).length,
-                    [
-                        "#4CAF50",
-                        "#2196F3",
-                        "#9C27B0",
-                        "#FF9800",
-                        "#607D8B",
-                        "#F44336",
-                        "#00BCD4",
-                        "#8BC34A",
-                        "#E91E63",
-                        "#795548",
-                    ]
-                ),
+                backgroundColor: generateColors(Object.keys(organizations).length, [
+                    "#4CAF50",
+                    "#2196F3",
+                    "#9C27B0",
+                    "#FF9800",
+                    "#607D8B",
+                    "#F44336",
+                    "#00BCD4",
+                    "#8BC34A",
+                    "#E91E63",
+                    "#795548",
+                ]),
                 borderColor: "#FFFFFF",
                 borderWidth: 2,
             },
@@ -202,13 +217,13 @@ export default function Dashboard({
                 label: "Jumlah",
                 data: agama,
                 backgroundColor: [
-                    "#4CAF50", // Islam - Hijau
-                    "#2196F3", // Kristen - Biru
-                    "#9C27B0", // Katolik - Ungu
-                    "#FF9800", // Hindu - Orange
-                    "#607D8B", // Buddha - Abu-abu
-                    "#F44336", // Konghucu - Merah
-                    "#795548"  // Kosong - Coklat
+                    "#4CAF50",
+                    "#2196F3",
+                    "#9C27B0",
+                    "#FF9800",
+                    "#607D8B",
+                    "#F44336",
+                    "#795548",
                 ],
                 borderColor: "#FFFFFF",
                 borderWidth: 2,
@@ -223,13 +238,7 @@ export default function Dashboard({
             {
                 label: "Jumlah",
                 data: golongan_darah,
-                backgroundColor: [
-                    "#F44336", // A - Merah
-                    "#2196F3", // B - Biru
-                    "#4CAF50", // AB - Hijau
-                    "#FFC107", // O - Kuning
-                    "#795548"  // Kosong - Coklat
-                ],
+                backgroundColor: ["#F44336", "#2196F3", "#4CAF50", "#FFC107", "#795548"],
                 borderColor: "#FFFFFF",
                 borderWidth: 2,
             },
@@ -243,21 +252,18 @@ export default function Dashboard({
             {
                 label: "Jumlah",
                 data: Object.values(jabatan),
-                backgroundColor: generateColors(
-                    Object.keys(jabatan).length,
-                    [
-                        "#4CAF50",
-                        "#2196F3",
-                        "#9C27B0",
-                        "#FF9800",
-                        "#607D8B",
-                        "#F44336",
-                        "#00BCD4",
-                        "#8BC34A",
-                        "#E91E63",
-                        "#795548",
-                    ]
-                ),
+                backgroundColor: generateColors(Object.keys(jabatan).length, [
+                    "#4CAF50",
+                    "#2196F3",
+                    "#9C27B0",
+                    "#FF9800",
+                    "#607D8B",
+                    "#F44336",
+                    "#00BCD4",
+                    "#8BC34A",
+                    "#E91E63",
+                    "#795548",
+                ]),
                 borderColor: "#FFFFFF",
                 borderWidth: 2,
             },
@@ -271,13 +277,7 @@ export default function Dashboard({
             {
                 label: "Jumlah",
                 data: status_perkawinan,
-                backgroundColor: [
-                    "#2196F3", // Belum Kawin - Biru
-                    "#4CAF50", // Kawin - Hijau
-                    "#FF9800", // Duda - Orange
-                    "#E91E63", // Janda - Pink
-                    "#795548"  // Kosong - Coklat
-                ],
+                backgroundColor: ["#2196F3", "#4CAF50", "#FF9800", "#E91E63", "#795548"],
                 borderColor: "#FFFFFF",
                 borderWidth: 2,
             },
@@ -296,12 +296,7 @@ export default function Dashboard({
     };
 
     const column1s = [
-        {
-            name: "ID",
-            selector: (row) => row.id,
-            sortable: true,
-            width: "80px",
-        },
+        { name: "ID", selector: (row) => row.id, sortable: true, width: "80px" },
         { name: "Kategori", selector: (row) => row.kategori, sortable: true },
         { name: "Jumlah", selector: (row) => row.jumlah, sortable: true },
     ];
@@ -318,10 +313,10 @@ export default function Dashboard({
     const fetchData = ({
         page = 1,
         perPage = 10,
-        search = "",
-        filters = "",
-        sortField = "",
-        sortDirection = "",
+        search = filters.search,
+        filters: filterParams = JSON.stringify(filters),
+        sortField: sort = sortField,
+        sortDirection: direction = sortDirection,
     }) => {
         router.get(
             `/village/dashboard`,
@@ -329,9 +324,9 @@ export default function Dashboard({
                 page,
                 per_page: perPage,
                 search,
-                filters,
-                sort_field: sortField,
-                sort_direction: sortDirection,
+                filters: filterParams,
+                sort_field: sort,
+                sort_direction: direction,
             },
             {
                 preserveState: true,
@@ -384,12 +379,24 @@ export default function Dashboard({
         setSelectedOfficial(null);
     };
 
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters((prev) => ({ ...prev, [name]: value }));
+        fetchData({ filters: JSON.stringify({ ...filters, [name]: value }) });
+    };
+
+    const handleSort = (column, direction) => {
+        setSortField(column.selector);
+        setSortDirection(direction);
+        fetchData({ sortField: column.selector, sortDirection: direction });
+    };
+
     return (
         <AuthenticatedLayout
             header={
-                <div className="text-2xl font-semibold leading-tight">
+                <div className="text-2xl font-semibold leading-tight text-white">
                     Dashboard
-                    <p className="text-xs font-thin mt-1">
+                    <p className="text-xs font-normal mt-1 text-white">
                         Selamat datang di dashboard admin, Anda dapat mengelola
                     </p>
                 </div>
@@ -398,884 +405,754 @@ export default function Dashboard({
         >
             <Head title="Dashboard" />
 
-            <div className="py-4">
-                <div className="mx-auto max-w-full sm:px-4 lg:px-4">
-                    {/* Statistik Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Kabupaten */}
-                        <motion.div
-                            className="bg-gradient-to-r from-green-400 to-green-600 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <FaCity size={40} className="text-white" />
-                            <div className="text-right">
-                                <h3 className="text-lg font-medium mb-2">
-                                    Kabupaten
-                                </h3>
-                                <p className="text-2xl font-semibold">
-                                    {regency.name_bps}
-                                </p>
-                            </div>
-                        </motion.div>
 
-                        {/* Kecamatan */}
-                        <motion.div
-                            className="bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <FaBuilding size={40} className="text-white" />
-                            <div className="text-right">
-                                <h3 className="text-lg font-medium mb-2">
-                                    Kecamatan
-                                </h3>
-                                <p className="text-2xl font-semibold">
-                                    {district.name_bps}
-                                </p>
-                            </div>
-                        </motion.div>
+            <div className="py-6 max-w-full px-4 mx-auto">
+                {/* Statistik Cards */}
+                <motion.div
+                    className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.3 }}
+                >
+                    <motion.div
+                        className="bg-gradient-to-r from-green-400 to-green-600 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaCity size={40} className="text-white" />
+                        <div className="text-right">
+                            <h3 className="text-lg font-medium mb-2">Kabupaten</h3>
+                            <p className="text-2xl font-semibold">{regency.name_bps}</p>
+                        </div>
+                    </motion.div>
 
-                        {/* Desa */}
-                        <motion.div
-                            className="bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <FaHome size={40} className="text-white" />
-                            <div className="text-right">
-                                <h3 className="text-lg font-medium mb-2">
-                                    Desa
-                                </h3>
-                                <p className="text-2xl font-semibold">
-                                    {village.name_bps}
-                                </p>
-                            </div>
-                        </motion.div>
+                    <motion.div
+                        className="bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaBuilding size={40} className="text-white" />
+                        <div className="text-right">
+                            <h3 className="text-lg font-medium mb-2">Kecamatan</h3>
+                            <p className="text-2xl font-semibold">{district.name_bps}</p>
+                        </div>
+                    </motion.div>
 
-                        {/* Aparatur */}
-                        <motion.div
-                            className="bg-gradient-to-r from-purple-400 to-purple-600 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <FaUsers size={40} className="text-white" />
-                            <div className="text-right">
-                                <h3 className="text-lg font-medium mb-2">
-                                    Aparatur
-                                </h3>
-                                <p className="text-3xl font-semibold">
-                                    {official_count.toLocaleString("id-ID")}
-                                </p>
-                            </div>
-                        </motion.div>
+                    <motion.div
+                        className="bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaHome size={40} className="text-white" />
+                        <div className="text-right">
+                            <h3 className="text-lg font-medium mb-2">Desa</h3>
+                            <p className="text-2xl font-semibold">{village.name_bps}</p>
+                        </div>
+                    </motion.div>
+                </motion.div>
 
-                        {/* Informasi */}
-                        <motion.div
-                            className="bg-gradient-to-r from-gray-500 to-gray-700 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <FaInfoCircle size={40} className="text-white" />
-                            <div className="text-right">
-                                <h3 className="text-lg font-medium mb-2">
-                                    Jabatan
-                                </h3>
-                                <p className="text-3xl font-semibold">
-                                    {(
-                                        posisi
-                                    ).toLocaleString("id-ID")}
-                                </p>
-                            </div>
-                        </motion.div>
+                {/* Statistik Cards */}
+                <motion.div
+                    className="grid grid-cols-1 md:grid-cols-3 gap-6 my-6"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.3 }}
+                >
+                    <motion.div
+                        className="bg-gradient-to-r from-purple-400 to-purple-600 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaUsers size={40} className="text-white" />
+                        <div className="text-right">
+                            <h3 className="text-lg font-medium mb-2">Aparatur</h3>
+                            <p className="text-3xl font-semibold">{official_count.toLocaleString("id-ID")}</p>
+                        </div>
+                    </motion.div>
 
-                        {/* Informasi */}
-                        <motion.div
-                            className="bg-gradient-to-r from-gray-500 to-gray-700 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <FaInfoCircle size={40} className="text-white" />
-                            <div className="text-right">
-                                <h3 className="text-lg font-medium mb-2">
-                                    Minimal
-                                </h3>
-                                <p className="text-xs font-semibold">
-                                    {official_count.toLocaleString("id-ID")} AD - {posisi} APD
-                                </p>
-                                <p className="text-3xl font-semibold">
-                                    {(
-                                        official_count - (1 * posisi)
-                                    ).toLocaleString("id-ID")}
-                                </p>
-                            </div>
-                        </motion.div>
+                    <motion.div
+                        className="bg-gradient-to-r from-gray-500 to-gray-700 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaInfoCircle size={40} className="text-white" />
+                        <div className="text-right">
+                            <h3 className="text-lg font-medium mb-2">Jabatan</h3>
+                            <p className="text-3xl font-semibold">{posisi.toLocaleString("id-ID")}</p>
+                        </div>
+                    </motion.div>
 
-                        {/* Informasi */}
-                        <motion.div
-                            className="bg-gradient-to-r from-gray-500 to-gray-700 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <FaInfoCircle size={40} className="text-white" />
-                            <div className="text-right">
-                                <h3 className="text-lg font-medium mb-2">
-                                    Perbandingan
-                                </h3>
-                                <p className="text-3xl font-semibold">
-                                    {(
-                                        total_terisi
-                                    ).toLocaleString("id-ID")} / {total_posisi.toLocaleString("id-ID")}
-                                </p>
-                            </div>
-                        </motion.div>
+                    <motion.div
+                        className="bg-gradient-to-r from-gray-500 to-gray-700 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaInfoCircle size={40} className="text-white" />
+                        <div className="text-right">
+                            <h3 className="text-lg font-medium mb-2">Minimal</h3>
+                            <p className="text-xs font-semibold">{official_count.toLocaleString("id-ID")} AD - {posisi} APD</p>
+                            <p className="text-3xl font-semibold">{(official_count - posisi).toLocaleString("id-ID")}</p>
+                        </div>
+                    </motion.div>
 
-                        {/* Aparatur */}
-                        <motion.div
-                            className="col-span-2 bg-gradient-to-r from-purple-400 to-purple-600 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <FaUsers size={40} className="text-white" />
-                            <div className="text-right">
-                                <h3 className="text-lg font-medium mb-2">
-                                    Persentase
-                                </h3>
-                                <p className="text-3xl font-semibold">
-                                    {kelengkapan_data.toLocaleString("id-ID")} %
-                                </p>
-                            </div>
-                        </motion.div>
+                    <motion.div
+                        className="bg-gradient-to-r from-gray-500 to-gray-700 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaInfoCircle size={40} className="text-white" />
+                        <div className="text-right">
+                            <h3 className="text-lg font-medium mb-2">Perbandingan</h3>
+                            <p className="text-3xl font-semibold">{total_terisi.toLocaleString("id-ID")} / {total_posisi.toLocaleString("id-ID")}</p>
+                        </div>
+                    </motion.div>
+
+                    <motion.div
+                        className="col-span-2 bg-gradient-to-r from-purple-400 to-purple-600 rounded-lg shadow-lg p-6 flex items-center space-x-4 justify-between text-white"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaUsers size={40} className="text-white" />
+                        <div className="text-right">
+                            <h3 className="text-lg font-medium mb-2">Persentase</h3>
+                            <p className="text-3xl font-semibold">{kelengkapan_data.toLocaleString("id-ID")} %</p>
+                        </div>
+                    </motion.div>
+                </motion.div>
+
+
+
+                {/* Filter Section */}
+                <motion.div
+                    className="bg-white p-6 rounded-lg shadow-md my-6"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                        Filter Data
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Pencarian</label>
+                            <input
+                                type="text"
+                                name="search"
+                                value={filters.search}
+                                onChange={handleFilterChange}
+                                placeholder="Cari nama atau NIK..."
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Pendidikan Terakhir</label>
+                            <select
+                                name="education"
+                                value={filters.education}
+                                onChange={handleFilterChange}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
+                            >
+                                <option value="">Semua</option>
+                                {Object.keys(pendidikan).map((edu) => (
+                                    <option key={edu} value={edu}>{edu}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Jabatan</label>
+                            <select
+                                name="position"
+                                value={filters.position}
+                                onChange={handleFilterChange}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
+                            >
+                                <option value="">Semua</option>
+                                {Object.keys(jabatan).map((pos) => (
+                                    <option key={pos} value={pos}>{pos}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Jenis Kelamin</label>
+                            <select
+                                name="gender"
+                                value={filters.gender}
+                                onChange={handleFilterChange}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
+                            >
+                                <option value="">Semua</option>
+                                <option value="L">Laki-Laki</option>
+                                <option value="P">Perempuan</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Agama</label>
+                            <select
+                                name="religion"
+                                value={filters.religion}
+                                onChange={handleFilterChange}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
+                            >
+                                <option value="">Semua</option>
+                                {["Islam", "Kristen", "Katolik", "Hindu", "Buddha", "Konghucu", "Kosong"].map((rel) => (
+                                    <option key={rel} value={rel}>{rel}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Golongan Darah</label>
+                            <select
+                                name="blood_type"
+                                value={filters.blood_type}
+                                onChange={handleFilterChange}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
+                            >
+                                <option value="">Semua</option>
+                                {["A", "B", "AB", "O", "Kosong"].map((bt) => (
+                                    <option key={bt} value={bt}>{bt}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Pelatihan</label>
+                            <select
+                                name="training"
+                                value={filters.training}
+                                onChange={handleFilterChange}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
+                            >
+                                <option value="">Semua</option>
+                                {Object.keys(trainings).map((tr) => (
+                                    <option key={tr} value={tr}>{tr}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Organisasi</label>
+                            <select
+                                name="organization"
+                                value={filters.organization}
+                                onChange={handleFilterChange}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
+                            >
+                                <option value="">Semua</option>
+                                {Object.keys(organizations).map((org) => (
+                                    <option key={org} value={org}>{org}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Status Aktif</label>
+                            <select
+                                name="status"
+                                value={filters.status}
+                                onChange={handleFilterChange}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
+                            >
+                                <option value="">Semua</option>
+                                {['daftar', 'proses', 'validasi', 'tolak'].map((bt) => (
+                                    <option key={bt} value={bt}>{bt}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
+                </motion.div>
 
-                    {/* Bagian Chart */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 py-8">
-                        {/* Status Pejabat */}
-                        <motion.div
-                            className="bg-white p-6 rounded-lg shadow-lg col-span-2"
-                            whileHover={{ scale: 1.02 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    Status Pejabat
-                                </h3>
-                                <button
-                                    onClick={() =>
-                                        openModal(
-                                            "Status Pejabat",
-                                            officialStatusData.labels,
-                                            officialStatusData.datasets[0].data
-                                        )
-                                    }
-                                >
-                                    <MdTableChart
-                                        className="text-green-600"
-                                        size={24}
-                                    />
-                                </button>
-                            </div>
-                            <div
-                                className="relative"
-                                style={{ height: "300px" }}
-                            >
-                                <Pie
-                                    data={officialStatusData}
-                                    options={chartOptions}
-                                />
-                            </div>
-                        </motion.div>
-
-                        {/* Jenis Kelamin */}
-                        <motion.div
-                            className="bg-white p-6 rounded-lg shadow-lg"
-                            whileHover={{ scale: 1.02 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    Jenis Kelamin
-                                </h3>
-                                <button
-                                    onClick={() =>
-                                        openModal(
-                                            "Jenis Kelamin",
-                                            genderData.labels,
-                                            genderData.datasets[0].data
-                                        )
-                                    }
-                                >
-                                    <MdTableChart
-                                        className="text-green-600"
-                                        size={24}
-                                    />
-                                </button>
-                            </div>
-                            <div
-                                className="relative"
-                                style={{ height: "300px" }}
-                            >
-                                <Pie data={genderData} options={chartOptions} />
-                            </div>
-                        </motion.div>
-
-                        {/* Status Perkawinan */}
-                        <motion.div
-                            className="bg-white p-6 rounded-lg shadow-lg"
-                            whileHover={{ scale: 1.02 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    Status Perkawinan
-                                </h3>
-                                <button
-                                    onClick={() =>
-                                        openModal(
-                                            "Status Perkawinan",
-                                            maritalStatusData.labels,
-                                            maritalStatusData.datasets[0].data
-                                        )
-                                    }
-                                >
-                                    <MdTableChart
-                                        className="text-green-600"
-                                        size={24}
-                                    />
-                                </button>
-                            </div>
-                            <div
-                                className="relative"
-                                style={{ height: "300px" }}
-                            >
-                                <Pie
-                                    data={maritalStatusData}
-                                    options={chartOptions}
-                                />
-                            </div>
-                        </motion.div>
-
-                        {/* Pendidikan Terakhir */}
-                        <motion.div
-                            className="bg-white p-6 rounded-lg shadow-lg col-span-2"
-
-                            whileHover={{ scale: 1.02 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    Pendidikan Terakhir
-                                </h3>
-                                <button
-                                    onClick={() =>
-                                        openModal(
-                                            "Pendidikan Terakhir",
-                                            educationData.labels,
-                                            educationData.datasets[0].data
-                                        )
-                                    }
-                                >
-                                    <MdTableChart
-                                        className="text-green-600"
-                                        size={24}
-                                    />
-                                </button>
-                            </div>
-                            <div
-                                className="relative"
-                                style={{ height: "300px" }}
-                            >
-                                <Bar
-                                    data={educationData}
-                                    options={{
-                                        ...chartOptions,
-                                        indexAxis: 'y'
-                                    }}
-                                />
-                            </div>
-                        </motion.div>
-
-                        {/* Pelatihan */}
-                        <motion.div
-                            className="bg-white p-6 rounded-lg shadow-lg"
-                            whileHover={{ scale: 1.02 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    Pelatihan
-                                </h3>
-                                <button
-                                    onClick={() =>
-                                        openModal(
-                                            "Pelatihan",
-                                            trainingsData.labels,
-                                            trainingsData.datasets[0].data
-                                        )
-                                    }
-                                >
-                                    <MdTableChart
-                                        className="text-green-600"
-                                        size={24}
-                                    />
-                                </button>
-                            </div>
-                            <div
-                                className="relative"
-                                style={{ height: "300px" }}
-                            >
-                                <Doughnut
-                                    data={trainingsData}
-                                    options={chartOptions}
-                                />
-                            </div>
-                        </motion.div>
-
-                        {/* Organisasi */}
-                        <motion.div
-                            className="bg-white p-6 rounded-lg shadow-lg"
-                            whileHover={{ scale: 1.02 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    Organisasi
-                                </h3>
-                                <button
-                                    onClick={() =>
-                                        openModal(
-                                            "Organisasi",
-                                            organizationsData.labels,
-                                            organizationsData.datasets[0].data
-                                        )
-                                    }
-                                >
-                                    <MdTableChart
-                                        className="text-green-600"
-                                        size={24}
-                                    />
-                                </button>
-                            </div>
-                            <div
-                                className="relative"
-                                style={{ height: "300px" }}
-                            >
-                                <Doughnut
-                                    data={organizationsData}
-                                    options={chartOptions}
-                                />
-                            </div>
-                        </motion.div>
-
-                        {/* Agama */}
-                        <motion.div
-                            className="bg-white p-6 rounded-lg shadow-lg"
-                            whileHover={{ scale: 1.02 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    Agama
-                                </h3>
-                                <button
-                                    onClick={() =>
-                                        openModal(
-                                            "Agama",
-                                            religionData.labels,
-                                            religionData.datasets[0].data
-                                        )
-                                    }
-                                >
-                                    <MdTableChart
-                                        className="text-green-600"
-                                        size={24}
-                                    />
-                                </button>
-                            </div>
-                            <div
-                                className="relative"
-                                style={{ height: "300px" }}
-                            >
-                                <Pie
-                                    data={religionData}
-                                    options={chartOptions}
-                                />
-                            </div>
-                        </motion.div>
-
-                        {/* Golongan Darah */}
-                        <motion.div
-                            className="bg-white p-6 rounded-lg shadow-lg"
-                            whileHover={{ scale: 1.02 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    Golongan Darah
-                                </h3>
-                                <button
-                                    onClick={() =>
-                                        openModal(
-                                            "Golongan Darah",
-                                            bloodTypeData.labels,
-                                            bloodTypeData.datasets[0].data
-                                        )
-                                    }
-                                >
-                                    <MdTableChart
-                                        className="text-green-600"
-                                        size={24}
-                                    />
-                                </button>
-                            </div>
-                            <div
-                                className="relative"
-                                style={{ height: "300px" }}
-                            >
-                                <Pie
-                                    data={bloodTypeData}
-                                    options={chartOptions}
-                                />
-                            </div>
-                        </motion.div>
-
-                        {/* Jabatan */}
-                        <motion.div
-                            className="bg-white p-6 rounded-lg shadow-lg col-span-2"
-                            whileHover={{ scale: 1.02 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    Jabatan
-                                </h3>
-                                <button
-                                    onClick={() =>
-                                        openModal(
-                                            "Jabatan",
-                                            positionData.labels,
-                                            positionData.datasets[0].data
-                                        )
-                                    }
-                                >
-                                    <MdTableChart
-                                        className="text-green-600"
-                                        size={24}
-                                    />
-                                </button>
-                            </div>
-                            <div
-                                className="relative"
-                                style={{ height: "300px" }}
-                            >
-                                <Bar
-                                    data={positionData}
-                                    options={{
-                                        ...chartOptions,
-                                        indexAxis: 'y'
-                                    }}
-                                />
-                            </div>
-                        </motion.div>
-
-
-
-                        {/* Modal untuk menampilkan data dalam tabel */}
-                        {modalOpen && (
-                            <motion.div
-                                className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                            >
-                                <motion.div
-                                    className="bg-white p-8 rounded-lg shadow-lg w-full max-w-3xl max-h-[80vh] overflow-y-auto"
-                                    initial={{ y: -50, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    exit={{ y: -50, opacity: 0 }}
-                                >
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-lg font-medium text-gray-900 mb-4">
-                                            {modalTitle}
-                                        </h3>
-                                        <button
-                                            className="p-1 bg-red-600 text-white rounded-lg font-bold"
-                                            onClick={() => setModalOpen(false)}
-                                        >
-                                            <FiX></FiX>
-                                        </button>
-                                    </div>
-                                    <DataTable
-                                        columns={column1s}
-                                        data={tableData1}
-                                        pagination
-                                        highlightOnHover
-                                    />
-                                </motion.div>
-                            </motion.div>
-                        )}
-                    </div>
-
-                    {/* Daftar Pejabat */}
+                {/* Official List (Table) */}
+                <motion.div
+                    className="mb-6"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                >
                     <OfficialList
                         officials={officialsData}
                         fetchData={fetchData}
                         onView={handleView}
                         onPrint={handlePrint}
+                        onSort={handleSort}
                     />
+                </motion.div>
 
-                    {/* Modal Detail Pejabat */}
-                    <Modal
-                        isOpen={isModalOpen && isViewMode}
-                        onClose={handleCloseModal}
-                        title="Detail Pejabat Desa"
+                {/* Chart Section */}
+                <motion.div
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                >
+                    {/* Status Pejabat */}
+                    <motion.div
+                        className="bg-white p-6 rounded-lg shadow-md col-span-2"
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">
+                                Status Pejabat
+                            </h3>
+                            <button
+                                onClick={() =>
+                                    openModal(
+                                        "Status Pejabat",
+                                        officialStatusData.labels,
+                                        officialStatusData.datasets[0].data
+                                    )
+                                }
+                            >
+                                <MdTableChart className="text-green-600" size={24} />
+                            </button>
+                        </div>
+                        <div className="relative" style={{ height: "300px" }}>
+                            <Pie data={officialStatusData} options={chartOptions} />
+                        </div>
+                    </motion.div>
+
+                    {/* Jenis Kelamin */}
+                    <motion.div
+                        className="bg-white p-6 rounded-lg shadow-md"
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">
+                                Jenis Kelamin
+                            </h3>
+                            <button
+                                onClick={() =>
+                                    openModal(
+                                        "Jenis Kelamin",
+                                        genderData.labels,
+                                        genderData.datasets[0].data
+                                    )
+                                }
+                            >
+                                <MdTableChart className="text-green-600" size={24} />
+                            </button>
+                        </div>
+                        <div className="relative" style={{ height: "300px" }}>
+                            <Pie data={genderData} options={chartOptions} />
+                        </div>
+                    </motion.div>
+
+                    {/* Status Perkawinan */}
+                    <motion.div
+                        className="bg-white p-6 rounded-lg shadow-md"
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">
+                                Status Perkawinan
+                            </h3>
+                            <button
+                                onClick={() =>
+                                    openModal(
+                                        "Status Perkawinan",
+                                        maritalStatusData.labels,
+                                        maritalStatusData.datasets[0].data
+                                    )
+                                }
+                            >
+                                <MdTableChart className="text-green-600" size={24} />
+                            </button>
+                        </div>
+                        <div className="relative" style={{ height: "300px" }}>
+                            <Pie data={maritalStatusData} options={chartOptions} />
+                        </div>
+                    </motion.div>
+
+                    {/* Pendidikan Terakhir */}
+                    <motion.div
+                        className="bg-white p-6 rounded-lg shadow-md col-span-2"
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">
+                                Pendidikan Terakhir
+                            </h3>
+                            <button
+                                onClick={() =>
+                                    openModal(
+                                        "Pendidikan Terakhir",
+                                        educationData.labels,
+                                        educationData.datasets[0].data
+                                    )
+                                }
+                            >
+                                <MdTableChart className="text-green-600" size={24} />
+                            </button>
+                        </div>
+                        <div className="relative" style={{ height: "300px" }}>
+                            <Bar
+                                data={educationData}
+                                options={{ ...chartOptions, indexAxis: 'y' }}
+                            />
+                        </div>
+                    </motion.div>
+
+                    {/* Pelatihan */}
+                    <motion.div
+                        className="bg-white p-6 rounded-lg shadow-md"
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">
+                                Pelatihan
+                            </h3>
+                            <button
+                                onClick={() =>
+                                    openModal(
+                                        "Pelatihan",
+                                        trainingsData.labels,
+                                        trainingsData.datasets[0].data
+                                    )
+                                }
+                            >
+                                <MdTableChart className="text-green-600" size={24} />
+                            </button>
+                        </div>
+                        <div className="relative" style={{ height: "300px" }}>
+                            <Doughnut data={trainingsData} options={chartOptions} />
+                        </div>
+                    </motion.div>
+
+                    {/* Organisasi */}
+                    <motion.div
+                        className="bg-white p-6 rounded-lg shadow-md"
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">
+                                Organisasi
+                            </h3>
+                            <button
+                                onClick={() =>
+                                    openModal(
+                                        "Organisasi",
+                                        organizationsData.labels,
+                                        organizationsData.datasets[0].data
+                                    )
+                                }
+                            >
+                                <MdTableChart className="text-green-600" size={24} />
+                            </button>
+                        </div>
+                        <div className="relative" style={{ height: "300px" }}>
+                            <Doughnut data={organizationsData} options={chartOptions} />
+                        </div>
+                    </motion.div>
+
+                    {/* Agama */}
+                    <motion.div
+                        className="bg-white p-6 rounded-lg shadow-md"
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">
+                                Agama
+                            </h3>
+                            <button
+                                onClick={() =>
+                                    openModal(
+                                        "Agama",
+                                        religionData.labels,
+                                        religionData.datasets[0].data
+                                    )
+                                }
+                            >
+                                <MdTableChart className="text-green-600" size={24} />
+                            </button>
+                        </div>
+                        <div className="relative" style={{ height: "300px" }}>
+                            <Pie data={religionData} options={chartOptions} />
+                        </div>
+                    </motion.div>
+
+                    {/* Golongan Darah */}
+                    <motion.div
+                        className="bg-white p-6 rounded-lg shadow-md"
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">
+                                Golongan Darah
+                            </h3>
+                            <button
+                                onClick={() =>
+                                    openModal(
+                                        "Golongan Darah",
+                                        bloodTypeData.labels,
+                                        bloodTypeData.datasets[0].data
+                                    )
+                                }
+                            >
+                                <MdTableChart className="text-green-600" size={24} />
+                            </button>
+                        </div>
+                        <div className="relative" style={{ height: "300px" }}>
+                            <Pie data={bloodTypeData} options={chartOptions} />
+                        </div>
+                    </motion.div>
+
+                    {/* Jabatan */}
+                    <motion.div
+                        className="bg-white p-6 rounded-lg shadow-md col-span-2"
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">
+                                Jabatan
+                            </h3>
+                            <button
+                                onClick={() =>
+                                    openModal(
+                                        "Jabatan",
+                                        positionData.labels,
+                                        positionData.datasets[0].data
+                                    )
+                                }
+                            >
+                                <MdTableChart className="text-green-600" size={24} />
+                            </button>
+                        </div>
+                        <div className="relative" style={{ height: "300px" }}>
+                            <Bar
+                                data={positionData}
+                                options={{ ...chartOptions, indexAxis: 'y' }}
+                            />
+                        </div>
+                    </motion.div>
+                </motion.div>
+
+                {/* Modal untuk menampilkan data dalam tabel */}
+                {modalOpen && (
+                    <motion.div
+                        className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                     >
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.3 }}
-                            className="space-y-4 overflow-y-auto max-h-[90vh]"
+                            className="bg-white p-8 rounded-lg shadow-lg w-full max-w-3xl max-h-[80vh] overflow-y-auto"
+                            initial={{ y: -50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: -50, opacity: 0 }}
                         >
-                            {/* Header dengan Foto Profil */}
-                            <div className="flex flex-col md:flex-row gap-6 items-start bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl">
-                                {selectedOfficial?.identities?.foto ? (
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-medium text-gray-900">{modalTitle}</h3>
+                                <button
+                                    className="p-1 bg-red-600 text-white rounded-lg font-bold"
+                                    onClick={() => setModalOpen(false)}
+                                >
+                                    <FiX />
+                                </button>
+                            </div>
+                            <DataTable
+                                columns={column1s}
+                                data={tableData1}
+                                pagination
+                                highlightOnHover
+                            />
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {/* Modal Detail Pejabat */}
+                <Modal
+                    isOpen={isModalOpen && isViewMode}
+                    onClose={handleCloseModal}
+                    title="Detail Pejabat Desa"
+                >
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="space-y-4 overflow-y-auto max-h-[90vh]"
+
+                    >
+                        <div className="flex flex-col md:flex-row gap-6 items-start bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl">
+                            {selectedOfficial?.identities?.foto ? (
+                                <motion.div
+                                    whileHover={{ scale: 1.03 }}
+                                    className="relative group cursor-pointer"
+                                >
+                                    <img
+                                        src={`/private-images/${selectedOfficial?.identities?.foto}`}
+                                        alt={`Foto ${selectedOfficial.nama_lengkap}`}
+                                        className="w-32 h-32 rounded-full object-cover"
+                                    />
+                                    <div className="absolute inset-0 bg-black bg-opacity-30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <FiImage className="text-white text-2xl" />
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
+                                    <FiUser className="text-5xl" />
+                                </div>
+                            )}
+
+                            <div className="flex-1">
+                                <motion.h2
+                                    className="text-2xl font-bold text-gray-800 mb-1"
+                                    initial={{ x: -10, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: 0.1 }}
+                                >
+                                    {selectedOfficial?.gelar_depan && `${selectedOfficial.gelar_depan} `}
+                                    {selectedOfficial?.nama_lengkap}
+                                    {selectedOfficial?.gelar_belakang && `, ${selectedOfficial.gelar_belakang}`}
+                                </motion.h2>
+                                <motion.p
+                                    className="text-lg text-blue-600 font-medium mb-3"
+                                    initial={{ x: -10, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: 0.15 }}
+                                >
+                                    {selectedOfficial?.position_current?.position?.name}
+                                </motion.p>
+                                <div className="flex flex-wrap gap-2">
                                     <motion.div
-                                        whileHover={{ scale: 1.03 }}
-                                        className="relative group cursor-pointer"
+                                        initial={{ scale: 0.9, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        transition={{ delay: 0.2 }}
+                                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm flex items-center gap-1"
                                     >
-                                        <img
-                                            src={`/private-images/${selectedOfficial?.identities?.foto}`}
-                                            alt={`Foto ${selectedOfficial.nama_lengkap}`}
-                                            className="w-32 h-32 rounded-full object-cover"
-                                        />
-                                        <div className="absolute inset-0 bg-black bg-opacity-30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <FiImage className="text-white text-2xl" />
-                                        </div>
+                                        <FiUser size={14} />{" "}
+                                        {selectedOfficial?.jenis_kelamin === "L" ? "Laki-laki" : "Perempuan"}
                                     </motion.div>
-                                ) : (
-                                    <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
-                                        <FiUser className="text-5xl" />
-                                    </div>
-                                )}
-
-                                <div className="flex-1">
-                                    <motion.h2
-                                        className="text-2xl font-bold text-gray-800 mb-1"
-                                        initial={{ x: -10, opacity: 0 }}
-                                        animate={{ x: 0, opacity: 1 }}
-                                        transition={{ delay: 0.1 }}
+                                    <motion.div
+                                        initial={{ scale: 0.9, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        transition={{ delay: 0.25 }}
+                                        className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm flex items-center gap-1"
                                     >
-                                        {selectedOfficial?.gelar_depan &&
-                                            `${selectedOfficial.gelar_depan} `}
-                                        {selectedOfficial?.nama_lengkap}
-                                        {selectedOfficial?.gelar_belakang &&
-                                            `, ${selectedOfficial.gelar_belakang}`}
-                                    </motion.h2>
-
-                                    <motion.p
-                                        className="text-lg text-blue-600 font-medium mb-3"
-                                        initial={{ x: -10, opacity: 0 }}
-                                        animate={{ x: 0, opacity: 1 }}
-                                        transition={{ delay: 0.15 }}
+                                        <FiCalendar size={14} />{" "}
+                                        {selectedOfficial?.tanggal_lahir} (
+                                        {calculateAge(selectedOfficial?.tanggal_lahir)} tahun)
+                                    </motion.div>
+                                    <motion.div
+                                        initial={{ scale: 0.9, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        transition={{ delay: 0.3 }}
+                                        className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm flex items-center gap-1"
                                     >
-                                        {
-                                            selectedOfficial?.position_current
-                                                ?.position?.name
-                                        }
-                                    </motion.p>
-
-                                    <div className="flex flex-wrap gap-2">
-                                        <motion.div
-                                            initial={{ scale: 0.9, opacity: 0 }}
-                                            animate={{ scale: 1, opacity: 1 }}
-                                            transition={{ delay: 0.2 }}
-                                            className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm flex items-center gap-1"
-                                        >
-                                            <FiUser size={14} />{" "}
-                                            {selectedOfficial?.jenis_kelamin ===
-                                            "L"
-                                                ? "Laki-laki"
-                                                : "Perempuan"}
-                                        </motion.div>
-
-                                        <motion.div
-                                            initial={{ scale: 0.9, opacity: 0 }}
-                                            animate={{ scale: 1, opacity: 1 }}
-                                            transition={{ delay: 0.25 }}
-                                            className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm flex items-center gap-1"
-                                        >
-                                            <FiCalendar size={14} />{" "}
-                                            {selectedOfficial?.tanggal_lahir} (
-                                            {calculateAge(
-                                                selectedOfficial?.tanggal_lahir
-                                            )}{" "}
-                                            tahun)
-                                        </motion.div>
-
-                                        <motion.div
-                                            initial={{ scale: 0.9, opacity: 0 }}
-                                            animate={{ scale: 1, opacity: 1 }}
-                                            transition={{ delay: 0.3 }}
-                                            className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm flex items-center gap-1"
-                                        >
-                                            <FiDroplet size={14} /> Gol. Darah:{" "}
-                                            {selectedOfficial?.identities
-                                                ?.gol_darah || "-"}
-                                        </motion.div>
-                                    </div>
+                                        <FiDroplet size={14} /> Gol. Darah:{" "}
+                                        {selectedOfficial?.identities?.gol_darah || "-"}
+                                    </motion.div>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Accordion Sections */}
-                            <div className="space-y-3">
-                                {/* Informasi Pribadi */}
-                                <AccordionSection
-                                    title="Informasi Pribadi"
-                                    icon={<FiUser className="text-blue-500" />}
-                                >
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                                        <InfoField
-                                            label="NIK"
-                                            value={selectedOfficial?.nik}
-                                        />
-                                        <InfoField
-                                            label="NIPD"
-                                            value={selectedOfficial?.nipd}
-                                        />
-                                        <InfoField
-                                            label="Tempat Lahir"
-                                            value={
-                                                selectedOfficial?.tempat_lahir
-                                            }
-                                        />
-                                        <InfoField
-                                            label="Tanggal Lahir"
-                                            value={
-                                                selectedOfficial?.tanggal_lahir
-                                            }
-                                        />
-                                        <InfoField
-                                            label="Agama"
-                                            value={selectedOfficial?.agama}
-                                        />
-                                        <InfoField
-                                            label="Status Perkawinan"
-                                            value={
-                                                selectedOfficial?.status_perkawinan
-                                            }
-                                        />
-                                        <InfoField
-                                            label="Pendidikan Terakhir"
-                                            value={
-                                                selectedOfficial?.identities
-                                                    ?.pendidikan_terakhir
-                                            }
-                                        />
+                        <div className="space-y-3">
+                            <AccordionSection
+                                title="Informasi Pribadi"
+                                icon={<FiUser className="text-blue-500" />}
+                            >
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                                    <InfoField label="NIK" value={selectedOfficial?.nik} />
+                                    <InfoField label="NIPD" value={selectedOfficial?.nipd} />
+                                    <InfoField label="Tempat Lahir" value={selectedOfficial?.tempat_lahir} />
+                                    <InfoField label="Tanggal Lahir" value={selectedOfficial?.tanggal_lahir} />
+                                    <InfoField label="Agama" value={selectedOfficial?.agama} />
+                                    <InfoField label="Status Perkawinan" value={selectedOfficial?.status_perkawinan} />
+                                    <InfoField label="Pendidikan Terakhir" value={selectedOfficial?.identities?.pendidikan_terakhir} />
+                                </div>
+                            </AccordionSection>
+
+                            <AccordionSection
+                                title="Alamat"
+                                icon={<FiMapPin className="text-green-500" />}
+                            >
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                                    <InfoField label="Alamat" value={selectedOfficial?.addresses?.alamat} fullWidth />
+                                    <div className="flex gap-4">
+                                        <InfoField label="RT" value={selectedOfficial?.addresses?.rt} />
+                                        <InfoField label="RW" value={selectedOfficial?.addresses?.rw} />
                                     </div>
-                                </AccordionSection>
+                                    <InfoField
+                                        label="Desa/Kelurahan"
+                                        value={`${selectedOfficial?.addresses?.village_name} (${selectedOfficial?.village?.name_dagri})`}
+                                    />
+                                    <InfoField
+                                        label="Kecamatan"
+                                        value={`${selectedOfficial?.addresses?.district_name} (${selectedOfficial?.village?.district?.name_dagri})`}
+                                    />
+                                    <InfoField
+                                        label="Kabupaten/Kota"
+                                        value={`${selectedOfficial?.addresses?.regency_name} (${selectedOfficial?.village?.district?.regency?.name_dagri})`}
+                                    />
+                                    <InfoField label="Provinsi" value={selectedOfficial?.addresses?.province_name} />
+                                </div>
+                            </AccordionSection>
 
-                                {/* Alamat */}
-                                <AccordionSection
-                                    title="Alamat"
-                                    icon={
-                                        <FiMapPin className="text-green-500" />
-                                    }
-                                >
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                                        <InfoField
-                                            label="Alamat"
-                                            value={
-                                                selectedOfficial?.addresses
-                                                    ?.alamat
-                                            }
-                                            fullWidth
-                                        />
-                                        <div className="flex gap-4">
-                                            <InfoField
-                                                label="RT"
-                                                value={
-                                                    selectedOfficial?.addresses
-                                                        ?.rt
-                                                }
-                                            />
-                                            <InfoField
-                                                label="RW"
-                                                value={
-                                                    selectedOfficial?.addresses
-                                                        ?.rw
-                                                }
-                                            />
+                            <AccordionSection
+                                title="Kontak"
+                                icon={<FiPhone className="text-purple-500" />}
+                            >
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                                    <InfoField label="Nomor Handphone" value={selectedOfficial?.contacts?.handphone} />
+                                    <InfoField label="Email" value={selectedOfficial?.contacts?.email || "-"} />
+                                </div>
+                            </AccordionSection>
+
+                            <AccordionSection
+                                title="Dokumen Identitas"
+                                icon={<FiFileText className="text-yellow-500" />}
+                            >
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                                    <InfoField label="BPJS Kesehatan" value={selectedOfficial?.identities?.bpjs_kesehatan || "-"} />
+                                    <InfoField label="BPJS Ketenagakerjaan" value={selectedOfficial?.identities?.bpjs_ketenagakerjaan || "-"} />
+                                    <InfoField label="NPWP" value={selectedOfficial?.identities?.npwp || "-"} />
+                                </div>
+                            </AccordionSection>
+
+                            <AccordionSection
+                                title="Posisi & Jabatan"
+                                icon={<FiBriefcase className="text-red-500" />}
+                            >
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                                    <InfoField label="Jabatan" value={selectedOfficial?.position_current?.position?.name} />
+                                    <InfoField label="Penetap" value={selectedOfficial?.position_current?.penetap} />
+                                    <InfoField label="Nomor SK" value={selectedOfficial?.position_current?.nomor_sk} />
+                                    <InfoField label="Tanggal SK" value={selectedOfficial?.position_current?.tanggal_sk} />
+                                    <InfoField label="TMT Jabatan" value={selectedOfficial?.position_current?.tmt_jabatan} />
+                                    {selectedOfficial?.position_current?.file_sk && (
+                                        <div className="md:col-span-2 lg:col-span-3">
+                                            <label className="block text-sm font-medium text-gray-500">File SK</label>
+                                            <a
+                                                href={selectedOfficial.position_current.file_sk}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="mt-1 inline-flex items-center text-blue-600 hover:underline"
+                                            >
+                                                <FiFileText className="mr-1" /> Lihat Dokumen SK
+                                            </a>
                                         </div>
-                                        <InfoField
-                                            label="Desa/Kelurahan"
-                                            value={`${selectedOfficial?.addresses?.village_name} (${selectedOfficial?.village?.name_dagri})`}
-                                        />
-                                        <InfoField
-                                            label="Kecamatan"
-                                            value={`${selectedOfficial?.addresses?.district_name} (${selectedOfficial?.village?.district?.name_dagri})`}
-                                        />
-                                        <InfoField
-                                            label="Kabupaten/Kota"
-                                            value={`${selectedOfficial?.addresses?.regency_name} (${selectedOfficial?.village?.district?.regency?.name_dagri})`}
-                                        />
-                                        <InfoField
-                                            label="Provinsi"
-                                            value={
-                                                selectedOfficial?.addresses
-                                                    ?.province_name
-                                            }
-                                        />
-                                    </div>
-                                </AccordionSection>
+                                    )}
+                                </div>
+                            </AccordionSection>
+                        </div>
 
-                                {/* Kontak */}
-                                <AccordionSection
-                                    title="Kontak"
-                                    icon={
-                                        <FiPhone className="text-purple-500" />
-                                    }
-                                >
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                                        <InfoField
-                                            label="Nomor Handphone"
-                                            value={
-                                                selectedOfficial?.contacts
-                                                    ?.handphone
-                                            }
-                                        />
-                                        <InfoField
-                                            label="Email"
-                                            value={
-                                                selectedOfficial?.contacts
-                                                    ?.email || "-"
-                                            }
-                                        />
-                                    </div>
-                                </AccordionSection>
-
-                                {/* Dokumen Identitas */}
-                                <AccordionSection
-                                    title="Dokumen Identitas"
-                                    icon={
-                                        <FiFileText className="text-yellow-500" />
-                                    }
-                                >
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                                        <InfoField
-                                            label="BPJS Kesehatan"
-                                            value={
-                                                selectedOfficial?.identities
-                                                    ?.bpjs_kesehatan || "-"
-                                            }
-                                        />
-                                        <InfoField
-                                            label="BPJS Ketenagakerjaan"
-                                            value={
-                                                selectedOfficial?.identities
-                                                    ?.bpjs_ketenagakerjaan ||
-                                                "-"
-                                            }
-                                        />
-                                        <InfoField
-                                            label="NPWP"
-                                            value={
-                                                selectedOfficial?.identities
-                                                    ?.npwp || "-"
-                                            }
-                                        />
-                                    </div>
-                                </AccordionSection>
-
-                                {/* Posisi & Jabatan */}
-                                <AccordionSection
-                                    title="Posisi & Jabatan"
-                                    icon={
-                                        <FiBriefcase className="text-red-500" />
-                                    }
-                                >
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                                        <InfoField
-                                            label="Jabatan"
-                                            value={
-                                                selectedOfficial
-                                                    ?.position_current?.position
-                                                    ?.name
-                                            }
-                                        />
-                                        <InfoField
-                                            label="Penetap"
-                                            value={
-                                                selectedOfficial
-                                                    ?.position_current?.penetap
-                                            }
-                                        />
-                                        <InfoField
-                                            label="Nomor SK"
-                                            value={
-                                                selectedOfficial
-                                                    ?.position_current?.nomor_sk
-                                            }
-                                        />
-                                        <InfoField
-                                            label="Tanggal SK"
-                                            value={
-                                                selectedOfficial
-                                                    ?.position_current
-                                                    ?.tanggal_sk
-                                            }
-                                        />
-                                        <InfoField
-                                            label="TMT Jabatan"
-                                            value={
-                                                selectedOfficial
-                                                    ?.position_current
-                                                    ?.tmt_jabatan
-                                            }
-                                        />
-                                        {selectedOfficial?.position_current
-                                            ?.file_sk && (
-                                            <div className="md:col-span-2 lg:col-span-3">
-                                                <label className="block text-sm font-medium text-gray-500">
-                                                    File SK
-                                                </label>
-                                                <a
-                                                    href={
-                                                        selectedOfficial
-                                                            .position_current
-                                                            .file_sk
-                                                    }
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="mt-1 inline-flex items-center text-blue-600 hover:underline"
-                                                >
-                                                    <FiFileText className="mr-1" />{" "}
-                                                    Lihat Dokumen SK
-                                                </a>
-                                            </div>
-                                        )}
-                                    </div>
-                                </AccordionSection>
-                            </div>
-
-                            {/* Tombol Close */}
-                            <div className="flex justify-end pt-4 p-4">
-                                <motion.button
-                                    whileHover={{
-                                        scale: 1.05,
-                                        boxShadow:
-                                            "0px 2px 8px rgba(0,0,0,0.1)",
-                                    }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={handleCloseModal}
-                                    className="px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 flex items-center gap-2 shadow-md"
-                                >
-                                    <FiX size={18} /> Tutup
-                                </motion.button>
-                            </div>
-                        </motion.div>
-                    </Modal>
-                </div>
+                        <div className="flex justify-end pt-4 p-4">
+                            <motion.button
+                                whileHover={{ scale: 1.05, boxShadow: "0px 2px 8px rgba(0,0,0,0.1)" }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleCloseModal}
+                                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 flex items-center gap-2 shadow-md"
+                            >
+                                <FiX size={18} /> Tutup
+                            </motion.button>
+                        </div>
+                    </motion.div>
+                </Modal>
             </div>
         </AuthenticatedLayout>
     );
@@ -1298,13 +1175,10 @@ const AccordionSection = ({ title, icon, children }) => {
             >
                 <div className="flex items-center gap-3">
                     <div className="text-lg">{icon}</div>
-                    <h3 className="text-lg font-medium text-gray-800">
-                        {title}
-                    </h3>
+                    <h3 className="text-lg font-medium text-gray-800">{title}</h3>
                 </div>
                 {isOpen ? <FiChevronUp /> : <FiChevronDown />}
             </button>
-
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -1325,9 +1199,7 @@ const AccordionSection = ({ title, icon, children }) => {
 // Komponen InfoField
 const InfoField = ({ label, value, fullWidth = false }) => (
     <div className={fullWidth ? "md:col-span-2 lg:col-span-3" : ""}>
-        <label className="block text-sm font-medium text-gray-500">
-            {label}
-        </label>
+        <label className="block text-sm font-medium text-gray-500">{label}</label>
         <p className="mt-1 text-gray-900 font-medium">{value || "-"}</p>
     </div>
 );
@@ -1339,10 +1211,7 @@ const calculateAge = (birthDate) => {
     const birthDateObj = new Date(birthDate);
     let age = today.getFullYear() - birthDateObj.getFullYear();
     const monthDiff = today.getMonth() - birthDateObj.getMonth();
-    if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birthDateObj.getDate())
-    ) {
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate())) {
         age--;
     }
     return age;

@@ -32,7 +32,7 @@ export default function List({
     const [currentPage, setCurrentPage] = useState(
         officials?.current_page || 1
     );
-    const [rowsPerPage, setRowsPerPage] = useState(officials?.per_page || 10);
+    const [rowsPerPage, setRowsPerPage] = useState(officials?.per_page || 5);
     const [sortField, setSortField] = useState("id");
     const [sortDirection, setSortDirection] = useState("asc");
 
@@ -279,7 +279,7 @@ export default function List({
     return (
         <div className="bg-white p-6 rounded-lg shadow-lg ">
             {/* Header dengan pencarian dan filter */}
-            <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+            {/* <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <div className="flex gap-4 w-full md:w-auto">
                     <div className="flex flex-col gap-1 w-full">
                         <label htmlFor="search" className="text-sm font-medium">
@@ -332,11 +332,11 @@ export default function List({
                     </div>
                 </div>
 
-            </div>
+            </div> */}
 
             {/* Tabel biasa dengan overflow horizontal */}
             <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-xs border">
+                <table className="min-w-full max-w-full divide-y divide-gray-200 text-xs border">
                     <thead className="bg-gray-50">
                         <tr>
                             <th
@@ -360,7 +360,7 @@ export default function List({
                             <th
                                 scope="col"
                                 className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: "150px" }}
+                                style={{ width: "120px" }}
                                 onClick={() => handleSort("nik")}
                             >
                                 <div className="flex items-center cursor-pointer">
@@ -371,7 +371,7 @@ export default function List({
                             <th
                                 scope="col"
                                 className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: "150px" }}
+                                style={{ width: "120px" }}
                                 onClick={() => handleSort("nipd")}
                             >
                                 <div className="flex items-center cursor-pointer">
@@ -382,7 +382,7 @@ export default function List({
                             <th
                                 scope="col"
                                 className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: "150px" }}
+                                style={{ width: "120px" }}
                                 onClick={() => handleSort("pendidikan")}
                             >
                                 <div className="flex items-center cursor-pointer">
@@ -393,7 +393,7 @@ export default function List({
                             <th
                                 scope="col"
                                 className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: "150px" }}
+                                style={{ width: "120px" }}
                                 // onClick={() => handleSort("pendidikan")}
                             >
                                 <div className="flex items-center cursor-pointer">
@@ -401,11 +401,19 @@ export default function List({
                                     {/* {renderSortIcon("pendidikan")} */}
                                 </div>
                             </th>
-
+                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: "100px" }}>
+                                Kabupaten
+                            </th>
+                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: "100px" }}>
+                                Kecamatan
+                            </th>
+                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: "100px" }}>
+                                Desa
+                            </th>
                             <th
                                 scope="col"
                                 className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: "150px" }}
+                                style={{ width: "80px" }}
                                 // onClick={() => handleSort("pendidikan")}
                             >
                                 <div className="flex items-center cursor-pointer">
@@ -416,7 +424,7 @@ export default function List({
                             <th
                                 scope="col"
                                 className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: "150px" }}
+                                style={{ width: "80px" }}
                                 // onClick={() => handleSort("pendidikan")}
                             >
                                 <div className="flex items-center cursor-pointer">
@@ -424,16 +432,7 @@ export default function List({
                                     {/* {renderSortIcon("pendidikan")} */}
                                 </div>
                             </th>
-                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Desa
-                            </th>
-                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Kecamatan
-                            </th>
-                            {/* <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Kabupaten
-                            </th> */}
-                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: "80px" }}>
                                 Status
                             </th>
                             {/* { (user.role == 'regency')  (
@@ -488,24 +487,23 @@ export default function List({
                                         {row?.identities?.pendidikan_terakhir || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row?.positions?.position?.name || "-"}
+                                        {row?.position_current?.position?.name || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row?.officialTrainings || "-"}
+                                        {row.village?.district?.regency?.name_dagri || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row?.officialOrganizations || "-"}
+                                        {row.village?.district?.name_dagri || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row.village.name_bps || "-"}
+                                        {row.village?.name_dagri || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row.village.district.name_bps || "-"}
+                                        {Array.isArray(row?.official_trainings) ? row.official_trainings.length : "-"}
                                     </td>
-                                    {/* <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row.village.district.regency
-                                            .name_bps || "-"}
-                                    </td> */}
+                                    <td className="px-2 py-2 border whitespace-nowrap">
+                                        {Array.isArray(row?.official_organizations) ? row.official_organizations.length : "-"}
+                                    </td>
                                     <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
                                         <CustomBadge role={row.status} />
                                     </td>
@@ -531,7 +529,7 @@ export default function List({
                         ) : (
                             <tr>
                                 <td
-                                    colSpan="6"
+                                    colSpan="12"
                                     className="px-6 py-4 text-center"
                                 >
                                     Tidak ada data yang ditemukan
@@ -552,7 +550,7 @@ export default function List({
                             onChange={handleRowsPerPageChange}
                             className="border rounded"
                         >
-                            {[5, 10, 25, 50, 100].map((size) => (
+                            {[5, 10, 15, 20].map((size) => (
                                 <option key={size} value={size}>
                                     {size}
                                 </option>

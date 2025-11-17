@@ -23,6 +23,7 @@ import ExcelImportModal from "../Form/ExcelImportModal";
 export default function List({
     officials,
     fetchData,
+    regencyCode,
     loading,
     onEdit,
     onDelete,
@@ -33,6 +34,7 @@ export default function List({
     onReject,
     role,
 }) {
+    // console.log(regencyCode);
     const user = usePage().props.auth.user;
     const [filterText, setFilterText] = useState("");
     const [educationFilter, setEducationFilter] = useState("");
@@ -42,6 +44,11 @@ export default function List({
     const [rowsPerPage, setRowsPerPage] = useState(officials?.per_page || 10);
     const [sortField, setSortField] = useState("id");
     const [sortDirection, setSortDirection] = useState("asc");
+
+    const [kecamatan, setKecamatan] = useState([]);
+    const [desa, setDesa] = useState([]);
+    const [selectedKecamatan, setSelectedKecamatan] = useState("");
+    const [selectedDesa, setSelectedDesa] = useState("");
 
     const educationOptions = [
         "SD/MI",
@@ -64,6 +71,8 @@ export default function List({
             filters: educationFilter,
             sortField: sortField,
             sortDirection: sortDirection,
+            kecamatan: selectedKecamatan,
+            desa: selectedDesa,
         });
     }, [
         currentPage,
@@ -72,6 +81,8 @@ export default function List({
         educationFilter,
         sortField,
         sortDirection,
+        selectedKecamatan,
+        selectedDesa,
     ]);
 
     const handlePageChange = (page) => setCurrentPage(page);
@@ -98,10 +109,12 @@ export default function List({
                 filters: educationFilter,
                 sort_field: sortField,
                 sort_direction: sortDirection,
+                kecamatan: selectedKecamatan,
+                desa: selectedDesa,
             };
 
             const response = await axios.get(
-                `/admin/official/${position.slug}/export/${type}`,
+                `/regency/official/${role}/export/${type}`,
                 {
                     params,
                     responseType: "blob", // Important for file downloads
@@ -130,7 +143,7 @@ export default function List({
             link.href = url;
             link.setAttribute(
                 "download",
-                `Pejabat_${position.slug}_${new Date().toLocaleDateString()}.${
+                `Pejabat_${role}_${new Date().toLocaleDateString()}.${
                     extensions[type]
                 }`
             );
@@ -283,11 +296,28 @@ export default function List({
         );
     };
 
+    // useEffect(() => {
+    //     axios
+    //         .get(`/regency/bps/wilayah/kecamatan/${regencyCode.code_bps}`)
+    //         .then((res) => setKecamatan(res.data));
+    // }, [regencyCode.code_bps]);
+
+    // useEffect(() => {
+    //     if (!selectedKecamatan) {
+    //         setDesa([]);
+    //         setSelectedDesa("");
+    //         return;
+    //     }
+    //     axios
+    //         .get(`/regency/bps/wilayah/desa/${selectedKecamatan}`)
+    //         .then((res) => setDesa(res.data));
+    // }, [selectedKecamatan]);
+
     return (
         <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-300">
             {/* Header dengan pencarian dan filter */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                <div className="flex gap-4 w-full md:w-auto">
+                {/* <div className="flex gap-4 w-full md:w-auto">
                     <div className="flex flex-col gap-1 w-full">
                         <label htmlFor="search" className="text-sm font-medium">
                             Pecarian
@@ -328,7 +358,56 @@ export default function List({
                             ))}
                         </select>
                     </div>
-                </div>
+
+                    <div className="flex flex-col gap-1">
+                        <label
+                            htmlFor="kecamatan"
+                            className="text-sm font-medium"
+                        >
+                            Kecamatan
+                        </label>
+                        <select
+                            id="kecamatan"
+                            value={selectedKecamatan}
+                            onChange={(e) => {
+                                setSelectedKecamatan(e.target.value);
+                                setSelectedDesa(""); // reset desa
+                                setCurrentPage(1);
+                            }}
+                            className="border rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                            <option value="">Semua Kecamatan</option>
+                            {kecamatan.map((k) => (
+                                <option key={k.kode_bps} value={k.kode_bps}>
+                                    {k.nama_bps}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                        <label htmlFor="desa" className="text-sm font-medium">
+                            Desa
+                        </label>
+                        <select
+                            id="desa"
+                            value={selectedDesa}
+                            onChange={(e) => {
+                                setSelectedDesa(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            disabled={!selectedKecamatan}
+                            className="border rounded focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
+                        >
+                            <option value="">Semua Desa</option>
+                            {desa.map((d) => (
+                                <option key={d.kode_bps} value={d.kode_bps}>
+                                    {d.nama_bps}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div> */}
 
                 <div className="flex gap-2 w-full md:w-auto justify-end">
                     <motion.button
@@ -362,7 +441,7 @@ export default function List({
                     </motion.button>
 
                     {/* <ExcelImportModal onImport={handleImportExcel} /> */}
-{/*
+                    {/*
                     <motion.div
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -502,13 +581,13 @@ export default function List({
                                         {row.nipd}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row?.identities?.pendidikan || "-"}
+                                        {row?.identities?.pendidikan_terakhir || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row.village.name_bps || "-"}
+                                        {row.village.name_dagri || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row.village.district.name_bps || "-"}
+                                        {row.village.district.name_dagri || "-"}
                                     </td>
                                     {/* <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.district.regency

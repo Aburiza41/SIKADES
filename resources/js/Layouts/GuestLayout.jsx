@@ -32,7 +32,7 @@ export default function GuestLayout({ children }) {
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col">
+        <div className="min-h-screen bg-green-100 flex flex-col">
 
 
             <Head title="Guest" />
@@ -46,7 +46,7 @@ export default function GuestLayout({ children }) {
             {/* Tombol Tanda Tanya (Help Button) */}
             <div className="fixed bottom-8 right-8 z-50">
                 <button
-                    className="bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition-all duration-300 transform hover:scale-110"
+                    className="bg-green-700 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition-all duration-300 transform hover:scale-110"
                     onClick={() => {
                         // Tambahkan fungsi untuk menangani klik tombol
                         alert("Butuh bantuan? Hubungi kami di support@palmchain.com");

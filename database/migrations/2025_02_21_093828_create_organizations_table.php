@@ -24,14 +24,14 @@ class CreateOrganizationsTable extends Migration
 
         // Menambahkan data default untuk tabel organizations
         DB::table('organizations')->insert([
-            // Parpol
-            ['title' => 'Parpol', 'description' => 'Partai Politik', 'created_at' => now(), 'updated_at' => now()],
-            // Profesi
-            ['title' => 'Profesi', 'description' => 'Profesi', 'created_at' => now(), 'updated_at' => now()],
-            // Sosial
-            ['title' => 'Sosial', 'description' => 'Sosial', 'created_at' => now(), 'updated_at' => now()],
             // Lainnya
-            ['title' => 'Lainnya', 'description' => 'Lainnya', 'created_at' => now(), 'updated_at' => now()],
+            ['title' => 'LAINNYA', 'description' => 'Lainnya', 'created_at' => now(), 'updated_at' => now()],
+            // Parpol
+            ['title' => 'PARPOL', 'description' => 'Partai Politik', 'created_at' => now(), 'updated_at' => now()],
+            // Profesi
+            ['title' => 'PROFESI', 'description' => 'Profesi', 'created_at' => now(), 'updated_at' => now()],
+            // Sosial
+            ['title' => 'SOSIAL', 'description' => 'Sosial', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         // Tabel untuk menyimpan relasi antara pejabat dan organisasi

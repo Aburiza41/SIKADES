@@ -40,8 +40,8 @@ export default function List({
         officials?.current_page || 1
     );
     const [rowsPerPage, setRowsPerPage] = useState(officials?.per_page || 10);
-    const [sortField, setSortField] = useState("id");
-    const [sortDirection, setSortDirection] = useState("asc");
+    const [sortField, setSortField] = useState("created_at");
+    const [sortDirection, setSortDirection] = useState("desc");
 
     const educationOptions = [
         "SD/MI",
@@ -101,9 +101,9 @@ export default function List({
             };
 
             const response = await axios.get(
-                `/admin/official/${position.slug}/export/${type}`,
+                `/village/export/${position.slug}/with/${type}`,
                 {
-                    params,
+                    // params,
                     responseType: "blob", // Important for file downloads
                 }
             );
@@ -287,51 +287,10 @@ export default function List({
         <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-300">
             {/* Header dengan pencarian dan filter */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                <div className="flex gap-4 w-full md:w-auto">
-                    <div className="flex flex-col gap-1 w-full">
-                        <label htmlFor="search" className="text-sm font-medium">
-                            Pecarian
-                        </label>
-                        <motion.input
-                            type="text"
-                            id="search"
-                            name="search"
-                            placeholder="Pencarian ..."
-                            value={filterText}
-                            onChange={(e) => setFilterText(e.target.value)}
-                            className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500 w-full md:w-auto"
-                            whileHover={{ scale: 1.02 }}
-                            whileFocus={{ scale: 1.02 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        />
-                    </div>
 
-                    <div className="flex flex-col gap-1">
-                        <label
-                            htmlFor="education"
-                            className="text-sm font-medium"
-                        >
-                            Pendidikan
-                        </label>
-                        <select
-                            id="education"
-                            name="education"
-                            value={educationFilter}
-                            onChange={(e) => setEducationFilter(e.target.value)}
-                            className="border rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                        >
-                            <option value="">Semua</option>
-                            {educationOptions.map((education, index) => (
-                                <option key={index} value={education}>
-                                    {education}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
 
                 <div className="flex gap-2 w-full md:w-auto justify-end">
-                    <motion.button
+                    {/* <motion.button
                         onClick={handleExportJSON}
                         className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
                         whileHover={{ scale: 1.05 }}
@@ -339,9 +298,9 @@ export default function List({
                         transition={{ type: "spring", stiffness: 300 }}
                     >
                         <FaFileAlt className="mr-2" /> JSON
-                    </motion.button>
+                    </motion.button> */}
 
-                    <motion.button
+                    {/* <motion.button
                         onClick={handleExportPDF}
                         className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
                         whileHover={{ scale: 1.05 }}
@@ -349,9 +308,9 @@ export default function List({
                         transition={{ type: "spring", stiffness: 300 }}
                     >
                         <FaFilePdf className="mr-2" /> PDF
-                    </motion.button>
+                    </motion.button> */}
 
-                    <motion.button
+                    {/* <motion.button
                         onClick={handleExportExcel}
                         className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
                         whileHover={{ scale: 1.05 }}
@@ -359,9 +318,9 @@ export default function List({
                         transition={{ type: "spring", stiffness: 300 }}
                     >
                         <FaFileExcel className="mr-2" /> Excel
-                    </motion.button>
+                    </motion.button> */}
 
-                    <ExcelImportModal onImport={handleImportExcel} />
+                    {/* <ExcelImportModal onImport={handleImportExcel} /> */}
 
                     <motion.div
                         whileHover={{ scale: 1.05 }}
@@ -436,15 +395,15 @@ export default function List({
                                     {renderSortIcon("pendidikan")}
                                 </div>
                             </th>
-                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {/* <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Desa
-                            </th>
-                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            </th> */}
+                            {/* <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Kecamatan
-                            </th>
-                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            </th> */}
+                            {/* <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Kabupaten
-                            </th>
+                            </th> */}
                             <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Status
                             </th>
@@ -502,18 +461,19 @@ export default function List({
                                         {row.nipd}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row?.identities?.pendidikan_terakhir || "-"}
+                                        {row?.identities?.pendidikan_terakhir ||
+                                            "-"}
                                     </td>
-                                    <td className="px-2 py-2 border whitespace-nowrap">
+                                    {/* <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.name_bps || "-"}
-                                    </td>
-                                    <td className="px-2 py-2 border whitespace-nowrap">
+                                    </td> */}
+                                    {/* <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.district.name_bps || "-"}
-                                    </td>
-                                    <td className="px-2 py-2 border whitespace-nowrap">
+                                    </td> */}
+                                    {/* <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.district.regency
                                             .name_bps || "-"}
-                                    </td>
+                                    </td> */}
                                     <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
                                         <CustomBadge role={row.status} />
                                     </td>

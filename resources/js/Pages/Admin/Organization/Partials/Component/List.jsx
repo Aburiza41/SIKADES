@@ -5,16 +5,13 @@ import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
 import Actions from "./Actions";
 
-export default function List({ official_organizations, organizations, fetchData, loading, onEdit, onDelete, onView, onPrint }) {
+export default function List({ organizations, fetchData, loading, onEdit, onDelete, onView }) {
     // State untuk pencarian
     const [filterText, setFilterText] = useState("");
 
-    // State untuk filter training
-    const [organizationFilter, setOrganizationFilter] = useState("");
-
     // State untuk pagination
-    const [currentPage, setCurrentPage] = useState(official_organizations?.current_page || 1);
-    const [rowsPerPage, setRowsPerPage] = useState(official_organizations?.per_page || 10);
+    const [currentPage, setCurrentPage] = useState(organizations?.current_page || 1);
+    const [rowsPerPage, setRowsPerPage] = useState(organizations?.per_page || 10);
 
     // State untuk sorting
     const [sortField, setSortField] = useState("id");
@@ -26,11 +23,10 @@ export default function List({ official_organizations, organizations, fetchData,
             page: currentPage,
             perPage: rowsPerPage,
             search: filterText,
-            filters: organizationFilter, // Kirim filter training ke backend
             sortField: sortField,
             sortDirection: sortDirection,
         });
-    }, [currentPage, rowsPerPage, filterText, organizationFilter, sortField, sortDirection]);
+    }, [currentPage, rowsPerPage, filterText, sortField, sortDirection]);
 
     // Handle perubahan halaman
     const handlePageChange = (page) => {
@@ -48,7 +44,7 @@ export default function List({ official_organizations, organizations, fetchData,
         const validDirections = ["asc", "desc"];
         const direction = validDirections.includes(sortDirection) ? sortDirection : "asc";
 
-        const validSortFields = ["id", "nama", "mulai", "selesai", "created_at", "updated_at"];
+        const validSortFields = ["id", "title", "description", "created_at", "updated_at"];
         const field = validSortFields.includes(column.selector) ? column.selector : "id";
 
         setSortField(field);
@@ -57,32 +53,25 @@ export default function List({ official_organizations, organizations, fetchData,
 
     // Handle ekspor data ke JSON
     const handleExportJSON = () => {
-        const jsonData = JSON.stringify(official_organizations.data, null, 2);
+        const jsonData = JSON.stringify(organizations.data, null, 2);
         const blob = new Blob([jsonData], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "official_organizations.json";
+        link.download = "organizations.json";
         link.click();
         URL.revokeObjectURL(url);
     };
 
     // Handle ekspor data ke Excel
     const handleExportExcel = () => {
-        const worksheet = XLSX.utils.json_to_sheet(official_organizations.data);
+        const worksheet = XLSX.utils.json_to_sheet(organizations.data);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "official_organizations");
-        XLSX.writeFile(workbook, "official_organizations.xlsx");
+        XLSX.utils.book_append_sheet(workbook, worksheet, "organizations");
+        XLSX.writeFile(workbook, "organizations.xlsx");
     };
 
-    // Fungsi untuk menghitung lama pelatihan
-    const calculateDuration = (mulai, selesai) => {
-        const startDate = new Date(mulai);
-        const endDate = new Date(selesai);
-        const diffTime = Math.abs(endDate - startDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Hitung selisih dalam hari
-        return `${diffDays} hari`;
-    };
+
 
     // Kolom tabel
     const columns = [
@@ -91,13 +80,11 @@ export default function List({ official_organizations, organizations, fetchData,
             cell: (row, index) => (currentPage - 1) * rowsPerPage + index + 1, // Nomor berurutan
             width: "70px",
         },
-        { name: "Nama", selector: (row) => row.official.nama_lengkap, sortable: true, width: "200px" },
-        { name: "Jenis", selector: (row) => row.organization.title, sortable: true},
-        { name: "Organisasi", selector: (row) => row.nama, sortable: true},
-        { name: "Posisi", selector: (row) => row.posisi, sortable: true},
+        { name: "Judul", selector: (row) => row.title, sortable: true, width: "200px" },
+        { name: "Deskripsi", selector: (row) => row.description, sortable: true},
         {
             name: "Aksi",
-            cell: (row) => <Actions row={row} onEdit={onEdit} onDelete={onDelete} onView={onView} onPrint={onPrint} />,
+            cell: (row) => <Actions row={row} onEdit={onEdit} onDelete={onDelete} onView={onView} />,
             ignoreRowClick: true,
             allowOverflow: true,
             button: true,
@@ -107,12 +94,12 @@ export default function List({ official_organizations, organizations, fetchData,
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-300">
-            {/* Header dengan pencarian dan filter */}
+            {/* Header dengan pencarian */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 {/* Input pencarian */}
                 <motion.input
                     type="text"
-                    placeholder="Cari nama..."
+                    placeholder="Cari judul..."
                     value={filterText}
                     onChange={(e) => setFilterText(e.target.value)}
                     className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto"
@@ -120,21 +107,6 @@ export default function List({ official_organizations, organizations, fetchData,
                     whileFocus={{ scale: 1.02 }}
                     transition={{ type: "spring", stiffness: 300 }}
                 />
-
-                {/* Filter Organization */}
-                <select
-                    name="organization"
-                    value={organizationFilter}
-                    onChange={(e) => setOrganizationFilter(e.target.value)}
-                    className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto"
-                >
-                    <option value="">Semua Organization</option>
-                    {organizations.map((organization) => (
-                        <option key={organization.id} value={organization.id}>
-                            {organization.title}
-                        </option>
-                    ))}
-                </select>
 
                 {/* Tombol aksi (Export JSON, Export Excel) */}
                 <div className="flex gap-2 w-full md:w-auto justify-end">
@@ -164,10 +136,10 @@ export default function List({ official_organizations, organizations, fetchData,
             <div className="overflow-x-auto">
                 <DataTable
                     columns={columns}
-                    data={official_organizations?.data || []}
+                    data={organizations?.data || []}
                     pagination
                     paginationServer
-                    paginationTotalRows={official_organizations?.total || 0}
+                    paginationTotalRows={organizations?.total || 0}
                     paginationDefaultPage={currentPage}
                     onChangePage={handlePageChange}
                     onChangeRowsPerPage={handleRowsPerPageChange}
@@ -177,7 +149,6 @@ export default function List({ official_organizations, organizations, fetchData,
                     striped
                     responsive
                     progressPending={loading}
-
                 />
             </div>
         </div>

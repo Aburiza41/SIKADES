@@ -12,6 +12,7 @@ import {
     FaArrowRight,
     FaFilePdf,
     FaPlus,
+    FaFilter,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
@@ -43,6 +44,12 @@ export default function List({
     const [sortField, setSortField] = useState("id");
     const [sortDirection, setSortDirection] = useState("asc");
 
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+    const [selectedKabupaten, setSelectedKabupaten] = useState("");
+    const [selectedKecamatan, setSelectedKecamatan] = useState("");
+    const [selectedDesa, setSelectedDesa] = useState("");
+
     const educationOptions = [
         "SD/MI",
         "SMP/MTS",
@@ -64,6 +71,9 @@ export default function List({
             filters: educationFilter,
             sortField: sortField,
             sortDirection: sortDirection,
+            kabupaten: selectedKabupaten,
+            kecamatan: selectedKecamatan,
+            desa: selectedDesa,
         });
     }, [
         currentPage,
@@ -72,7 +82,19 @@ export default function List({
         educationFilter,
         sortField,
         sortDirection,
+        selectedKabupaten,
+        selectedKecamatan,
+        selectedDesa,
     ]);
+
+    const handleFilter = (filters) => {
+        setFilterText(filters.search || "");
+        setEducationFilter(filters.education || "");
+        setSelectedKabupaten(filters.kabupaten || "");
+        setSelectedKecamatan(filters.kecamatan || "");
+        setSelectedDesa(filters.desa || "");
+        setCurrentPage(1);
+    };
 
     const handlePageChange = (page) => setCurrentPage(page);
     const handleRowsPerPageChange = (e) => {
@@ -98,6 +120,9 @@ export default function List({
                 filters: educationFilter,
                 sort_field: sortField,
                 sort_direction: sortDirection,
+                kabupaten: selectedKabupaten,
+                kecamatan: selectedKecamatan,
+                desa: selectedDesa,
             };
 
             const response = await axios.get(
@@ -283,102 +308,65 @@ export default function List({
         );
     };
 
+
+
     return (
         <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-300">
-            {/* Header dengan pencarian dan filter */}
-            <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                <div className="flex gap-4 w-full md:w-auto">
-                    <div className="flex flex-col gap-1 w-full">
-                        <label htmlFor="search" className="text-sm font-medium">
-                            Pecarian
-                        </label>
-                        <motion.input
-                            type="text"
-                            id="search"
-                            name="search"
-                            placeholder="Pencarian ..."
-                            value={filterText}
-                            onChange={(e) => setFilterText(e.target.value)}
-                            className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500 w-full md:w-auto"
-                            whileHover={{ scale: 1.02 }}
-                            whileFocus={{ scale: 1.02 }}
+                {/* Header dengan export dan import */}
+                <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+                    <div className="flex gap-4 w-full md:w-auto">
+                        {/* Kosongkan area filter karena sudah ada di atas */}
+                    </div>
+
+                    <div className="flex gap-2 w-full md:w-auto justify-end">
+                        <motion.button
+                            onClick={handleExportJSON}
+                            className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                             transition={{ type: "spring", stiffness: 300 }}
-                        />
-                    </div>
+                        >
+                            <FaFileAlt className="mr-2" /> JSON
+                        </motion.button>
 
-                    <div className="flex flex-col gap-1">
-                        <label
-                            htmlFor="education"
-                            className="text-sm font-medium"
+                        <motion.button
+                            onClick={handleExportPDF}
+                            className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            transition={{ type: "spring", stiffness: 300 }}
                         >
-                            Pendidikan
-                        </label>
-                        <select
-                            id="education"
-                            name="education"
-                            value={educationFilter}
-                            onChange={(e) => setEducationFilter(e.target.value)}
-                            className="border rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+                            <FaFilePdf className="mr-2" /> PDF
+                        </motion.button>
+
+                        <motion.button
+                            onClick={handleExportExcel}
+                            className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            transition={{ type: "spring", stiffness: 300 }}
                         >
-                            <option value="">Semua</option>
-                            {educationOptions.map((education, index) => (
-                                <option key={index} value={education}>
-                                    {education}
-                                </option>
-                            ))}
-                        </select>
+                            <FaFileExcel className="mr-2" /> Excel
+                        </motion.button>
+
+                        <ExcelImportModal onImport={handleImportExcel} />
+
+                        {/* <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                        >
+                            <Link
+                                href={`/admin/official/${role}/create`}
+                                className="bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
+                            >
+                                <FaPlus className="mr-2" /> Tambah
+                            </Link>
+                        </motion.div> */}
+
+                        {/* <input type="file" className="p-2 border rounded" placeholder="Cari..." /> */}
                     </div>
                 </div>
-
-                <div className="flex gap-2 w-full md:w-auto justify-end">
-                    <motion.button
-                        onClick={handleExportJSON}
-                        className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                    >
-                        <FaFileAlt className="mr-2" /> JSON
-                    </motion.button>
-
-                    <motion.button
-                        onClick={handleExportPDF}
-                        className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                    >
-                        <FaFilePdf className="mr-2" /> PDF
-                    </motion.button>
-
-                    <motion.button
-                        onClick={handleExportExcel}
-                        className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                    >
-                        <FaFileExcel className="mr-2" /> Excel
-                    </motion.button>
-
-                    <ExcelImportModal onImport={handleImportExcel} />
-
-                    {/* <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                    >
-                        <Link
-                            href={`/admin/official/${role}/create`}
-                            className="bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
-                        >
-                            <FaPlus className="mr-2" /> Tambah
-                        </Link>
-                    </motion.div> */}
-
-                    {/* <input type="file" className="p-2 border rounded" placeholder="Cari..." /> */}
-                </div>
-            </div>
 
             {/* Tabel biasa dengan overflow horizontal */}
             <div className="overflow-x-auto">
@@ -425,17 +413,7 @@ export default function List({
                                     {renderSortIcon("nipd")}
                                 </div>
                             </th>
-                            <th
-                                scope="col"
-                                className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: "150px" }}
-                                onClick={() => handleSort("pendidikan")}
-                            >
-                                <div className="flex items-center cursor-pointer">
-                                    Pendidikan
-                                    {renderSortIcon("pendidikan")}
-                                </div>
-                            </th>
+
                             <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Desa
                             </th>
@@ -458,13 +436,13 @@ export default function List({
                                     </th>
                                 )
                             } */}
-                            <th
+                            {/* <th
                                 scope="col"
                                 className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 style={{ width: "120px" }}
                             >
                                 Proses
-                            </th>
+                            </th> */}
                             <th
                                 scope="col"
                                 className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -502,9 +480,6 @@ export default function List({
                                         {row.nipd}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row?.identities?.pendidikan_terakhir || "-"}
-                                    </td>
-                                    <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.name_dagri || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
@@ -517,13 +492,13 @@ export default function List({
                                     <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
                                         <CustomBadge role={row.status} />
                                     </td>
-                                    <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    {/* <td className="border px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
                                         <Procces
                                             row={row}
                                             onAccept={onAccept}
                                             onReject={onReject}
                                         />
-                                    </td>
+                                    </td> */}
                                     <td className="px-2 py-2 border whitespace-nowrap">
                                         <Actions
                                             row={row}

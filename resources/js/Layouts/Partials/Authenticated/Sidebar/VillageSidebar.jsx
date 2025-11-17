@@ -59,7 +59,7 @@ export default function VillageSidebar(props) {
                                 : 'text-green-900 hover:bg-green-700 hover:text-white')
                         }
                     >
-                        <HiHome className="w-5 h-5 mr-3" />Beranda
+                        <HiHome className="w-5 h-5 mr-3" />Dashboard
                     </Link>
                 </li>
 

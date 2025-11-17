@@ -20,10 +20,12 @@ class District extends Model
         'name_bps',
         'code_dagri',
         'name_dagri',
+        'active',
         'code',
-        // 'logo',
-        // 'description',
-        // 'website',
+    ];
+
+    protected $casts = [
+        'active' => 'boolean',
     ];
 
     /**

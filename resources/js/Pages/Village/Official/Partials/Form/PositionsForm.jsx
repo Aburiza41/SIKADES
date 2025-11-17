@@ -112,11 +112,11 @@ export default function PositionsForm({
                         </motion.div>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-800">
-                                C. JABATAN SAAT INI {jabatan.name.toUpperCase()}
+                                C. JABATAN SAAT INI {jabatan?.name?.toUpperCase()}
                             </h1>
                             <p className="text-sm text-gray-600 mt-1 flex items-center">
                                 <HiInformationCircle className="mr-1 text-blue-500" />
-                                Formulir {jabatan.name} ini digunakan untuk mengisi jabatan
+                                Formulir {jabatan?.name} ini digunakan untuk mengisi jabatan
                                 pejabat desa.
                             </p>
                         </div>

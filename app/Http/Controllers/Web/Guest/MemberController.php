@@ -10,6 +10,7 @@ use App\Models\Study;
 use App\Models\Village;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class MemberController extends Controller
@@ -22,18 +23,19 @@ class MemberController extends Controller
         // Ambil data Kabupaten tanpa relasi yang tidak diperlukan
         $regencies = Regency::get();
 
-        // Data tingkat pendidikan
+        // Data tingkat pendidikan sesuai skema baru
         $educationLevels = [
-            1 => 'SD/MI',
-            2 => 'SMP/MTS',
-            3 => 'SMA/SMK/MA',
-            4 => 'D1',
-            5 => 'D2',
-            6 => 'D3',
-            7 => 'D4',
-            8 => 'S1',
-            9 => 'S2',
-            10 => 'S3',
+            'SD/MI' => 'SD/MI',
+            'SMP/MTS/SLTP' => 'SMP/MTS',
+            'SMA/SMK/MA/SLTA/SMU' => 'SMA/SMK/MA',
+            'D1' => 'D1',
+            'D2' => 'D2',
+            'D3' => 'D3',
+            'D4' => 'D4',
+            'S1' => 'S1',
+            'S2' => 'S2',
+            'S3' => 'S3',
+            'Lainnya' => 'Lainnya',
         ];
 
         // Proses setiap Kabupaten
@@ -44,14 +46,11 @@ class MemberController extends Controller
             // Hitung total Desa dengan optimasi query
             $regency->total_villages = $regency->districts()->withCount('villages')->get()->sum('villages_count');
 
-            // Base query untuk officials dengan status validasi
-            $baseOfficialsQuery = function ($query) {
-                $query->where('status', 'daftar');
-            };
-
             // Hitung total Perangkat Desa dengan status "validasi"
             $regency->total_officials = $regency->districts()
-                ->with(['villages.officials' => $baseOfficialsQuery])
+                ->with(['villages.officials' => function ($query) {
+                    $query->where('status', 'validasi');
+                }])
                 ->get()
                 ->sum(function ($district) {
                     return $district->villages->sum(function ($village) {
@@ -59,15 +58,17 @@ class MemberController extends Controller
                     });
                 });
 
+            // Hitung total Perangkat berdasarkan Pendidikan Terakhir dengan status "validasi" menggunakan DB query
             $educationTotals = [];
-            foreach ($educationLevels as $id => $education) {
-                $count = \App\Models\Official::whereHas('village.district.regency', function($q) use ($regency) {
-                            $q->where('id', $regency->id);
-                        })
-                        ->whereHas('identities', function($q) use ($education) {
-                            $q->where('pendidikan_terakhir', $education);
-                        })
-                        ->count();
+            foreach ($educationLevels as $key => $education) {
+                $count = DB::table('officials')
+                    ->join('official_identities', 'officials.id', '=', 'official_identities.official_id')
+                    ->join('villages', 'officials.village_id', '=', 'villages.id')
+                    ->join('districts', 'villages.district_id', '=', 'districts.id')
+                    ->where('districts.regency_id', $regency->id)
+                    ->where('officials.status', 'validasi')
+                    ->where('official_identities.pendidikan_terakhir', $key)
+                    ->count();
 
                 $educationTotals[$education] = $count;
             }
@@ -76,9 +77,8 @@ class MemberController extends Controller
             // Hitung total Perangkat berdasarkan Jenis Kelamin
             $genderTotals = [
                 'L' => $regency->districts()
-                    ->with(['villages.officials' => function ($query) use ($baseOfficialsQuery) {
-                        $baseOfficialsQuery($query);
-                        $query->where('jenis_kelamin', 'L');
+                    ->with(['villages.officials' => function ($query) {
+                        $query->where('status', 'validasi')->where('jenis_kelamin', 'L');
                     }])
                     ->get()
                     ->sum(function ($district) {
@@ -87,9 +87,8 @@ class MemberController extends Controller
                         });
                     }),
                 'P' => $regency->districts()
-                    ->with(['villages.officials' => function ($query) use ($baseOfficialsQuery) {
-                        $baseOfficialsQuery($query);
-                        $query->where('jenis_kelamin', 'P');
+                    ->with(['villages.officials' => function ($query) {
+                        $query->where('status', 'validasi')->where('jenis_kelamin', 'P');
                     }])
                     ->get()
                     ->sum(function ($district) {
@@ -115,18 +114,19 @@ class MemberController extends Controller
         // Ambil data Kabupaten tanpa relasi yang tidak diperlukan
         $regencies = Regency::get();
 
-        // Data pendidikan
+        // Data pendidikan sesuai skema baru
         $educationLevels = [
-            1 => 'SD/MI',
-            2 => 'SMP/MTS',
-            3 => 'SMA/SMK/MA',
-            4 => 'D1',
-            5 => 'D2',
-            6 => 'D3',
-            7 => 'D4',
-            8 => 'S1',
-            9 => 'S2',
-            10 => 'S3',
+            'SD/MI' => 'SD/MI',
+            'SMP/MTS/SLTP' => 'SMP/MTS',
+            'SMA/SMK/MA/SLTA/SMU' => 'SMA/SMK/MA',
+            'D1' => 'D1',
+            'D2' => 'D2',
+            'D3' => 'D3',
+            'D4' => 'D4',
+            'S1' => 'S1',
+            'S2' => 'S2',
+            'S3' => 'S3',
+            'Lainnya' => 'Lainnya',
         ];
 
         // Proses setiap Kabupaten
@@ -137,14 +137,11 @@ class MemberController extends Controller
             // Hitung total Desa (optimasi query)
             $regency->total_villages = $regency->districts()->withCount('villages')->get()->sum('villages_count');
 
-            // Query dasar untuk perangkat desa dengan status validasi
-            $baseOfficialsQuery = function ($query) {
-                $query->where('status', 'daftar');
-            };
-
             // Hitung total Perangkat Desa dengan status "validasi" (optimasi query)
             $regency->total_officials = $regency->districts()
-                ->with(['villages.officials' => $baseOfficialsQuery])
+                ->with(['villages.officials' => function ($query) {
+                    $query->where('status', 'validasi');
+                }])
                 ->get()
                 ->sum(function ($district) {
                     return $district->villages->sum(function ($village) {
@@ -152,28 +149,17 @@ class MemberController extends Controller
                     });
                 });
 
-            // Hitung total Perangkat berdasarkan Pendidikan
-            $educationLevels = [
-                1 => 'SD/MI',
-                2 => 'SMP/MTS',
-                3 => 'SMA/SMK/MA',
-                4 => 'D1',
-                5 => 'D2',
-                6 => 'D3',
-                7 => 'D4',
-                8 => 'S1',
-                9 => 'S2',
-                10 => 'S3',
-            ];
-           $educationTotals = [];
-            foreach ($educationLevels as $id => $education) {
-                $count = \App\Models\Official::whereHas('village.district.regency', function($q) use ($regency) {
-                            $q->where('id', $regency->id);
-                        })
-                        ->whereHas('identities', function($q) use ($education) {
-                            $q->where('pendidikan_terakhir', $education);
-                        })
-                        ->count();
+            // Hitung total Perangkat berdasarkan Pendidikan dengan status "validasi" menggunakan DB query
+            $educationTotals = [];
+            foreach ($educationLevels as $key => $education) {
+                $count = DB::table('officials')
+                    ->join('official_identities', 'officials.id', '=', 'official_identities.official_id')
+                    ->join('villages', 'officials.village_id', '=', 'villages.id')
+                    ->join('districts', 'villages.district_id', '=', 'districts.id')
+                    ->where('districts.regency_id', $regency->id)
+                    ->where('officials.status', 'validasi')
+                    ->where('official_identities.pendidikan_terakhir', $key)
+                    ->count();
 
                 $educationTotals[$education] = $count;
             }
@@ -187,9 +173,8 @@ class MemberController extends Controller
 
             // Query untuk jenis kelamin Laki-laki
             $genderTotals['L'] = $regency->districts()
-                ->with(['villages.officials' => function ($query) use ($baseOfficialsQuery) {
-                    $baseOfficialsQuery($query);
-                    $query->where('jenis_kelamin', 'L');
+                ->with(['villages.officials' => function ($query) {
+                    $query->where('status', 'validasi')->where('jenis_kelamin', 'L');
                 }])
                 ->get()
                 ->sum(function ($district) {
@@ -200,9 +185,8 @@ class MemberController extends Controller
 
             // Query untuk jenis kelamin Perempuan
             $genderTotals['P'] = $regency->districts()
-                ->with(['villages.officials' => function ($query) use ($baseOfficialsQuery) {
-                    $baseOfficialsQuery($query);
-                    $query->where('jenis_kelamin', 'P');
+                ->with(['villages.officials' => function ($query) {
+                    $query->where('status', 'validasi')->where('jenis_kelamin', 'P');
                 }])
                 ->get()
                 ->sum(function ($district) {
@@ -237,19 +221,19 @@ class MemberController extends Controller
         // Ambil data Kecamatan berdasarkan Kabupaten
         $districts = District::where('regency_id', $regency->id)->get();
 
-        // Ambil data pendidikan dari tabel studies
-        // $educationLevels = Study::pluck('name', 'id')->toArray();
+        // Data pendidikan sesuai skema baru
         $educationLevels = [
-            1 => 'SD/MI',
-            2 => 'SMP/MTS',
-            3 => 'SMA/SMK/MA',
-            4 => 'D1',
-            5 => 'D2',
-            6 => 'D3',
-            7 => 'D4',
-            8 => 'S1',
-            9 => 'S2',
-            10 => 'S3',
+            'SD/MI' => 'SD/MI',
+            'SMP/MTS/SLTP' => 'SMP/MTS',
+            'SMA/SMK/MA/SLTA/SMU' => 'SMA/SMK/MA',
+            'D1' => 'D1',
+            'D2' => 'D2',
+            'D3' => 'D3',
+            'D4' => 'D4',
+            'S1' => 'S1',
+            'S2' => 'S2',
+            'S3' => 'S3',
+            'Lainnya' => 'Lainnya',
         ];
 
         // Proses setiap Kecamatan
@@ -260,39 +244,25 @@ class MemberController extends Controller
             // Hitung total Perangkat Desa dengan status "validasi"
             $district->total_officials = $district->villages()
                 ->with(['officials' => function ($query) {
-                    $query->where('status', 'daftar');
+                    $query->where('status', 'validasi');
                 }])
                 ->get()
                 ->sum(function ($village) {
                     return $village->officials->count();
                 });
 
-            // Hitung total Perangkat berdasarkan Pendidikan dengan status "daftar"
-            $educationLevels = [
-            1 => 'SD/MI',
-            2 => 'SMP/MTS',
-            3 => 'SMA/SMK/MA',
-            4 => 'D1',
-            5 => 'D2',
-            6 => 'D3',
-            7 => 'D4',
-            8 => 'S1',
-            9 => 'S2',
-            10 => 'S3',
-        ];
+            // Hitung total Perangkat berdasarkan Pendidikan dengan status "validasi" menggunakan DB query
             $educationTotals = [];
-            foreach ($educationLevels as $id => $education) {
-                $educationTotals[$education] = $district->villages()
-                    ->with(['officials' => function ($query) use ($education) {
-                        $query->where('status', 'daftar')
-                            ->whereHas('identities', function ($q) use ($education) {
-                                $q->where('pendidikan_terakhir', $education);
-                            });
-                    }])
-                    ->get()
-                    ->sum(function ($village) {
-                        return $village->officials->count();
-                    });
+            foreach ($educationLevels as $key => $education) {
+                $count = DB::table('officials')
+                    ->join('official_identities', 'officials.id', '=', 'official_identities.official_id')
+                    ->join('villages', 'officials.village_id', '=', 'villages.id')
+                    ->where('villages.district_id', $district->id)
+                    ->where('officials.status', 'validasi')
+                    ->where('official_identities.pendidikan_terakhir', $key)
+                    ->count();
+
+                $educationTotals[$education] = $count;
             }
             $district->education_totals = $educationTotals;
 
@@ -300,7 +270,7 @@ class MemberController extends Controller
             $genderTotals = [
                 'L' => $district->villages()
                     ->with(['officials' => function ($query) {
-                        $query->where('status', 'daftar')->where('jenis_kelamin', 'L');
+                        $query->where('status', 'validasi')->where('jenis_kelamin', 'L');
                     }])
                     ->get()
                     ->sum(function ($village) {
@@ -308,7 +278,7 @@ class MemberController extends Controller
                     }),
                 'P' => $district->villages()
                     ->with(['officials' => function ($query) {
-                        $query->where('status', 'daftar')->where('jenis_kelamin', 'P');
+                        $query->where('status', 'validasi')->where('jenis_kelamin', 'P');
                     }])
                     ->get()
                     ->sum(function ($village) {
@@ -346,7 +316,7 @@ class MemberController extends Controller
 
         // Ambil data Desa dengan relasi officials
         $villages = Village::with(['officials' => function ($query) use ($positionIds) {
-            $query->where('status', 'daftar') // Filter hanya yang statusnya 'daftar'
+            $query->where('status', 'validasi') // Filter hanya yang statusnya 'validasi'
                 ->whereHas('positions', function ($q) use ($positionIds) {
                     $q->whereIn('position_id', $positionIds)
                         ->where('tmt_jabatan', '<=', Carbon::now())
@@ -371,24 +341,26 @@ class MemberController extends Controller
         ->where('district_id', $district->id)
         ->get();
 
+        // Data pendidikan sesuai skema baru
         $educationLevels = [
-            1 => 'SD/MI',
-            2 => 'SMP/MTS',
-            3 => 'SMA/SMK/MA',
-            4 => 'D1',
-            5 => 'D2',
-            6 => 'D3',
-            7 => 'D4',
-            8 => 'S1',
-            9 => 'S2',
-            10 => 'S3',
+            'SD/MI' => 'SD/MI',
+            'SMP/MTS/SLTP' => 'SMP/MTS',
+            'SMA/SMK/MA/SLTA/SMU' => 'SMA/SMK/MA',
+            'D1' => 'D1',
+            'D2' => 'D2',
+            'D3' => 'D3',
+            'D4' => 'D4',
+            'S1' => 'S1',
+            'S2' => 'S2',
+            'S3' => 'S3',
+            'Lainnya' => 'Lainnya',
         ];
 
         // Proses setiap Desa
         $villages->each(function ($village) use ($educationLevels, $positionIds) {
-            // Hitung total Perangkat Desa dengan status "daftar" dan memenuhi kriteria posisi
+            // Hitung total Perangkat Desa dengan status "validasi" dan memenuhi kriteria posisi
             $village->total_officials = $village->officials()
-                ->where('status', 'daftar')
+                ->where('status', 'validasi')
                 ->whereHas('positions', function ($q) use ($positionIds) {
                     $q->whereIn('position_id', $positionIds)
                         ->where('tmt_jabatan', '<=', Carbon::now())
@@ -399,11 +371,11 @@ class MemberController extends Controller
                 })
                 ->count();
 
-            // Hitung total Perangkat berdasarkan Pendidikan dengan status "daftar"
+            // Hitung total Perangkat berdasarkan Pendidikan dengan status "validasi"
             $educationTotals = [];
-            foreach ($educationLevels as $id => $education) {
+            foreach ($educationLevels as $key => $education) {
                 $educationTotals[$education] = $village->officials()
-                    ->where('status', 'daftar')
+                    ->where('status', 'validasi')
                     ->whereHas('positions', function ($q) use ($positionIds) {
                         $q->whereIn('position_id', $positionIds)
                             ->where('tmt_jabatan', '<=', Carbon::now())
@@ -412,17 +384,17 @@ class MemberController extends Controller
                                     ->orWhereNull('periode');
                             });
                     })
-                    ->whereHas('identities', function ($query) use ($education) {
-                        $query->where('pendidikan_terakhir', $education);
+                    ->whereHas('identities', function ($query) use ($key) {
+                        $query->where('pendidikan_terakhir', $key);
                     })
                     ->count();
             }
             $village->education_totals = $educationTotals;
 
-            // Hitung total Perangkat berdasarkan Jenis Kelamin dengan status "daftar"
+            // Hitung total Perangkat berdasarkan Jenis Kelamin dengan status "validasi"
             $genderTotals = [
                 'L' => $village->officials()
-                    ->where('status', 'daftar')
+                    ->where('status', 'validasi')
                     ->whereHas('positions', function ($q) use ($positionIds) {
                         $q->whereIn('position_id', $positionIds)
                             ->where('tmt_jabatan', '<=', Carbon::now())
@@ -434,7 +406,7 @@ class MemberController extends Controller
                     ->where('jenis_kelamin', 'L')
                     ->count(),
                 'P' => $village->officials()
-                    ->where('status', 'daftar')
+                    ->where('status', 'validasi')
                     ->whereHas('positions', function ($q) use ($positionIds) {
                         $q->whereIn('position_id', $positionIds)
                             ->where('tmt_jabatan', '<=', Carbon::now())

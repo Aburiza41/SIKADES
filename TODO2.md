@@ -1,0 +1,13 @@
+- [x] Fix OrganizationController: change to Organization master CRUD
+  - [x] Update index() for Organization query
+  - [x] Update create() to render Organization form
+  - [x] Update store() validation and creation
+  - [x] Update show() for Organization
+  - [x] Update edit() for Organization
+  - [x] Update update() for Organization
+  - [x] Update destroy() for Organization
+- [x] Update React components: Page.jsx and List.jsx for Organization master data
+- [x] Fix infinite loop in Organization List component by removing fetchData from useEffect dependencies
+- [x] Remove bulk delete functionality from Village controller and routes
+- [x] Remove bulk delete functionality from Village List component
+- [ ] Test the controller

@@ -1,30 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Swal from "sweetalert2";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, usePage, router } from "@inertiajs/react";
 import OrganizationList from "./Partials/Component/List";
-import { HiUsers } from "react-icons/hi";
+import { HiUsers, HiPlus } from "react-icons/hi";
 import Modal from "./Partials/Section/Modal";
-import OrganizationPDF from "./Partials/Component/PDF";
 
 // Ambil token CSRF
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-export default function Organization({ initialOrganizations, organizations }) {
+export default function Organization({ organizations, sort, search }) {
     const { flash } = usePage().props;
-    const [organizationsData, setOrganizationsData] = useState(initialOrganizations);
+    const [organizationsData, setOrganizationsData] = useState(organizations);
     const [loading, setLoading] = useState(false);
+    const [currentSort, setCurrentSort] = useState(sort || {});
+    const [currentSearch, setCurrentSearch] = useState(search || "");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
     const [isViewMode, setIsViewMode] = useState(false);
     const [selectedOrganization, setSelectedOrganization] = useState(null);
     const [newOrganization, setNewOrganization] = useState({
-        official_id: "",
-        organization_id: "",
-        doc_scan: "",
-        nama: "",
-        posisi: "",
-        keterangan: "",
+        title: "",
+        description: "",
     });
 
     // Handle flash messages
@@ -34,30 +31,24 @@ export default function Organization({ initialOrganizations, organizations }) {
     }, [flash]);
 
     // Fetch data from the server
-    const fetchData = ({
-        page = 1,
-        perPage = 10,
-        search = "",
-        filters = "",
-        sortField = "",
-        sortDirection = ""
-    }) => {
+    const fetchData = useCallback((params = {}) => {
         setLoading(true);
         router.get(
             "/admin/organization",
             {
-                page,
-                per_page: perPage,
-                search,
-                filters,
-                sort_field: sortField,
-                sort_direction: sortDirection,
+                page: params.page || 1,
+                per_page: params.perPage || 10,
+                search: params.search || currentSearch,
+                sort_field: params.sortField || currentSort.sort_field,
+                sort_direction: params.sortDirection || currentSort.sort_direction,
             },
             {
                 preserveState: true,
                 replace: true,
                 onSuccess: (page) => {
-                    setOrganizationsData(page.props.official_organizations); // Gunakan official_organizations
+                    setOrganizationsData(page.props.organizations);
+                    setCurrentSort(page.props.sort || {});
+                    setCurrentSearch(page.props.search || "");
                     setLoading(false);
                 },
                 onError: () => {
@@ -66,86 +57,67 @@ export default function Organization({ initialOrganizations, organizations }) {
                 },
             }
         );
-    };
+    }, []);
 
     // Handle add organization
     const handleAdd = () => {
         setIsEdit(false);
         setIsViewMode(false);
         setIsModalOpen(true);
+        setSelectedOrganization(null);
         setNewOrganization({
-            official_id: "",
-            organization_id: "",
-            doc_scan: "",
-            nama: "",
-            posisi: "",
-            keterangan: "",
+            title: "",
+            description: "",
         });
     };
 
     // Handle edit organization
     const handleEdit = (organization) => {
-        setSelectedOrganization(organization); // Set data yang akan diedit
-        setIsEdit(true); // Set mode edit
-        setIsViewMode(false); // Nonaktifkan mode view
-        setIsModalOpen(true); // Buka modal
-
-        // Isi form dengan data organization yang dipilih
+        setSelectedOrganization(organization);
+        setIsEdit(true);
+        setIsViewMode(false);
+        setIsModalOpen(true);
         setNewOrganization({
-            official_id: organization.official_id,
-            organization_id: organization.organization_id,
-            doc_scan: organization.doc_scan,
-            nama: organization.nama,
-            posisi: organization.posisi,
-            keterangan: organization.keterangan,
+            title: organization.title || "",
+            description: organization.description || "",
         });
     };
 
     // Handle view organization
     const handleView = (organization) => {
-        setSelectedOrganization(organization); // Set data yang akan dilihat
-        setIsEdit(false); // Nonaktifkan mode edit
-        setIsViewMode(true); // Aktifkan mode view
-        setIsModalOpen(true); // Buka modal
+        setSelectedOrganization(organization);
+        setIsEdit(false);
+        setIsViewMode(true);
+        setIsModalOpen(true);
     };
 
     // Handle delete organization
     const handleDelete = (id) => {
         Swal.fire({
-            title: "Are you sure?",
-            text: "This data will be deleted!",
+            title: "Apakah Anda yakin?",
+            text: "Data ini akan dihapus permanen!",
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#d33",
             cancelButtonColor: "#3085d6",
-            confirmButtonText: "Yes, delete it!",
+            confirmButtonText: "Ya, hapus!",
+            cancelButtonText: "Batal",
         }).then((result) => {
             if (result.isConfirmed) {
                 router.delete(`/admin/organization/${id}`, {
                     headers: {
-                        'X-CSRF-TOKEN': csrfToken, // Sertakan token CSRF
+                        'X-CSRF-TOKEN': csrfToken,
                     },
                     onSuccess: () => {
-                        Swal.fire("Deleted!", "Data has been successfully deleted.", "success");
-                        fetchData({}); // Refresh data setelah penghapusan
+                        Swal.fire("Terhapus!", "Data berhasil dihapus.", "success");
+                        fetchData({});
                     },
                     onError: () => {
-                        Swal.fire("Error", "An error occurred while deleting the data.", "error");
+                        Swal.fire("Error", "Terjadi kesalahan saat menghapus data.", "error");
                     },
                 });
             }
         });
-    };
-
-    // Handle print organization
-    const handlePrint = (organization) => {
-        const data = {
-            nama: organization.nama,
-            organization: organization.organization?.title || "-",
-            posisi: organization.posisi,
-            keterangan: organization.keterangan,
-        };
-        OrganizationPDF(data); // Panggil fungsi PDF dengan data organization
     };
 
     // Handle submit form (tambah/edit)
@@ -155,22 +127,17 @@ export default function Organization({ initialOrganizations, organizations }) {
         const url = isEdit ? `/admin/organization/${selectedOrganization.id}` : "/admin/organization";
         const method = isEdit ? "put" : "post";
 
-        // Data yang akan dikirim ke backend
         const payload = {
-            official_id: newOrganization.official_id,
-            organization_id: newOrganization.organization_id,
-            doc_scan: newOrganization.doc_scan,
-            nama: newOrganization.nama,
-            posisi: newOrganization.posisi,
-            keterangan: newOrganization.keterangan,
+            title: newOrganization.title,
+            description: newOrganization.description,
         };
 
         router[method](url, payload, {
             headers: {
-                'X-CSRF-TOKEN': csrfToken, // Sertakan token CSRF
+                'X-CSRF-TOKEN': csrfToken,
             },
             onSuccess: () => {
-                Swal.fire("Success", `Organization ${isEdit ? "updated" : "added"} successfully.`, "success");
+                Swal.fire("Success", `Organisasi ${isEdit ? "diperbarui" : "ditambahkan"} berhasil.`, "success");
                 setIsModalOpen(false);
                 fetchData({});
             },
@@ -183,17 +150,13 @@ export default function Organization({ initialOrganizations, organizations }) {
     // Handle close modal
     const handleCloseModal = () => {
         setIsModalOpen(false);
-        setIsEdit(false); // Reset mode edit
-        setIsViewMode(false); // Reset mode view
-        setSelectedOrganization(null); // Reset selected organization
+        setIsEdit(false);
+        setIsViewMode(false);
+        setSelectedOrganization(null);
         setNewOrganization({
-            official_id: "",
-            organization_id: "",
-            doc_scan: "",
-            nama: "",
-            posisi: "",
-            keterangan: "",
-        }); // Reset form
+            title: "",
+            description: "",
+        });
     };
 
     return (
@@ -211,50 +174,42 @@ export default function Organization({ initialOrganizations, organizations }) {
             <div className="p-4">
                 <button
                     onClick={handleAdd}
-                    className="mb-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                    className="mb-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center"
                 >
-                    Add Organization
+                    <HiPlus className="mr-2" />
+                    Tambah Organisasi
                 </button>
                 <OrganizationList
-                    official_organizations={organizationsData}
-                    organizations={organizations}
+                    organizations={organizationsData}
                     fetchData={fetchData}
                     loading={loading}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onView={handleView}
-                    onPrint={handlePrint}
                 />
             </div>
 
             {/* Modal untuk Tambah/Edit */}
-            <Modal isOpen={isModalOpen && !isViewMode} onClose={handleCloseModal} title={isEdit ? "Edit Organization" : "Add Organization"}>
+            <Modal isOpen={isModalOpen && !isViewMode} onClose={handleCloseModal} title={isEdit ? "Edit Organisasi" : "Tambah Organisasi"}>
                 <div className="p-4">
                     <form onSubmit={handleSubmit}>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700">Nama</label>
+                            <label className="block text-sm font-medium text-gray-700">Judul</label>
                             <input
                                 type="text"
-                                value={newOrganization.nama}
-                                onChange={(e) => setNewOrganization({ ...newOrganization, nama: e.target.value })}
+                                value={newOrganization.title}
+                                onChange={(e) => setNewOrganization({ ...newOrganization, title: e.target.value })}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                required
                             />
                         </div>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700">Posisi</label>
-                            <input
-                                type="text"
-                                value={newOrganization.posisi}
-                                onChange={(e) => setNewOrganization({ ...newOrganization, posisi: e.target.value })}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                            />
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700">Keterangan</label>
+                            <label className="block text-sm font-medium text-gray-700">Deskripsi</label>
                             <textarea
-                                value={newOrganization.keterangan}
-                                onChange={(e) => setNewOrganization({ ...newOrganization, keterangan: e.target.value })}
+                                value={newOrganization.description}
+                                onChange={(e) => setNewOrganization({ ...newOrganization, description: e.target.value })}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                rows="3"
                             />
                         </div>
                         <div className="flex justify-end">
@@ -263,13 +218,13 @@ export default function Organization({ initialOrganizations, organizations }) {
                                 onClick={handleCloseModal}
                                 className="mr-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
                             >
-                                Cancel
+                                Batal
                             </button>
                             <button
                                 type="submit"
                                 className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                             >
-                                {isEdit ? "Update" : "Save"}
+                                {isEdit ? "Perbarui" : "Simpan"}
                             </button>
                         </div>
                     </form>
@@ -277,23 +232,15 @@ export default function Organization({ initialOrganizations, organizations }) {
             </Modal>
 
             {/* Modal untuk View */}
-            <Modal isOpen={isModalOpen && isViewMode} onClose={handleCloseModal} title="View Organization">
+            <Modal isOpen={isModalOpen && isViewMode} onClose={handleCloseModal} title="Lihat Organisasi">
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Nama</label>
-                        <p className="mt-1 text-gray-900">{selectedOrganization?.nama}</p>
+                        <label className="block text-sm font-medium text-gray-700">Judul</label>
+                        <p className="mt-1 text-gray-900">{selectedOrganization?.title}</p>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Organization</label>
-                        <p className="mt-1 text-gray-900">{selectedOrganization?.organization?.title || "-"}</p>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Posisi</label>
-                        <p className="mt-1 text-gray-900">{selectedOrganization?.posisi}</p>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Keterangan</label>
-                        <p className="mt-1 text-gray-900">{selectedOrganization?.keterangan}</p>
+                        <label className="block text-sm font-medium text-gray-700">Deskripsi</label>
+                        <p className="mt-1 text-gray-900">{selectedOrganization?.description || "-"}</p>
                     </div>
                     <div className="flex justify-end">
                         <button
@@ -301,7 +248,7 @@ export default function Organization({ initialOrganizations, organizations }) {
                             onClick={handleCloseModal}
                             className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
                         >
-                            Close
+                            Tutup
                         </button>
                     </div>
                 </div>

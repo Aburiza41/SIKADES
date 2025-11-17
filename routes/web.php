@@ -22,15 +22,21 @@ use App\Http\Controllers\Web\Admin\OfficialImportController as AdminOfficialImpo
 use App\Http\Controllers\Web\Admin\AparatusController as AdminAparatusController;
 use App\Http\Controllers\Web\Admin\OrganizationController as AdminOrganizationController;
 use App\Http\Controllers\Web\Admin\TrainingController as AdminTrainingController;
+use App\Http\Controllers\Web\Admin\PositionController as AdminPositionController;
 use App\Http\Controllers\Web\Admin\UserController as AdminUserController;
 // use App\Http\Controllers\Web\Admin\UserExportController as AdminUserExportController;
 use App\Http\Controllers\Web\Admin\UserImportController as AdminUserImportController;
+use App\Http\Controllers\Web\Admin\RegencyController as AdminRegencyController;
+use App\Http\Controllers\Web\Admin\DistrictController as AdminDistrictController;
+use App\Http\Controllers\Web\Admin\VillageController as AdminVillageController;
 
 // Regency
 use App\Http\Controllers\Web\Regency\DashboardController as RegencyDashboardController;
 use App\Http\Controllers\Web\Regency\OfficialController as RegencyOfficialController;
 use App\Http\Controllers\Web\Regency\AparatusController as RegencyAparatusController;
 use App\Http\Controllers\Web\Regency\UserController as RegencyUserController;
+
+use App\Http\Controllers\Web\Regency\OfficialExportController as RegencyOfficialExportController;
 
 // Village
 use App\Http\Controllers\Web\Village\DashboardController as VillageDashboardController;
@@ -40,6 +46,8 @@ use App\Http\Controllers\Web\Village\ProfileDescriptionController as VillageProf
 use App\Http\Controllers\Web\Village\OfficialPositionController as VillageOfficialPositionController;
 use App\Http\Controllers\Web\Village\OfficialTrainingController as VillageOfficialTrainingController;
 use App\Http\Controllers\Web\Village\OfficialOrganizationController as VillageOfficialOrganizationController;
+
+use App\Http\Controllers\Web\Village\OfficialExportController as VillageOfficialExportController;
 
 // Middleware
 use App\Http\Middleware\Custom\AdminMiddleware;
@@ -55,6 +63,8 @@ use Maatwebsite\Excel\Excel;
 
 // Insert
 Route::prefix('/insert')->name('insert.')->group(function () {
+    // User
+    Route::get('/user', [\App\Http\Controllers\Web\Insert\UserController::class, 'index'])->name('user');
     // Identitas
     Route::get('/identitas', [\App\Http\Controllers\Web\Insert\IdentityController::class, 'index'])->name('identitas');
     // WorkPlace
@@ -157,13 +167,17 @@ Route::prefix('/admin')->name('admin.')->middleware('auth', AdminMiddleware::cla
     Route::prefix('/aparatus')->name('aparatus.')->controller(AdminAparatusController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/regency/{id}', [AdminAparatusController::class, 'regency'])->name('regency');
+
+        Route::get('/regency/distric/{id}', [AdminAparatusController::class, 'district'])->name('district');
     });
 
     // Organization
     Route::prefix('/organization')->name('organization.')->controller(AdminOrganizationController::class)->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
         Route::post('/', 'store')->name('store');
         Route::get('/{id}', 'show')->name('show');
+        Route::get('/{id}/edit', 'edit')->name('edit');
         Route::put('/{id}', 'update')->name('update');
         Route::delete('/{id}', 'destroy')->name('destroy');
     });
@@ -171,10 +185,55 @@ Route::prefix('/admin')->name('admin.')->middleware('auth', AdminMiddleware::cla
     // Training
     Route::prefix('/training')->name('training.')->controller(AdminTrainingController::class)->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
+        Route::get('/{id}/edit', 'edit')->name('edit');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+    });
+
+    // Position
+    Route::prefix('/position')->name('position.')->controller(AdminPositionController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
+        Route::get('/{id}/edit', 'edit')->name('edit');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+    });
+
+    // Kabupaten
+    Route::prefix('/regency')->name('regency.')->controller(AdminRegencyController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
         Route::get('/{id}', 'show')->name('show');
         Route::put('/{id}', 'update')->name('update');
         Route::delete('/{id}', 'destroy')->name('destroy');
+    });
+
+    // Kecamatan
+    Route::prefix('/district')->name('district.')->controller(AdminDistrictController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+    });
+
+    // Desa
+    Route::prefix('/village')->name('village.')->controller(AdminVillageController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
+        Route::get('/{id}/edit', 'edit')->name('edit');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+        Route::get('/regencies', 'getRegencies')->name('regencies');
+        Route::get('/districts/{regency_id?}', 'getDistricts')->name('districts');
+        Route::get('/villages/{district_id?}', 'getVillages')->name('villages');
     });
 
     // User
@@ -211,18 +270,21 @@ Route::prefix('/regency')->name('regency.')->group(function () {
 
     Route::prefix('/official/{role}')->name('official.')->controller(RegencyOfficialController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::get('/create', 'create')->name('create');
-        Route::post('/store', 'store')->name('store');
-        Route::get('/{id}', 'show')->name('show');
-        Route::get('/{id}/edit', 'edit')->name('edit');
-        Route::post('/{id}/edit', 'update')->name('update');
-        Route::delete('/{id}/delete', 'destroy')->name('destroy');
+        // Route::get('/create', 'create')->name('create');
+        // Route::post('/store', 'store')->name('store');
+        // Route::get('/{id}', 'show')->name('show');
+        // Route::get('/{id}/edit', 'edit')->name('edit');
+        // Route::post('/{id}/edit', 'update')->name('update');
+        // Route::delete('/{id}/delete', 'destroy')->name('destroy');
 
-        // Route::prefix('/export')->name('export.')->controller(AdminOfficialExportController::class)->group(function () {
-        //     Route::get('/json', 'json')->name('json');
-        //     Route::get('/excel', 'excel')->name('excel');
-        //     Route::get('/pdf', 'pdf')->name('pdf');
-        // });
+        // Terima
+        Route::post('/status/{id}/{status}', 'accept')->name('accept');
+
+        Route::prefix('/export')->name('export.')->controller(RegencyOfficialExportController::class)->group(function () {
+            Route::get('/json', 'json')->name('json');
+            Route::get('/excel', 'excel')->name('excel');
+            Route::get('/pdf', 'pdf')->name('pdf');
+        });
 
         // Route::prefix('/import')->name('export.')->controller(AdminOfficialImportController::class)->group(function () {
         //     // Route::get('/json', 'json')->name('json');
@@ -265,6 +327,145 @@ Route::prefix('/regency')->name('regency.')->group(function () {
         Route::get('/{id}', 'show')->name('show');
         Route::put('/{id}', 'update')->name('update');
         Route::delete('/{id}', 'destroy')->name('destroy');
+        Route::post('/{id}/reset-password', 'resetPassword')->name('reset-password');
+    });
+
+    // Endpoint untuk mengambil data provinsi
+    // Route::get('/bps/wilayah', function () {
+    // $response = Http::get('https://sig.bps.go.id/rest-bridging/getwilayah');
+    // return $response->json();
+    // });
+    Route::get('/bps/wilayah', function () {
+    $client = new \GuzzleHttp\Client([
+    'verify' => false, // Nonaktifkan SSL verification
+    'timeout' => 30,
+    ]);
+
+    $response = $client->get('https://sig.bps.go.id/rest-bridging/getwilayah');
+
+    return json_decode($response->getBody(), true);
+    });
+
+    // Endpoint untuk mengambil data kabupaten berdasarkan kode provinsi
+    // Route::get('/bps/wilayah/kabupaten/{provinceCode}', function ($provinceCode) {
+    // $response = Http::get("https://sig.bps.go.id/rest-bridging/getwilayah?level=kabupaten&parent={$provinceCode}");
+    // return $response->json();
+    // });
+    Route::get('/bps/wilayah/kabupaten/{provinceCode}', function ($provinceCode) {
+    // Buat instance Guzzle Client
+    $client = new \GuzzleHttp\Client([
+    'base_uri' => 'https://sig.bps.go.id',
+    'timeout' => 30, // Timeout 30 detik
+    'verify' => false, // Nonaktifkan SSL verification (hati-hati di production)
+    ]);
+
+    try {
+    // Lakukan request ke API BPS
+    $response = $client->get('/rest-bridging/getwilayah', [
+    'query' => [
+    'level' => 'kabupaten',
+    'parent' => $provinceCode
+    ]
+    ]);
+
+    // Decode response JSON
+    $data = json_decode($response->getBody(), true);
+
+    return response()->json($data);
+    } catch (\GuzzleHttp\Exception\RequestException $e) {
+    // Handle error
+    return response()->json([
+    'error' => 'Gagal mengambil data kabupaten',
+    'message' => $e->getMessage()
+    ], 500);
+    }
+    });
+
+    // Endpoint untuk mengambil data kecamatan berdasarkan kode kabupaten
+    // Route::get('/bps/wilayah/kecamatan/{regencyCode}', function ($regencyCode) {
+    // $response = Http::get("https://sig.bps.go.id/rest-bridging/getwilayah?level=kecamatan&parent={$regencyCode}");
+    // return $response->json();
+    // });
+    Route::get('/bps/wilayah/kecamatan/{regencyCode}', function ($regencyCode) {
+    $client = new \GuzzleHttp\Client([
+    'base_uri' => 'https://sig.bps.go.id',
+    'timeout' => 30,
+    'verify' => false, // Nonaktifkan SSL verification (dev only)
+    ]);
+
+    try {
+    $response = $client->get('/rest-bridging/getwilayah', [
+    'query' => [
+    'level' => 'kecamatan',
+    'parent' => $regencyCode
+    ]
+    ]);
+
+    return response()->json(
+    json_decode($response->getBody(), true)
+    );
+    } catch (\GuzzleHttp\Exception\RequestException $e) {
+    $statusCode = $e->getResponse() ? $e->getResponse()->getStatusCode() : 500;
+
+    return response()->json([
+    'error' => 'Gagal mengambil data kecamatan',
+    'message' => $e->getMessage(),
+    'code' => $statusCode
+    ], $statusCode);
+    }
+    });
+
+    // Endpoint untuk mengambil data desa berdasarkan kode kecamatan
+    // Route::get('/bps/wilayah/desa/{districtCode}', function ($districtCode) {
+    // $response = Http::get("https://sig.bps.go.id/rest-bridging/getwilayah?level=desa&parent={$districtCode}");
+    // return $response->json();
+    // });
+    // use GuzzleHttp\Client;
+    // use GuzzleHttp\Exception\RequestException;
+
+    Route::get('/bps/wilayah/desa/{districtCode}', function ($districtCode) {
+    $client = new \GuzzleHttp\Client([
+    'base_uri' => 'https://sig.bps.go.id',
+    'timeout' => 30,
+    'verify' => false, // Nonaktifkan SSL verification (hanya untuk development)
+    ]);
+
+    try {
+    $response = $client->get('/rest-bridging/getwilayah', [
+    'query' => [
+    'level' => 'desa',
+    'parent' => $districtCode
+    ],
+    'headers' => [
+    'Accept' => 'application/json',
+    ]
+    ]);
+
+    $data = json_decode($response->getBody(), true);
+
+    // Validasi response
+    if (json_last_error() !== JSON_ERROR_NONE) {
+    throw new \Exception('Invalid JSON response');
+    }
+
+    return response()->json($data);
+    } catch (\GuzzleHttp\Exception\RequestException $e) {
+    $statusCode = $e->hasResponse() ? $e->getResponse()->getStatusCode() : 500;
+
+    return response()->json([
+    'error' => true,
+    'message' => 'Gagal mengambil data desa',
+    'detail' => $e->getMessage(),
+    'code' => $statusCode
+    ], $statusCode);
+    } catch (\Exception $e) {
+    return response()->json([
+    'error' => true,
+    'message' => 'Terjadi kesalahan pemrosesan data',
+    'detail' => $e->getMessage(),
+    'code' => 500
+    ], 500);
+    }
     });
 });
 
@@ -304,6 +505,16 @@ Route::prefix('/village')->name('village.')->group(function () {
     //     });
     // });
 
+    Route::prefix('export/{role}/with')
+        ->where(['role' => '[a-z-]+']) // Tambahkan ini
+        ->name('export.')
+        ->controller(VillageOfficialExportController::class)
+        ->group(function () {
+        Route::get('/json', 'json')->name('json');
+        Route::get('/excel', 'excel')->name('excel');
+        Route::get('/pdf', 'pdf')->name('pdf');
+    });
+
     Route::prefix('/official')->name('official.')->controller(VillageOfficialController::class)->group(function () {
         Route::get('/{role}/', 'index')->name('index');
         Route::get('/{role}/create', 'create')->name('create');
@@ -311,13 +522,9 @@ Route::prefix('/village')->name('village.')->group(function () {
         Route::get('/{role}/{id}', 'show')->name('show');
         Route::get('/{role}/{id}/edit', 'edit')->name('edit');
         Route::post('/{role}/{id}/edit', 'update')->name('update');
-        Route::delete('/{role}/{id}/delete', 'destroy')->name('destroy');
+        // Route::delete('/{role}/{id}/delete', 'destroy')->name('destroy');
 
-        // Route::prefix('/export')->name('export.')->controller(AdminOfficialExportController::class)->group(function () {
-        //     Route::get('/json', 'json')->name('json');
-        //     Route::get('/excel', 'excel')->name('excel');
-        //     Route::get('/pdf', 'pdf')->name('pdf');
-        // });
+
 
         // Route::prefix('/import')->name('export.')->controller(AdminOfficialImportController::class)->group(function () {
         //     // Route::get('/json', 'json')->name('json');
@@ -515,4 +722,23 @@ Route::prefix('temporary-files')->group(function () {
     Route::post('/', [TemporaryFileController::class, 'store']);
     Route::delete('/', [TemporaryFileController::class, 'destroy']);
 });
+
+
+// API Location (without middleware)
+use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\PositionController;
+
+Route::prefix('/local')->name('local.')->group(function () {
+
+    Route::get('/regencies', [LocationController::class, 'getRegencies'])->name('regencies');
+    Route::get('/districts/{regency_id?}', [LocationController::class, 'getDistricts'])->name('districts');
+    Route::get('/villages/{district_id?}', [LocationController::class, 'getVillages'])->name('villages');
+
+
+    Route::get('/positions', [PositionController::class, 'getPositions'])->name('positions');
+});
+
+
 require __DIR__ . '/auth.php';
+
+

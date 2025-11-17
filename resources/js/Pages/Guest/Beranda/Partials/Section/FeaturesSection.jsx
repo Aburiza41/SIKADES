@@ -6,6 +6,7 @@ import {
     FaUsers,
     FaFileAlt,
     FaCogs,
+    FaShieldAlt
 } from "react-icons/fa";
 
 // Variants untuk container agar anak-anaknya (card) tampil dengan efek stagger
@@ -37,23 +38,12 @@ const cardVariants = {
 
 export default function FeaturesSection() {
     return (
-        <section className="py-16 min-h-screen flex items-center relative overflow-hidden bg-gray-50">
+        <section className="min-h-screen flex items-center relative overflow-hidden bg-white">
             {/* Konten Fitur */}
-            <div className="mx-auto max-w-7xl relative z-10 px-4">
-                {/* Animasi Judul */}
-                <motion.h2
-                    className="text-5xl font-bold mb-12 text-green-700 text-center"
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    viewport={{ once: true }}
-                >
-                    Fitur SIKADES
-                </motion.h2>
-
+            <div className="mx-auto max-w-7xl relative z-10">
                 {/* Grid Container dengan Staggered Animation */}
                 <motion.div
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                     variants={containerVariants}
                     initial="hidden"
                     whileInView="visible"
@@ -62,34 +52,40 @@ export default function FeaturesSection() {
                     {/* Fitur */}
                     {[
                         {
-                            icon: <FaDatabase className="w-12 h-12" />,
+                            icon: <FaDatabase className="w-16 h-16" />,
                             title: "Manajemen Data",
                             description:
                                 "Kelola data aparatur desa secara terpusat dan terstruktur untuk memudahkan akses dan pembaruan.",
                         },
                         {
-                            icon: <FaChartBar className="w-12 h-12" />,
+                            icon: <FaChartBar className="w-16 h-16" />,
                             title: "Analisis Data",
                             description:
                                 "Sajikan data dalam bentuk grafik dan statistik untuk mendukung pengambilan keputusan yang tepat.",
                         },
                         {
-                            icon: <FaUsers className="w-12 h-12" />,
+                            icon: <FaUsers className="w-16 h-16" />,
                             title: "Kolaborasi Aparatur",
                             description:
                                 "Fasilitasi komunikasi dan koordinasi antar aparatur desa untuk meningkatkan efisiensi kerja.",
                         },
                         {
-                            icon: <FaFileAlt className="w-12 h-12" />,
+                            icon: <FaFileAlt className="w-16 h-16" />,
                             title: "Pelaporan Otomatis",
                             description:
                                 "Buat laporan kegiatan dan perkembangan desa secara otomatis dengan format yang terstandarisasi.",
                         },
                         {
-                            icon: <FaCogs className="w-12 h-12" />,
+                            icon: <FaCogs className="w-16 h-16" />,
                             title: "Pengaturan Fleksibel",
                             description:
                                 "Kustomisasi sistem sesuai kebutuhan desa dengan pengaturan yang mudah dan intuitif.",
+                        },
+                        {
+                            icon: <FaShieldAlt className="w-16 h-16" />,
+                            title: "Keamanan Data",
+                            description:
+                                "Lindungi data aparatur desa dengan enkripsi dan sistem keamanan canggih untuk mencegah akses tidak sah.",
                         },
                     ].map((feature, index) => (
                         <motion.div
@@ -99,15 +95,15 @@ export default function FeaturesSection() {
                             whileInView="visible"
                             viewport={{ once: true }}
                             whileHover="hover"
-                            className="p-8 border rounded-lg shadow-lg bg-white transition-all duration-300 cursor-pointer"
+                            className="px-8 py-24 transition-all duration-300 cursor-pointer"
                         >
-                            <div className="text-green-700 mb-4 flex justify-center transition-colors duration-300">
+                            <div className="text-green-900 mb-8 flex justify-center transition-colors duration-300">
                                 {feature.icon}
                             </div>
-                            <h3 className="text-xl font-semibold mb-2 text-center">
+                            <h3 className="text-2xl font-semibold mb-2 text-center">
                                 {feature.title}
                             </h3>
-                            <p className="text-center">
+                            <p className="text-center font-light text-sm">
                                 {feature.description}
                             </p>
                         </motion.div>

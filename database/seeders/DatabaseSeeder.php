@@ -63,8 +63,8 @@ class DatabaseSeeder extends Seeder
         $this->info("\n🌱 Menjalankan seeder tambahan...");
 
         $seeders = [
-            UserRegencySeeder::class,
-            UserVillageSeeder::class,
+            // UserRegencySeeder::class,
+            // UserVillageSeeder::class,
             // OfficialSeeder::class,
         ];
 

@@ -162,68 +162,84 @@ export default function List({
 
     // Kolom tabel
     const columns = [
-        {
-            name: "ID",
-            selector: (row) => row.id,
-            sortable: true,
-            width: "70px",
+    {
+        name: "ID",
+        selector: (row) => row.id,
+        sortable: true,
+        width: "70px",
+    },
+    {
+        name: "Nama",
+        selector: (row) => row.name,
+        sortable: true,
+    },
+    {
+        name: "Username",
+        selector: (row) => row.username,
+        sortable: true,
+    },
+    // {
+    //     name: "Email",
+    //     selector: (row) => row.email,
+    //     sortable: true,
+    // },
+    {
+        name: "Kode Daerah",
+        selector: (row) => {
+            if (row.role === 'regency') {
+                return row.user_regency?.regency?.code_bps || 'N/A';
+            } else if (row.role === 'village') {
+                return row.user_village?.village?.code_bps || 'N/A';
+            } else {
+                return 'Admin Pusat'; // Untuk role admin
+            }
         },
-        { name: "Nama", selector: (row) => row.name, sortable: true },
-        { name: "Email", selector: (row) => row.email, sortable: true },
-        // {
-        //     name: "Kode Daerah",
-        //     selector: (row) => {
-        //         if (row.role === 'regency') {
-        //             return row.user_regency?.regency?.code_bps || 'N/A';
-        //         } else if (row.role === 'district') {
-        //             return row.user_district?.district?.code_bps || 'N/A';
-        //         } else if (row.role === 'village') {
-        //             return row.user_village?.village?.code_bps || 'N/A';
-        //         } else {
-        //             return 'Admin Pusat'; // Untuk role admin
-        //         }
-        //     },
-        //     sortable: true
-        // },
-        {
-            name: "Daerah",
-            selector: (row) => {
-                if (row.role === "regency") {
-                    return row.user_regency?.regency?.name_bps || "N/A";
-                } else if (row.role === "district") {
-                    return row.user_district?.district?.name_bps || "N/A";
-                } else if (row.role === "village") {
-                    return row.user_village?.village?.name_bps || "N/A";
-                } else {
-                    return "Admin Pusat"; // Untuk role admin
-                }
-            },
-            sortable: true,
+        sortable: true,
+    },
+    {
+        name: "Daerah",
+        selector: (row) => {
+            if (row.role === 'regency') {
+                return row.user_regency?.regency?.name_bps || 'N/A';
+            } else if (row.role === 'village') {
+                return row.user_village?.village?.name_bps || 'N/A';
+            } else {
+                return 'Admin Pusat'; // Untuk role admin
+            }
         },
-        {
-            name: "Role",
-            selector: (row) => row.role,
-            sortable: true,
-            cell: (row) => <CustomBadge role={row.role} />, // Menggunakan komponen CustomBadge
-        },
-        // { name: "Tanggal Dibuat", selector: (row) => new Date(row.created_at).toLocaleDateString(), sortable: true },
-        // { name: "Tanggal Diperbarui", selector: (row) => new Date(row.updated_at).toLocaleDateString(), sortable: true },
-        {
-            name: "Aksi",
-            cell: (row) => (
-                <Actions
-                    row={row}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onView={onView}
-                    onPrint={onPrint}
-                />
-            ),
-            ignoreRowClick: true,
-            allowOverflow: true,
-            button: true,
-        },
-    ];
+        sortable: true,
+    },
+    {
+        name: "Role",
+        selector: (row) => row.role,
+        sortable: true,
+        cell: (row) => <CustomBadge role={row.role} />, // Menggunakan komponen CustomBadge
+    },
+    {
+        name: "Tanggal Dibuat",
+        selector: (row) => new Date(row.created_at).toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        }),
+        sortable: true,
+    },
+    {
+        name: "Aksi",
+        cell: (row) => (
+            <Actions
+                row={row}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onView={onView}
+                onPrint={onPrint}
+            />
+        ),
+        ignoreRowClick: true,
+        allowOverflow: true,
+        button: true,
+    },
+];
 
     // Komponen Badge Kustom
     const CustomBadge = ({ role }) => {

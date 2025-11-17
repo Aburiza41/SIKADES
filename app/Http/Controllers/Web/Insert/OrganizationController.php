@@ -2,204 +2,348 @@
 
 namespace App\Http\Controllers\Web\Insert;
 
-
 use App\Http\Controllers\Controller;
 use App\Imports\TestImport;
-use App\Models\Regency;
-use App\Models\District;
 use App\Models\Official;
-use App\Models\OfficialAddress;
-use App\Models\OfficialContact;
-use App\Models\OfficialIdentity;
-use App\Models\OfficialStatusLog;
 use App\Models\Organization;
-use App\Models\Position;
-use App\Models\Village;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
-use Illuminate\Support\Facades\Log;
 
 class OrganizationController extends Controller
 {
+    /**
+     * Import and process organization data from Excel file
+     *
+     * @return void
+     */
     public function index()
     {
         ini_set('memory_limit', '-1');
         set_time_limit(0);
 
-        $filePath = public_path('data/Data_Keanggotaan.xlsx');
-        $data = Excel::toCollection(new TestImport, $filePath)->first();
-        // dd($data[0], count($data));
-        // Prepare official data
-        $success_count = 0;
-        $failed_count = 0;
-        $not_found = [
-            'officials' => [],
-            'organizations' => []
+        try {
+            $filePath = public_path('data/Data_Keanggotaan.xlsx');
+            $data = Excel::toCollection(new TestImport, $filePath)->first();
+
+            $result = $this->processImport($data);
+
+            // Display results
+            $this->displayResults($result);
+        } catch (\Exception $e) {
+            Log::error('Import failed: ' . $e->getMessage());
+            echo "<h2>Error</h2><p>Import failed: {$e->getMessage()}</p>";
+        }
+    }
+
+    /**
+     * Process imported data
+     *
+     * @param \Illuminate\Support\Collection $data
+     * @return array
+     */
+    protected function processImport($data)
+    {
+        $result = [
+            'success_count' => 0,
+            'failed_count' => 0,
+            'not_found' => [
+                'officials' => []
+            ]
         ];
 
-        foreach ($data as $k_position => $v_position) {
+        foreach ($data as $index => $row) {
+            // Stop looping if IDIdentitas is empty
+            if (empty($row['idkeanggotaan'])) {
+                Log::warning("Stopping loop at row {$index}: Empty IDIdentitas detected");
+                echo "Stopping loop at row {$index}: Empty IDIdentitas detected<br>";
+                break;
+            }
+
             try {
-                // 1. Find Official
-                $official = $this->findOfficial($v_position['ididentitas']);
-                if (!$official) {
-                    $not_found['officials'][] = [
-                        'row' => $k_position,
-                        'id_identitas' => $v_position['ididentitas']
+                // Validate data
+                $validationResult = $this->validateOrganizationData($row);
+                if (!$validationResult['valid']) {
+                    $result['not_found']['officials'][] = [
+                        'row' => $index,
+                        'id_identitas' => $row['ididentitas'],
+                        'reason' => $validationResult['reason']
                     ];
+                    Log::warning("Failed at row {$index}: ID {$row['ididentitas']} - {$validationResult['reason']}");
+                    echo "Failed at row {$index}: ID {$row['ididentitas']} - {$validationResult['reason']}<br>";
+                    $result['failed_count']++;
                     continue;
                 }
 
-                // 2. Find Village
-                $jabatan = $this->findJabatan($v_position['jenisorganisasi']);
-                // dd($jabatan);
-                if (!$jabatan) {
-                    // $not_found['positions'][] = [
-                    //     'row' => $k_position,
-                    //     'kantor' => $v_position['namajabatan']
-                    // ];
-                    // continue;
-                    $jabatan = Organization::where('title', 'like', '%' . 'Lainnya' . '%')->first();
+                // Find official
+                $official = $this->findOfficial($row['ididentitas']);
+                if (!$official) {
+                    $result['not_found']['officials'][] = [
+                        'row' => $index,
+                        'id_identitas' => $row['ididentitas'],
+                        'reason' => 'Official not found'
+                    ];
+                    Log::warning("Failed at row {$index}: ID {$row['ididentitas']} - Official not found");
+                    echo "Failed at row {$index}: ID {$row['ididentitas']} - Official not found<br>";
+                    $result['failed_count']++;
+                    continue;
                 }
 
-                // dd($jabatan);
+                // Find or create organization
+                $organization = $this->findOrCreateOrganization(
+                    $row['jenisorganisasi'],
+                    $row['namaorganisasi']
+                );
 
+                if (!$organization) {
+                    Log::error("Failed to find or create organization at row {$index}: ID {$row['ididentitas']} - Organization: " . ($row['namaorganisasi'] ?? $row['jenisorganisasi'] ?? '-'));
+                    echo "Failed to find or create organization at row {$index}: ID {$row['ididentitas']} - Organization: " . ($row['namaorganisasi'] ?? $row['jenisorganisasi'] ?? '-') . "<br>";
+                    $result['failed_count']++;
+                    continue;
+                }
 
-                // 3. Insert Work Place
-                $this->insert($official, $jabatan, $v_position);
-                $success_count++;
-            } catch (\Throwable $th) {
-                dd($th);
-                Log::error("Error processing row {$k_position}: " . $th->getMessage());
-                $failed_count++;
+                // Insert organization data
+                $this->insertOrganizationData($official, $organization, $row);
+                $result['success_count']++;
+                Log::info("Success at row {$index}: ID {$row['ididentitas']} - Organization created successfully (Organization: {$organization->title}" . ($organization->title === 'LAINNYA' ? ", Keterangan: " . ($row['namaorganisasi'] ?? $row['jenisorganisasi'] ?? '-') . ")" : ")"));
+                echo "Success at row {$index}: ID {$row['ididentitas']} - Organization created successfully (Organization: {$organization->title}" . ($organization->title === 'LAINNYA' ? ", Keterangan: " . ($row['namaorganisasi'] ?? $row['jenisorganisasi'] ?? '-') . ")" : ")") . "<br>";
+
+            } catch (\Exception $e) {
+                Log::error("Error processing row {$index}: {$e->getMessage()}", [
+                    'id_identitas' => $row['ididentitas'],
+                    'data' => $row,
+                    'organization' => isset($organization) ? $organization->toArray() : null,
+                    'official' => isset($official) ? $official->toArray() : null
+                ]);
+                echo "Failed at row {$index}: ID {$row['ididentitas']} - Error: {$e->getMessage()}<br>";
+                $result['failed_count']++;
                 continue;
             }
         }
 
-        // Tampilkan hasil proses
-        echo "<h2>Import Result</h2>";
-        echo "<p>Success: {$success_count}</p>";
-        echo "<p>Failed: {$failed_count}</p>";
-
-        // Tampilkan data yang tidak ditemukan
-        $this->displayNotFound($not_found);
+        return $result;
     }
 
     /**
-     * Mencari official berdasarkan ID identitas
+     * Validate organization data from Excel
+     *
+     * @param array $data
+     * @return array
+     */
+    protected function validateOrganizationData($data)
+    {
+        if (empty($data['ididentitas'])) {
+            return [
+                'valid' => false,
+                'reason' => 'Missing IDIdentitas'
+            ];
+        }
+
+        if (empty($data['jenisorganisasi']) && empty($data['namaorganisasi'])) {
+            return [
+                'valid' => false,
+                'reason' => 'Missing JenisOrganisasi and NamaOrganisasi'
+            ];
+        }
+
+        return ['valid' => true];
+    }
+
+    /**
+     * Find official by identity code
+     *
+     * @param string|null $idIdentitas
+     * @return \App\Models\Official|null
      */
     protected function findOfficial($idIdentitas)
     {
+        if (empty($idIdentitas)) {
+            return null;
+        }
+
         $cleanId = trim(preg_replace('/\s+/', '', $idIdentitas));
         return Official::where('code_ident', 'like', '%' . $cleanId . '%')->first();
     }
 
     /**
-     * Mencari village berdasarkan nama kantor
+     * Find or create organization based on type and name, fallback to Lainnya if not in predefined categories
+     *
+     * @param string|null $type
+     * @param string|null $name
+     * @return \App\Models\Organization|null
      */
-    protected function findJabatan($jabatan)
+    protected function findOrCreateOrganization($type, $name)
     {
-        // dd($jabatan);
-        $cleanName = trim($jabatan);
-        // dd($cleanName);
-        return Organization::where(function ($query) use ($cleanName) {
-            $query->where('title', 'like', '%' . $cleanName . '%')
-                ->orWhere('description', 'like', '%' . $cleanName . '%');
-        })
-            ->first();
+        $title = trim($type ?? '');
+
+        // If type is numeric, use name as title
+        if (is_numeric($type)) {
+            $title = trim($name ?? '');
+        }
+
+        // Fallback to 'LAINNYA' if no valid title
+        if (empty($title)) {
+            $lainnya = Organization::where('title', 'LAINNYA')->first();
+            if (!$lainnya) {
+                $lainnya = Organization::create([
+                    'title' => 'LAINNYA',
+                    'description' => 'Lainnya',
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
+                ]);
+                Log::info("Created 'LAINNYA' organization with title 'LAINNYA'");
+            }
+            return $lainnya;
+        }
+
+        // Predefined organization categories
+        $validCategories = [
+            'PARPOL' => 'Partai Politik',
+            'PROFESI' => 'Profesi',
+            'SOSIAL' => 'Sosial'
+        ];
+
+        // Normalize title to uppercase for comparison
+        $normalizedTitle = strtoupper($title);
+
+        // Check if title matches a predefined category
+        if (array_key_exists($normalizedTitle, $validCategories)) {
+            $organization = Organization::where('title', $normalizedTitle)->first();
+            if ($organization) {
+                return $organization;
+            }
+            // Create organization if it doesn't exist
+            $organization = Organization::create([
+                'title' => $normalizedTitle,
+                'description' => $validCategories[$normalizedTitle],
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]);
+            Log::info("Created organization with title '{$normalizedTitle}'");
+            return $organization;
+        }
+
+        // Fallback to 'LAINNYA'
+        $lainnya = Organization::where('title', 'LAINNYA')->first();
+        if (!$lainnya) {
+            $lainnya = Organization::create([
+                'title' => 'LAINNYA',
+                'description' => 'Lainnya',
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]);
+            Log::info("Created 'LAINNYA' organization with title 'LAINNYA'");
+        }
+        return $lainnya;
     }
 
     /**
-     * Insert data tempat kerja
+     * Insert organization data
+     *
+     * @param \App\Models\Official $official
+     * @param \App\Models\Organization $organization
+     * @param array $data
+     * @return void
      */
-    protected function insert($official, $jabatan, $data)
+    protected function insertOrganizationData($official, $organization, $data)
     {
+        DB::enableQueryLog();
         try {
-            // Konversi tanggal dengan validasi
-            $mulai = $this->parseDateString($data['tanggalmulai'] ?? null);
-            $selesai = $this->parseDateString($data['tanggalselesai'] ?? null);
+            DB::transaction(function () use ($official, $organization, $data) {
+                $mulai = $this->parseDateString($data['tanggalmulai'] ?? null);
+                $selesai = $this->parseDateString($data['tanggalselesai'] ?? null);
 
-            // Validasi tanggal wajib
-            // if (!$tmtJabatan) {
-            //     throw new \Exception("Tanggal TMT Jabatan tidak valid");
-            // }
+                // Skip invalid dates (0000-00-00)
+                if ($mulai && $mulai->format('Y-m-d') === '0000-00-00') {
+                    $mulai = null;
+                }
+                if ($selesai && $selesai->format('Y-m-d') === '0000-00-00') {
+                    $selesai = null;
+                }
 
-            $workPlaceInsert = [
-                'official_id' => $official->id,
-                'organization_id' => $jabatan->id,
-                'nama' => $data['namaorganisasi'] ?? '-',
-                'mulai' => $mulai ? $mulai->format('Y-m-d') : null,
-                'selesai' => $selesai ? $selesai->format('Y-m-d') : null,
-                'posisi' => $data['kedudukan'] ?? null,
-                'pimpinan' => $data['namapimpinan'] ?? null,
-                'alamat' => $data['tempat'] ?? null,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ];
+                $insertData = [
+                    'official_id' => $official->id,
+                    'organization_id' => $organization->id,
+                    'nama' => trim($data['namaorganisasi'] ?? '-') ?: '-',
+                    'posisi' => trim($data['kedudukan'] ?? null),
+                    'mulai' => $mulai ? $mulai->format('Y-m-d') : null,
+                    'selesai' => $selesai ? $selesai->format('Y-m-d') : null,
+                    'pimpinan' => trim($data['namapimpinan'] ?? null),
+                    'alamat' => trim($data['tempat'] ?? null),
+                    'keterangan' => $organization->title === 'LAINNYA' ? trim($data['namaorganisasi'] ?? $data['jenisorganisasi'] ?? '-') : null,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
+                ];
 
-            DB::table('official_organizations')->insert($workPlaceInsert);
+                DB::table('official_organizations')->insert($insertData);
+            });
         } catch (\Exception $e) {
-            Log::error("Gagal insert data jabatan: " . $e->getMessage());
-            throw $e; // Re-throw untuk ditangkap di loop utama
+            Log::error('Insert organization failed', [
+                'error' => $e->getMessage(),
+                'queries' => DB::getQueryLog(),
+                'data' => $data,
+                'official' => $official->toArray(),
+                'organization' => $organization->toArray()
+            ]);
+            throw $e;
         }
     }
 
     /**
-     * Helper untuk parsing tanggal dengan validasi ketat
+     * Parse date string with validation
+     *
+     * @param mixed $dateString
+     * @return \Carbon\Carbon|null
      */
     protected function parseDateString($dateString)
     {
-        if (empty($dateString)) {
+        if (empty($dateString) || $dateString === '0000-00-00') {
             return null;
         }
 
         $cleanDate = trim($dateString);
 
         try {
-            // Coba parsing sebagai tanggal Excel (numeric)
+            // Handle Excel numeric date
             if (is_numeric($cleanDate)) {
                 $date = Date::excelToDateTimeObject($cleanDate);
                 return Carbon::instance($date);
             }
 
-            // Coba parsing sebagai string tanggal
-            $parsedDate = Carbon::createFromFormat('Y-m-d', $cleanDate);
+            // Handle string date
+            $parsedDate = Carbon::parse($cleanDate);
 
-            // Validasi range tanggal untuk MySQL
+            // Validate date range for MySQL
             if ($parsedDate->year < 1000 || $parsedDate->year > 9999) {
                 return null;
             }
 
             return $parsedDate;
         } catch (\Exception $e) {
-            Log::warning("Gagal parsing tanggal: {$cleanDate} - " . $e->getMessage());
+            Log::warning("Failed to parse date: {$cleanDate} - " . $e->getMessage());
             return null;
         }
     }
 
-
     /**
-     * Menampilkan data yang tidak ditemukan
+     * Display import results
+     *
+     * @param array $result
+     * @return void
      */
-    protected function displayNotFound($not_found)
+    protected function displayResults($result)
     {
-        if (!empty($not_found['officials'])) {
-            echo "<h3>Officials not found:</h3>";
-            echo "<ul>";
-            foreach ($not_found['officials'] as $item) {
-                echo "<li>Row {$item['row']}: {$item['id_identitas']}</li>";
-            }
-            echo "</ul>";
-        }
+        echo "<h2>Import Result</h2>";
+        echo "<p>Success: {$result['success_count']}</p>";
+        echo "<p>Failed: {$result['failed_count']}</p>";
 
-        if (!empty($not_found['organizations'])) {
-            echo "<h3>organizations not found:</h3>";
-            echo "<ul>";
-            foreach ($not_found['organizations'] as $item) {
-                echo "<li>Row {$item['row']}: {$item['kantor']}</li>";
+        if (!empty($result['not_found']['officials'])) {
+            echo "<h3>Officials not found:</h3><ul>";
+            foreach ($result['not_found']['officials'] as $item) {
+                echo "<li>Row {$item['row']}: {$item['id_identitas']} - {$item['reason']}</li>";
             }
             echo "</ul>";
         }

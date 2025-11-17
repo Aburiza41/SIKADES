@@ -6,7 +6,14 @@ import {
     HiUserGroup, // Untuk Organisasi
     HiAcademicCap, // Untuk Pelatihan
     HiCog, // Untuk Operator
+    HiBriefcase, // Untuk Jabatan
 } from "react-icons/hi";
+
+import {
+    FaCity,
+    FaBuilding,
+    FaHome,
+} from "react-icons/fa";
 
 export default function AdminSidebar(props) {
     const { url } = usePage(); // Mengambil URL saat ini untuk menentukan menu aktif
@@ -135,6 +142,66 @@ export default function AdminSidebar(props) {
                         }
                     >
                         <HiAcademicCap className="w-5 h-5 mr-3" />Pelatihan
+                    </Link>
+                </li>
+
+                {/* Menu Jabatan */}
+                <li>
+                    <Link
+                        href={route("admin.position.index")}
+                        className={
+                            `flex items-center p-2 rounded transition-colors duration-700 font-bold ` +
+                            (route().current('admin.position.*')
+                                ? 'bg-green-700 text-white border-l-4 border-green-900 hover:bg-white hover:text-green-900 hover:border-none'
+                                : 'text-green-900 hover:bg-green-700 hover:text-white')
+                        }
+                    >
+                        <HiBriefcase className="w-5 h-5 mr-3" />Jabatan
+                    </Link>
+                </li>
+
+                {/* Menu Operator */}
+                <li>
+                    <Link
+                        href={route("admin.regency.index")} // Ganti dengan route yang sesuai
+                        className={
+                            `flex items-center p-2 rounded transition-colors duration-700 font-bold ` +
+                            (route().current('admin.regency.*')
+                                ? 'bg-green-700 text-white border-l-4 border-green-900 hover:bg-white hover:text-green-900 hover:border-none'
+                                : 'text-green-900 hover:bg-green-700 hover:text-white')
+                        }
+                    >
+                        <FaCity className="w-5 h-5 mr-3" />Kabupaten
+                    </Link>
+                </li>
+
+                {/* Menu Operator */}
+                <li>
+                    <Link
+                        href={route("admin.district.index")} // Ganti dengan route yang sesuai
+                        className={
+                            `flex items-center p-2 rounded transition-colors duration-700 font-bold ` +
+                            (route().current('admin.district.*')
+                                ? 'bg-green-700 text-white border-l-4 border-green-900 hover:bg-white hover:text-green-900 hover:border-none'
+                                : 'text-green-900 hover:bg-green-700 hover:text-white')
+                        }
+                    >
+                        <FaBuilding className="w-5 h-5 mr-3" />Kecamatan
+                    </Link>
+                </li>
+
+                {/* Menu Operator */}
+                <li>
+                    <Link
+                        href={route("admin.village.index")} // Ganti dengan route yang sesuai
+                        className={
+                            `flex items-center p-2 rounded transition-colors duration-700 font-bold ` +
+                            (route().current('admin.village.*')
+                                ? 'bg-green-700 text-white border-l-4 border-green-900 hover:bg-white hover:text-green-900 hover:border-none'
+                                : 'text-green-900 hover:bg-green-700 hover:text-white')
+                        }
+                    >
+                        <FaHome className="w-5 h-5 mr-3" />Desa
                     </Link>
                 </li>
 

@@ -21,6 +21,7 @@ class PositionOfficial extends Model
         'tmt_jabatan',
         'period',
         'keterangan',
+        'status',
     ];
 
     public function official()

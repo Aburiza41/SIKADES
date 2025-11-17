@@ -23,8 +23,15 @@ import ExcelImportModal from "../Form/ExcelImportModal";
 export default function List({
     officials,
     fetchData,
+    loading,
+    onEdit,
+    onDelete,
     onView,
     onPrint,
+    position,
+    onAccept,
+    onReject,
+    role,
 }) {
     const user = usePage().props.auth.user;
     const [filterText, setFilterText] = useState("");
@@ -33,8 +40,8 @@ export default function List({
         officials?.current_page || 1
     );
     const [rowsPerPage, setRowsPerPage] = useState(officials?.per_page || 10);
-    const [sortField, setSortField] = useState("id");
-    const [sortDirection, setSortDirection] = useState("asc");
+    const [sortField, setSortField] = useState("created_at");
+    const [sortDirection, setSortDirection] = useState("desc");
 
     const educationOptions = [
         "SD/MI",
@@ -82,75 +89,75 @@ export default function List({
         }
     };
 
-    // const handleExport = async (type) => {
-    //     try {
-    //         const params = {
-    //             page: currentPage,
-    //             per_page: rowsPerPage,
-    //             search: filterText,
-    //             filters: educationFilter,
-    //             sort_field: sortField,
-    //             sort_direction: sortDirection,
-    //         };
+    const handleExport = async (type) => {
+        try {
+            const params = {
+                page: currentPage,
+                per_page: rowsPerPage,
+                search: filterText,
+                filters: educationFilter,
+                sort_field: sortField,
+                sort_direction: sortDirection,
+            };
 
-    //         const response = await axios.get(
-    //             `/admin/official/${position.slug}/export/${type}`,
-    //             {
-    //                 params,
-    //                 responseType: "blob", // Important for file downloads
-    //             }
-    //         );
+            const response = await axios.get(
+                `/village/export/${position.slug}/with/${type}`,
+                {
+                    // params,
+                    responseType: "blob", // Important for file downloads
+                }
+            );
 
-    //         // Determine file extension and content type
-    //         const extensions = {
-    //             json: "json",
-    //             excel: "xlsx",
-    //             pdf: "pdf",
-    //         };
-    //         const contentType = {
-    //             json: "application/json",
-    //             excel: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    //             pdf: "application/pdf",
-    //         };
+            // Determine file extension and content type
+            const extensions = {
+                json: "json",
+                excel: "xlsx",
+                pdf: "pdf",
+            };
+            const contentType = {
+                json: "application/json",
+                excel: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                pdf: "application/pdf",
+            };
 
-    //         // Create download link
-    //         const url = window.URL.createObjectURL(
-    //             new Blob([response.data], {
-    //                 type: contentType[type],
-    //             })
-    //         );
-    //         const link = document.createElement("a");
-    //         link.href = url;
-    //         link.setAttribute(
-    //             "download",
-    //             `Pejabat_${position.slug}_${new Date().toLocaleDateString()}.${
-    //                 extensions[type]
-    //             }`
-    //         );
-    //         document.body.appendChild(link);
-    //         link.click();
-    //         link.remove();
+            // Create download link
+            const url = window.URL.createObjectURL(
+                new Blob([response.data], {
+                    type: contentType[type],
+                })
+            );
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute(
+                "download",
+                `Pejabat_${position.slug}_${new Date().toLocaleDateString()}.${
+                    extensions[type]
+                }`
+            );
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
 
-    //         // Show success notification
-    //         Swal.fire(
-    //             "Success",
-    //             `${type.toUpperCase()} exported successfully!`,
-    //             "success"
-    //         );
-    //     } catch (error) {
-    //         console.error(`Export ${type} error:`, error);
-    //         Swal.fire(
-    //             "Error",
-    //             `Failed to export ${type.toUpperCase()}. Please try again.`,
-    //             "error"
-    //         );
-    //     }
-    // };
+            // Show success notification
+            Swal.fire(
+                "Success",
+                `${type.toUpperCase()} exported successfully!`,
+                "success"
+            );
+        } catch (error) {
+            console.error(`Export ${type} error:`, error);
+            Swal.fire(
+                "Error",
+                `Failed to export ${type.toUpperCase()}. Please try again.`,
+                "error"
+            );
+        }
+    };
 
-    // // Usage:
-    // const handleExportJSON = () => handleExport("json");
-    // const handleExportExcel = () => handleExport("excel");
-    // const handleExportPDF = () => handleExport("pdf");
+    // Usage:
+    const handleExportJSON = () => handleExport("json");
+    const handleExportExcel = () => handleExport("excel");
+    const handleExportPDF = () => handleExport("pdf");
 
     const renderSortIcon = (field) => {
         if (sortField !== field) return <FaSort className="ml-1" />;
@@ -161,85 +168,85 @@ export default function List({
         );
     };
 
-    // const handleImportExcel = async (file) => {
-    //     // Tampilkan loading indicator
-    //     // Swal.fire({
-    //     //     title: "Memproses File",
-    //     //     html: "Sedang mengupload dan memproses file Excel...",
-    //     //     allowOutsideClick: false,
-    //     //     didOpen: () => {
-    //     //         Swal.showLoading();
-    //     //     },
-    //     // });
+    const handleImportExcel = async (file) => {
+        // Tampilkan loading indicator
+        // Swal.fire({
+        //     title: "Memproses File",
+        //     html: "Sedang mengupload dan memproses file Excel...",
+        //     allowOutsideClick: false,
+        //     didOpen: () => {
+        //         Swal.showLoading();
+        //     },
+        // });
 
-    //     try {
-    //         const formData = new FormData();
-    //         formData.append("file", file);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
 
-    //         const response = await axios.post(
-    //             `/admin/official/${position.slug}/import/excel`,
-    //             formData,
-    //             {
-    //                 headers: {
-    //                     "Content-Type": "multipart/form-data",
-    //                 },
-    //             }
-    //         );
+            const response = await axios.post(
+                `/admin/official/${position.slug}/import/excel`,
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
 
-    //         // Tutup loading dan tampilkan sukses
-    //         Swal.fire({
-    //             icon: "success",
-    //             title: "Import Berhasil!",
-    //             html: `
-    //             <div class="text-left">
-    //                 <p>File <strong>${file.name}</strong> berhasil diimport.</p>
-    //                 ${
-    //                     response.data.inserted
-    //                         ? `<p>Total data: <strong>${response.data.inserted}</strong></p>`
-    //                         : ""
-    //                 }
-    //             </div>
-    //         `,
-    //             confirmButtonText: "OK",
-    //             willClose: () => {
-    //                 // Lakukan sesuatu setelah alert ditutup
-    //                 // Misalnya refresh data atau reset form
-    //             },
-    //         });
+            // Tutup loading dan tampilkan sukses
+            Swal.fire({
+                icon: "success",
+                title: "Import Berhasil!",
+                html: `
+                <div class="text-left">
+                    <p>File <strong>${file.name}</strong> berhasil diimport.</p>
+                    ${
+                        response.data.inserted
+                            ? `<p>Total data: <strong>${response.data.inserted}</strong></p>`
+                            : ""
+                    }
+                </div>
+            `,
+                confirmButtonText: "OK",
+                willClose: () => {
+                    // Lakukan sesuatu setelah alert ditutup
+                    // Misalnya refresh data atau reset form
+                },
+            });
 
-    //         return response.data;
-    //     } catch (error) {
-    //         let errorMessage = "Terjadi kesalahan saat mengimport file";
+            return response.data;
+        } catch (error) {
+            let errorMessage = "Terjadi kesalahan saat mengimport file";
 
-    //         if (error.response) {
-    //             // Error dari server (4xx/5xx)
-    //             errorMessage =
-    //                 error.response.data.message ||
-    //                 `Error ${error.response.status}: ${error.response.statusText}`;
-    //         } else if (error.request) {
-    //             // Tidak ada response dari server
-    //             errorMessage =
-    //                 "Tidak ada respon dari server. Silakan coba lagi.";
-    //         } else if (error.message.includes("Network Error")) {
-    //             errorMessage =
-    //                 "Koneksi jaringan bermasalah. Periksa koneksi internet Anda.";
-    //         }
+            if (error.response) {
+                // Error dari server (4xx/5xx)
+                errorMessage =
+                    error.response.data.message ||
+                    `Error ${error.response.status}: ${error.response.statusText}`;
+            } else if (error.request) {
+                // Tidak ada response dari server
+                errorMessage =
+                    "Tidak ada respon dari server. Silakan coba lagi.";
+            } else if (error.message.includes("Network Error")) {
+                errorMessage =
+                    "Koneksi jaringan bermasalah. Periksa koneksi internet Anda.";
+            }
 
-    //         Swal.fire({
-    //             icon: "error",
-    //             title: "Import Gagal",
-    //             html: `
-    //             <div class="text-left">
-    //                 <p>${errorMessage}</p>
-    //                 ${file ? `<p>File: <strong>${file.name}</strong></p>` : ""}
-    //             </div>
-    //         `,
-    //             confirmButtonText: "Tutup",
-    //         });
+            Swal.fire({
+                icon: "error",
+                title: "Import Gagal",
+                html: `
+                <div class="text-left">
+                    <p>${errorMessage}</p>
+                    ${file ? `<p>File: <strong>${file.name}</strong></p>` : ""}
+                </div>
+            `,
+                confirmButtonText: "Tutup",
+            });
 
-    //         throw error;
-    //     }
-    // };
+            throw error;
+        }
+    };
 
     const CustomBadge = ({ role }) => {
         let badgeColor = "";
@@ -277,61 +284,59 @@ export default function List({
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-lg ">
+        <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-300">
             {/* Header dengan pencarian dan filter */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                <div className="flex gap-4 w-full md:w-auto">
-                    <div className="flex flex-col gap-1 w-full">
-                        <label htmlFor="search" className="text-sm font-medium">
-                            Pencarian
-                        </label>
-                        <motion.input
-                            type="text"
-                            id="search"
-                            name="search"
-                            placeholder="Pencarian ..."
-                            value={filterText}
-                            onChange={(e) => {
-                            e.persist(); // Add this for React synthetic event handling
-                            setFilterText(e.target.value);
-                            }}
-                            className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500 w-full md:w-auto"
-                            whileHover={{ scale: 1.02 }}
-                            whileFocus={{
-                            scale: 1.02,
-                            transition: { duration: 0.1 } // Faster transition for focus
-                            }}
-                            transition={{ type: "spring", stiffness: 300, damping: 20 }} // Added damping
-                            onFocus={(e) => {
-                            e.target.select(); // Optional: selects all text when focused
-                            }}
-                        />
-                        </div>
 
-                    <div className="flex flex-col gap-1">
-                        <label
-                            htmlFor="education"
-                            className="text-sm font-medium"
+
+                <div className="flex gap-2 w-full md:w-auto justify-end">
+                    {/* <motion.button
+                        onClick={handleExportJSON}
+                        className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaFileAlt className="mr-2" /> JSON
+                    </motion.button> */}
+
+                    {/* <motion.button
+                        onClick={handleExportPDF}
+                        className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaFilePdf className="mr-2" /> PDF
+                    </motion.button> */}
+
+                    {/* <motion.button
+                        onClick={handleExportExcel}
+                        className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <FaFileExcel className="mr-2" /> Excel
+                    </motion.button> */}
+
+                    {/* <ExcelImportModal onImport={handleImportExcel} /> */}
+
+                    <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <Link
+                            href={`/village/official/${role}/create`}
+                            className="bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
                         >
-                            Pendidikan
-                        </label>
-                        <select
-                            id="education"
-                            name="education"
-                            value={educationFilter}
-                            onChange={(e) => setEducationFilter(e.target.value)}
-                            className="border rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                        >
-                            <option value="">Semua</option>
-                            {educationOptions.map((education, index) => (
-                                <option key={index} value={education}>
-                                    {education}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                            <FaPlus className="mr-2" /> Tambah
+                        </Link>
+                    </motion.div>
+
+                    {/* <input type="file" className="p-2 border rounded" placeholder="Cari..." /> */}
                 </div>
-
             </div>
 
             {/* Tabel biasa dengan overflow horizontal */}
@@ -354,7 +359,7 @@ export default function List({
                             >
                                 <div className="flex items-center cursor-pointer">
                                     Nama Lengkap
-                                    {/* {renderSortIcon("nama_lengkap")} */}
+                                    {renderSortIcon("nama_lengkap")}
                                 </div>
                             </th>
                             <th
@@ -365,7 +370,7 @@ export default function List({
                             >
                                 <div className="flex items-center cursor-pointer">
                                     NIK
-                                    {/* {renderSortIcon("nik")} */}
+                                    {renderSortIcon("nik")}
                                 </div>
                             </th>
                             <th
@@ -376,7 +381,7 @@ export default function List({
                             >
                                 <div className="flex items-center cursor-pointer">
                                     NIPD
-                                    {/* {renderSortIcon("nipd")} */}
+                                    {renderSortIcon("nipd")}
                                 </div>
                             </th>
                             <th
@@ -387,50 +392,16 @@ export default function List({
                             >
                                 <div className="flex items-center cursor-pointer">
                                     Pendidikan
-                                    {/* {renderSortIcon("pendidikan")} */}
-                                </div>
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: "150px" }}
-                                // onClick={() => handleSort("pendidikan")}
-                            >
-                                <div className="flex items-center cursor-pointer">
-                                    Jabatan
-                                    {/* {renderSortIcon("pendidikan")} */}
-                                </div>
-                            </th>
-
-                            <th
-                                scope="col"
-                                className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: "150px" }}
-                                // onClick={() => handleSort("pendidikan")}
-                            >
-                                <div className="flex items-center cursor-pointer">
-                                    Pelatihan
-                                    {/* {renderSortIcon("pendidikan")} */}
-                                </div>
-                            </th>
-                            <th
-                                scope="col"
-                                className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                style={{ width: "150px" }}
-                                // onClick={() => handleSort("pendidikan")}
-                            >
-                                <div className="flex items-center cursor-pointer">
-                                    Organisasi
-                                    {/* {renderSortIcon("pendidikan")} */}
+                                    {renderSortIcon("pendidikan")}
                                 </div>
                             </th>
                             {/* <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Desa
-                            </th>
-                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            </th> */}
+                            {/* <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Kecamatan
-                            </th>
-                            <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            </th> */}
+                            {/* <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Kabupaten
                             </th> */}
                             <th className="px-2 py-2 border text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -463,7 +434,16 @@ export default function List({
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        { officials?.data?.length > 0 ? (
+                        {loading ? (
+                            <tr>
+                                <td
+                                    colSpan="6"
+                                    className="px-2 py-4 border text-center"
+                                >
+                                    Memuat data...
+                                </td>
+                            </tr>
+                        ) : officials?.data?.length > 0 ? (
                             officials.data.map((row, index) => (
                                 <tr key={row.id}>
                                     <td className="px-2 py-2 border whitespace-nowrap">
@@ -472,11 +452,7 @@ export default function List({
                                             1}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        <span className="font-semibold">{row.nama_lengkap}</span>  (
-                                            {calculateAge(
-                                                row?.tanggal_lahir
-                                            )}{" "}
-                                            th)
+                                        {row.nama_lengkap}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.nik}
@@ -485,24 +461,16 @@ export default function List({
                                         {row.nipd}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row?.identities?.pendidikan_terakhir || "-"}
-                                    </td>
-                                    <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row?.positions?.position?.name || "-"}
-                                    </td>
-                                    <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row?.officialTrainings || "-"}
-                                    </td>
-                                    <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row?.officialOrganizations || "-"}
+                                        {row?.identities?.pendidikan_terakhir ||
+                                            "-"}
                                     </td>
                                     {/* <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.name_bps || "-"}
-                                    </td>
-                                    <td className="px-2 py-2 border whitespace-nowrap">
+                                    </td> */}
+                                    {/* <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.district.name_bps || "-"}
-                                    </td>
-                                    <td className="px-2 py-2 border whitespace-nowrap">
+                                    </td> */}
+                                    {/* <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.district.regency
                                             .name_bps || "-"}
                                     </td> */}
@@ -519,11 +487,11 @@ export default function List({
                                     <td className="px-2 py-2 border whitespace-nowrap">
                                         <Actions
                                             row={row}
-                                            // onEdit={onEdit}
-                                            // onDelete={onDelete}
+                                            onEdit={onEdit}
+                                            onDelete={onDelete}
                                             onView={onView}
                                             onPrint={onPrint}
-                                            // role={role}
+                                            role={role}
                                         />
                                     </td>
                                 </tr>
@@ -632,19 +600,3 @@ export default function List({
         </div>
     );
 }
-
-// Helper untuk menghitung usia
-const calculateAge = (birthDate) => {
-    if (!birthDate) return "-";
-    const today = new Date();
-    const birthDateObj = new Date(birthDate);
-    let age = today.getFullYear() - birthDateObj.getFullYear();
-    const monthDiff = today.getMonth() - birthDateObj.getMonth();
-    if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birthDateObj.getDate())
-    ) {
-        age--;
-    }
-    return age;
-};

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('description')->nullable(); // Deskripsi singkat (opsional)
             $table->integer('level')->default(0); // Level hierarki (opsional, untuk urutan jenjang)
             $table->foreignId('parent_id')->nullable()->constrained('studies')->nullOnDelete(); // Parent jenjang (opsional, untuk hierarki)
+            $table->longText('keterangan')->nullable();
             $table->timestamps();
         });
 

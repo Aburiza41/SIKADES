@@ -279,7 +279,7 @@ export default function List({
     return (
         <div className="bg-white p-6 rounded-lg shadow-lg ">
             {/* Header dengan pencarian dan filter */}
-            <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+            {/* <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <div className="flex gap-4 w-full md:w-auto">
                     <div className="flex flex-col gap-1 w-full">
                         <label htmlFor="search" className="text-sm font-medium">
@@ -332,7 +332,7 @@ export default function List({
                     </div>
                 </div>
 
-            </div>
+            </div> */}
 
             {/* Tabel biasa dengan overflow horizontal */}
             <div className="overflow-x-auto">
@@ -491,16 +491,16 @@ export default function List({
                                         {row?.positions?.position?.name || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row?.officialTrainings || "-"}
+                                        {Array.isArray(row?.official_trainings) ? row.official_trainings.length : "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row?.officialOrganizations || "-"}
+                                        {Array.isArray(row?.official_organizations) ? row.official_organizations.length : "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row.village.name_bps || "-"}
+                                        {row.village.name_dagri || "-"}
                                     </td>
                                     <td className="px-2 py-2 border whitespace-nowrap">
-                                        {row.village.district.name_bps || "-"}
+                                        {row.village.district.name_dagri || "-"}
                                     </td>
                                     {/* <td className="px-2 py-2 border whitespace-nowrap">
                                         {row.village.district.regency

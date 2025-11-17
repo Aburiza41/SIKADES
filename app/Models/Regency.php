@@ -19,10 +19,12 @@ class Regency extends Model
         'name_bps',
         'code_dagri',
         'name_dagri',
-        'code'
-        // 'logo',
-        // 'description',
-        // 'website',
+        'active',
+        'code',
+    ];
+
+    protected $casts = [
+        'active' => 'boolean',
     ];
 
     // Relation

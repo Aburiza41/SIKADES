@@ -24,7 +24,7 @@ const itemVariants = {
 
 export default function Footer() {
   return (
-    <footer className="bg-gradient-to-r from-green-900 to-green-800 border-t border-green-700">
+    <footer className="bg-gradient-to-t from-green-900 to-green-800 border-t border-green-900">
       <div className="mx-auto max-w-7xl py-12">
         {/* Grid untuk konten footer dengan animasi */}
         <motion.div

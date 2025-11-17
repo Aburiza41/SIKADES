@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web\Village;
 
 use App\Http\Controllers\Controller;
 use App\Models\ChildrenOfficial;
+use App\Models\District;
 use App\Models\Official;
 use App\Models\OfficialOrganization;
 use App\Models\OfficialStudy;
@@ -22,8 +23,11 @@ use App\Models\OfficialAddress;
 use App\Models\OfficialContact;
 use App\Models\OfficialIdentity;
 use App\Models\ParentOfficial;
+use App\Models\Regency;
+use App\Models\Role;
 use App\Models\SpouseOfficial;
 use App\Models\Study;
+use App\Models\Village;
 use App\Models\WorkPlaceOfficial;
 use COM;
 use Illuminate\Support\Facades\Storage;
@@ -36,52 +40,235 @@ class OfficialController extends Controller
 
     public function index(Request $request, String $role)
     {
-        // dd($role);
-        // Debug nid
+        // Log request parameters for debugging
         Log::info('Request parameters:', $request->all());
 
+        // Ambil data desa yang terkait dengan user yang login
         $village = Auth::user()->user_village->village ?? null;
+        if (!$village) {
+            return Inertia::render('Village/Official/Page', [
+                'error' => 'User tidak terkait dengan desa.',
+            ]);
+        }
+        $district = $village->district;
+        $regency = $district->regency;
 
-        // dd(Official::with(['position_current.position'])->first());
-        // Query utama untuk officials dengan filter dan sorting
-        $officials = Official::with(['village.district.regency', 'addresses', 'contacts', 'identities', 'studies', 'positions.position', 'officialTrainings', 'officialOrganizations', 'position_current.position'])
-            ->when($request->has('search') && $request->search !== '', function ($query) use ($request) {
-                $query->where(function ($q) use ($request) {
-                    $q->where('nama_lengkap', 'like', '%' . $request->search . '%')
-                        ->orWhere('nik', 'like', '%' . $request->search . '%')
-                        ->orWhere('nipd', 'like', '%' . $request->search . '%');
-                });
-            })
-            ->when($request->filled('filters'), function ($query) use ($request) {
-                $query->whereHas('identities', function ($q) use ($request) {
-                    $q->where('pendidikan_terakhir', $request->filters); // Filter berdasarkan ID village
-                });
-            })
-            ->when($village->id, function ($query) use ($village) {
-                $query->whereHas('village', function ($q) use ($village) {
-                    $q->where('id', $village->id); // Filter berdasarkan ID village
-                });
-            })
+        // Definisikan enum pendidikan
+        $educationLevels = [
+            'SD/MI' => 'SD/MI',
+            'SMP/MTS/SLTP' => 'SMP/MTS/SLTP',
+            'SMA/SMK/MA/SLTA/SMU' => 'SMA/SMK/MA/SLTA/SMU',
+            'D1' => 'D1',
+            'D2' => 'D2',
+            'D3' => 'D3',
+            'D4' => 'D4',
+            'S1' => 'S1',
+            'S2' => 'S2',
+            'S3' => 'S3',
+            'Lainnya' => 'Lainnya'
+        ];
+
+        // Parse filters dari request
+        $filters = $request->filled('filters') ? json_decode($request->filters, true) : [];
+
+        // In audiovisualsiasi query untuk menghitung data dengan filter
+        $baseQuery = Official::where('village_id', $village->id)
             ->when($role, function ($query) use ($role) {
                 $query->whereHas('position_current.position', function ($q) use ($role) {
-                    $q->where('slug', $role); // Filter berdasarkan position->slug
+                    $q->where('slug', $role);
                 });
-            })
+            });
+
+        // Terapkan filter jika ada
+        if (!empty($filters)) {
+            // Filter berdasarkan pendidikan terakhir
+            if (!empty($filters['education'])) {
+                $baseQuery->whereHas('identities', function ($q) use ($filters) {
+                    $q->where('pendidikan_terakhir', $filters['education']);
+                });
+            }
+
+            // Filter berdasarkan jabatan
+            if (!empty($filters['position'])) {
+                $baseQuery->whereHas('position_current', function ($q) use ($filters) {
+                    $q->whereHas('position', function ($subQ) use ($filters) {
+                        $subQ->where('name', $filters['position']);
+                    });
+                });
+            }
+
+            // Filter berdasarkan jenis kelamin
+            if (!empty($filters['gender'])) {
+                $baseQuery->where('jenis_kelamin', $filters['gender']);
+            }
+
+            // Filter berdasarkan agama
+            if (!empty($filters['religion'])) {
+                $baseQuery->where('agama', $filters['religion']);
+            }
+
+            // Filter berdasarkan golongan darah
+            if (!empty($filters['blood_type'])) {
+                $baseQuery->whereHas('identities', function ($q) use ($filters) {
+                    $q->where('gol_darah', $filters['blood_type']);
+                });
+            }
+
+            // Filter berdasarkan pelatihan
+            if (!empty($filters['training'])) {
+                $baseQuery->whereHas('officialTrainings', function ($q) use ($filters) {
+                    $q->whereHas('training', function ($subQ) use ($filters) {
+                        $subQ->where('title', $filters['training']);
+                    });
+                });
+            }
+
+            // Filter berdasarkan organisasi
+            if (!empty($filters['organization'])) {
+                $baseQuery->whereHas('officialOrganizations', function ($q) use ($filters) {
+                    $q->whereHas('organization', function ($subQ) use ($filters) {
+                        $subQ->where('name', $filters['organization']);
+                    });
+                });
+            }
+
+            // Filter berdasarkan status aktif
+            if (!empty($filters['status'])) {
+                $baseQuery->where('status', $filters['status']);
+            }
+
+            // Filter pencarian
+            if (!empty($filters['search'])) {
+                $baseQuery->where(function ($q) use ($filters) {
+                    $q->where('nama_lengkap', 'like', '%' . $filters['search'] . '%')
+                        ->orWhere('nik', 'like', '%' . $filters['search'] . '%')
+                        ->orWhere('niad', 'like', '%' . $filters['search'] . '%');
+                });
+            }
+        }
+
+        // Hitung total pejabat
+        $official_count = (clone $baseQuery)->count();
+
+        // Hitung total pejabat berdasarkan status
+        $statusOptions = ['daftar', 'proses', 'validasi', 'tolak'];
+        $status_pejabat = array_map(function ($status) use ($baseQuery) {
+            return (clone $baseQuery)->where('status', $status)->count();
+        }, $statusOptions);
+
+        // Hitung total pejabat berdasarkan jenis kelamin
+        $genderOptions = ['L', 'P'];
+        $jenis_kelamin = array_map(function ($gender) use ($baseQuery) {
+            return (clone $baseQuery)->where('jenis_kelamin', $gender)->count();
+        }, $genderOptions);
+
+        // Hitung total pejabat berdasarkan pendidikan
+        $pendidikan = [];
+        foreach ($educationLevels as $education) {
+            $pendidikan[$education] = (clone $baseQuery)->whereHas('identities', function ($q) use ($education) {
+                $q->where('pendidikan_terakhir', $education);
+            })->count();
+        }
+
+        // Hitung Data Pelatihan
+        $trainingLevels = Training::all();
+        $trainings = [];
+        foreach ($trainingLevels as $trainingLevel) {
+            $trainings[$trainingLevel->title] = (clone $baseQuery)->whereHas('officialTrainings', function ($q) use ($trainingLevel) {
+                $q->where('training_id', $trainingLevel->id);
+            })->count();
+        }
+
+        // Hitung Data Organisasi
+        $organizationLevels = Organization::all();
+        $organizations = [];
+        foreach ($organizationLevels as $organizationLevel) {
+            $organizations[$organizationLevel->name] = (clone $baseQuery)->whereHas('officialOrganizations', function ($q) use ($organizationLevel) {
+                $q->where('organization_id', $organizationLevel->id);
+            })->count();
+        }
+
+        // Hitung total pejabat berdasarkan agama
+        $religionOptions = ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Kosong'];
+        $agama = array_map(function ($religion) use ($baseQuery) {
+            return (clone $baseQuery)->where('agama', $religion)->count();
+        }, $religionOptions);
+
+        // Hitung total pejabat berdasarkan golongan darah
+        $bloodTypeOptions = ['A', 'B', 'AB', 'O', 'Kosong'];
+        $golongan_darah = array_map(function ($bloodType) use ($baseQuery) {
+            return (clone $baseQuery)->whereHas('identities', function ($q) use ($bloodType) {
+                $q->where('gol_darah', $bloodType);
+            })->count();
+        }, $bloodTypeOptions);
+
+        // Hitung total pejabat berdasarkan jabatan
+        $positions = Position::all();
+        $jabatan = [];
+        $total_posisi = 0;
+        $total_terisi = 0;
+        foreach ($positions as $position) {
+            $jabatan[$position->name] = (clone $baseQuery)->whereHas('position_current', function ($q) use ($position) {
+                $q->where('position_id', $position->id);
+            })->count();
+            $total_posisi++;
+            if ($jabatan[$position->name] > 0) {
+                $total_terisi++;
+            }
+        }
+        $kelengkapan_data = $total_posisi > 0 ? round($total_terisi / $total_posisi * 100) : 0;
+
+        // Hitung total pejabat berdasarkan status perkawinan
+        $maritalStatusOptions = ['Belum Kawin', 'Kawin', 'Duda', 'Janda', 'Kosong'];
+        $status_perkawinan = array_map(function ($status) use ($baseQuery) {
+            return (clone $baseQuery)->where('status_perkawinan', $status)->count();
+        }, $maritalStatusOptions);
+
+        // Cari Position berdasarkan role
+        $position = Position::where('slug', $role)->firstOrFail();
+
+        // Ambil data pejabat dengan pagination dan filter
+        $officials = (clone $baseQuery)
+            ->with([
+                'village.district.regency',
+                'addresses',
+                'contacts',
+                'identities',
+                'studies',
+                'positions.position',
+                'officialTrainings.training',
+                'officialOrganizations.organization',
+                'position_current.position',
+                'statusLogs'
+            ])
             ->orderBy(
-                in_array($request->sort_field, ['id', 'nama_lengkap', 'nik', 'niad', 'created_at', 'updated_at']) ? $request->sort_field : 'id',
-                in_array(strtolower($request->sort_direction), ['asc', 'desc']) ? strtolower($request->sort_direction) : 'asc'
+                in_array($request->sort_field, ['id', 'nama_lengkap', 'nik', 'niad', 'created_at', 'updated_at'])
+                    ? $request->sort_field
+                    : 'id',
+                in_array(strtolower($request->sort_direction), ['asc', 'desc'])
+                    ? strtolower($request->sort_direction)
+                    : 'asc'
             )
             ->paginate($request->per_page ?? 10);
 
-        // dd($officials[0]->identities);
-        // dd($officials);
-        // Cari Position
-        $position = Position::where('slug', $role)->first();
+        // Filter officials aktif berdasarkan tmt_jabatan
+        $selectFilteredOfficials = (clone $baseQuery)
+            ->whereHas('position_current', function ($q) use ($role) {
+                $q->whereHas('position', function ($subQ) use ($role) {
+                    $subQ->where('slug', $role);
+                })->whereNotNull('tmt_jabatan')->where('tmt_jabatan', '<=', now());
+            })
+            ->with(['position_current.position'])
+            ->get()
+            ->sortByDesc('position_current.tmt_jabatan')
+            ->take($position->max)
+            ->values();
 
-        // dd($position, $officials);
+        // dd($pendidikan);
 
-        // Kembalikan data menggunakan Inertia
+        // Kirim data ke view
         return Inertia::render('Village/Official/Page', [
+            'initialOfficials' => $officials->items(),
             'officials' => [
                 'current_page' => $officials->currentPage(),
                 'data' => $officials->items(),
@@ -91,11 +278,42 @@ class OfficialController extends Controller
                 'from' => $officials->firstItem(),
                 'to' => $officials->lastItem(),
             ],
-            'filters' => $request->filters, // Kirim filter yang aktif
-            'sort' => $request->only(['sort_field', 'sort_direction']), // Kirim sorting yang aktif
-            'search' => $request->search, // Kirim pencarian yang aktif
+            'filters' => $filters,
+            'sort' => $request->only(['sort_field', 'sort_direction']),
+            'search' => $filters['search'] ?? '',
             'role' => $role,
-            'position' => $position
+            'position' => [
+                'name' => $position->name,
+                'slug' => $position->slug,
+                'max' => $position->max
+            ],
+            'selectFilteredOfficials' => $selectFilteredOfficials,
+            'regency' => [
+                'name_bps' => $regency->name_bps,
+                'code_bps' => $regency->code_bps
+            ],
+            'district' => [
+                'name_bps' => $district->name_bps,
+                'code_bps' => $district->code_bps
+            ],
+            'village' => [
+                'name_bps' => $village->name_bps,
+                'code_bps' => $village->code_bps,
+                'name_dagri' => $village->name_dagri
+            ],
+            'official_count' => $official_count,
+            'total_posisi' => $total_posisi,
+            'total_terisi' => $total_terisi,
+            'kelengkapan_data' => $kelengkapan_data,
+            'status_pejabat' => $status_pejabat,
+            'jenis_kelamin' => $jenis_kelamin,
+            'pendidikan' => $pendidikan,
+            'jabatan' => $jabatan,
+            'trainings' => $trainings,
+            'organizations' => $organizations,
+            'agama' => $agama,
+            'golongan_darah' => $golongan_darah,
+            'status_perkawinan' => $status_perkawinan
         ]);
     }
 
@@ -140,354 +358,364 @@ class OfficialController extends Controller
     public function store(Request $request, string $role)
     {
         // dd($request->all());
-        // Jika User role adalah village maka akan ada data village
+        // Check if user has village access
         if (Auth::user()->role == 'village') {
             $village = Auth::user()->user_village->village;
         }
 
-        // Jika Tidak ada data village maka lempar ke halaman login
         if (!$village) {
             return redirect()->route('login');
         }
 
-        // Mulai transaksi database
         DB::beginTransaction();
 
         try {
-            // Isi Village Id
             $village = Auth::user()->user_village->village;
 
-            // Ambil data official dari request
-            // Ambil data official dari request
-            $officialData = [
-                'village_id' => $village->id,
-                'nik' => $request->input('official.nik'),
-                'nipd' => $request->input('official.nipd'),
-                'nama_lengkap' => $request->input('official.nama_lengkap'),
-                'gelar_depan' => $request->input('official.gelar_depan'),
-                'gelar_belakang' => $request->input('official.gelar_belakang'),
-                'tempat_lahir' => $request->input('official.tempat_lahir'),
-                'tanggal_lahir' => $request->input('official.tanggal_lahir'),
-                'jenis_kelamin' => $request->input('official.jenis_kelamin'),
-                'agama' => $request->input('official.agama'),
-                'status_perkawinan' => $request->input('official.status_perkawinan'),
-                'status' => 'daftar', // Default status
-                // Informasi alamat tambahan (jika diperlukan)
-                // 'pendidikan' => $request->input('official.pendidikan'),
-                // 'gol_darah' => $request->input('official.gol_darah'),
-            ];
+            // Create official
+            $official = $this->createOfficial($request, $village->id);
 
-            // Simpan data official ke tabel officials
-            $official = Official::create($officialData);
+            // Create related records
+            $this->createOfficialAddress($request, $official);
+            $this->createOfficialContact($request, $official);
+            $this->createOfficialIdentity($request, $official);
+            $this->createStudies($request, $official);
 
-            // Simpan data alamat ke tabel official_addresses
-            $officialAddress = [
-                'official_id' => $official->id,
-                'rt' => $request->input('official.rt'),
-                'rw' => $request->input('official.rw'),
-                'kode_pos' => $request->input('official.postal'),
-                'alamat' => $request->input('official.alamat'),
-                'province_code' => $request->input('official.province_code'),
-                'province_name' => $request->input('official.province_name'),
-                'regency_code' => $request->input('official.regency_code'),
-                'regency_name' => $request->input('official.regency_name'),
-                'district_code' => $request->input('official.district_code'),
-                'district_name' => $request->input('official.district_name'),
-                'village_code' => $request->input('official.village_code'),
-                'village_name' => $request->input('official.village_name'),
-                'user_village_id' => Auth::user()->id
-            ];
-            OfficialAddress::create($officialAddress);
+            // Create workplace
+            $this->createWorkplace($request, $official);
 
-            // Simpan data kontak ke tabel official_contacts
-            $officialContact = [
-                'official_id' => $official->id,
-                'handphone' => $request->input('official.handphone'),
-            ];
-            OfficialContact::create($officialContact);
+            // Create position
+            $this->createPosition($request, $official);
 
-            // Handle file upload (foto)
+            // Create trainings
+            $this->createTrainings($request, $official);
 
+            // Create organizations
+            $this->createOrganizations($request, $official);
 
-            // Simpan data identitas tambahan ke tabel official_identities
-            $officialIdentity = [
-                'official_id' => $official->id,
-                'gol_darah' => $request->input('official.gol_darah') ?? null,
-                'pendidikan_terakhir' => $request->input('official.pendidikan') ?? null,
-                'bpjs_kesehatan' => $request->input('official.bpjs_kesehatan') ?? null,
-                'bpjs_ketenagakerjaan' => $request->input('official.bpjs_ketenagakerjaan') ?? null,
-                'npwp' => $request->input('official.npwp') ?? null,
-            ];
+            // Create family records
+            $this->createParents($request, $official);
+            $this->createSpouse($request, $official);
+            $this->createChildren($request, $official);
 
-            if ($request->hasFile('official.foto')) {
-                $foto = $request->file('official.foto');
-                $filename = time() . '_' . $foto->getClientOriginalName();
-                $path = $foto->storeAs('public/officials', $filename);
-                $officialIdentity['foto'] = 'officials/' . $filename;
-            }
+            // Update status if all required data is present
+            $this->updateOfficialStatus($official);
 
-            OfficialIdentity::create($officialIdentity);
-
-            try {
-                // Simpan data studies (pendidikan)
-                $studies = $request->input('studies');
-                foreach ($studies as $index => $study) {
-                    $inputStudy = [
-                        'official_id' => $official->id,
-                        'pendidikan_umum' => $study['tingkatPendidikan'],
-                        'nama_sekolah' => $study['namaSekolah'],
-                        'alamat_sekolah' => $study['tempat'],
-                        'nomor_ijazah' => $study['nomorIjazah'],
-                        'tanggal' => $study['tanggalIjazah']
-                    ];
-
-                    // Simpan file dokumen jika ada
-                    if ($request->hasFile("studies.{$index}.dokumenIjazah")) {
-                        $file = $request->file("studies.{$index}.dokumenIjazah");
-                        $fileName = time() . '_' . $file->getClientOriginalName();
-                        $file->storeAs('public/uploads/studies', $fileName);
-                        $inputStudy['dokumen'] = $fileName;
-                    }
-
-                    OfficialStudy::create($inputStudy);
-                }
-            } catch (\Throwable $th) {
-                //throw $th;
-            }
-
-            // Simpan Tempat Kerja
-            // Cari Regency berdasarkan Codebps
-            $regency = \App\Models\Regency::where('code_bps', $request->input('tempat_kerja.regency_code'))->first();
-            // Cari District berdasarkan Codebps
-            $district = \App\Models\District::where('code_bps', $request->input('tempat_kerja.district_code'))->first();
-            // Cari Village berdasarkan Codebps
-            $village = \App\Models\Village::where('code_bps', $request->input('tempat_kerja.village_code'))->first();
-            $tempatKerja = [
-                'official_id' => $official->id,
-                'rt' => $request->input('tempat_kerja.rt'),
-                'rw' => $request->input('tempat_kerja.rw'),
-                'kode_pos' => $request->input('tempat_kerja.postal'),
-                'alamat' => $request->input('tempat_kerja.alamat'),
-                'regency_id' => $regency->id,
-                'district_id' => $district->id,
-                'village_id' => $village->id
-            ];
-            WorkPlaceOfficial::create($tempatKerja);
-
-            // Simpan data positions (jabatan)
-            $positionOfficial = [
-                'official_id' => $official->id,
-                'position_id' => $request->input('position.jabatanId') ?? null,
-                'penetap' => $request->input('position.penetap') ?? null,
-                'nomor_sk' => $request->input('position.nomorSk') ?? null,
-                'tanggal_sk' => $request->input('position.tanggalSk') ?? null,
-                'tmt_jabatan' => $request->input('position.tmtJabatan') ?? null,
-                'periode' => $request->input('position.period') ?? null
-            ];
-
-            if ($request->hasFile('position.file')) {
-                $foto = $request->file('position.file');
-                $filename = time() . '_' . $foto->getClientOriginalName();
-                $path = $foto->storeAs('public/officials', $filename);
-                $positionOfficial['file_sk'] = 'officials/' . $filename;
-            }
-
-            PositionOfficial::create($positionOfficial);
-
-            try {
-                $trainings = $request->input('trainings', []);
-
-                foreach ($trainings as $index => $training) {
-                    // Validate required fields
-                    // if (empty($training['pelatihan_title'])) {
-                    //     continue; // or throw an exception
-                    // }
-
-                    // Find or create training
-                    $trainingModel = Training::firstOrCreate(
-                        ['title' => $training['pelatihan_title']],
-                        ['description' => $training['description'] ?? null]
-                    );
-
-                    // Prepare training data
-                    $trainingInput = [
-                        'official_id' => $official->id,
-                        'training_id' => $trainingModel->id,
-                        'nama' => $training['nama'] ?? null,
-                        'alamat' => $training['tempat'] ?? null,
-                        'penyelenggara' => $training['penyelenggara'] ?? null,
-                        'nomor_sertifikat' => $training['nomor'] ?? null,
-                        'tanggal_sertifikat' => $training['tanggal'] ?? null,
-                        'keterangan' => $training['keterangan'] ?? null,
-                    ];
-
-                    // Handle file upload
-                    if ($request->hasFile("trainings.{$index}.docScan")) {
-                        $file = $request->file("trainings.{$index}.docScan");
-                        $fileName = time() . '_' . $file->getClientOriginalName();
-                        $file->storeAs('public/uploads/trainings', $fileName);
-                        $trainingInput['doc_scan'] = $fileName;
-                    }
-
-                    OfficialTraining::create($trainingInput);
-                }
-            } catch (\Throwable $th) {
-                // Log the error properly
-                \Log::error('Error saving training data: ' . $th->getMessage());
-
-                // You might want to rethrow or handle differently
-                throw new \Exception('Failed to save training data. Please try again.');
-            }
-
-            try {
-                $organizations = $request->input('organizations', []);
-
-                foreach ($organizations as $index => $organization) {
-                    // Validate required fields
-                    // if (empty($organization['organization_id']) || empty($organization['nama'])) {
-                    //     continue; // or throw an exception
-                    // }
-
-                    $organizationModel = Training::firstOrCreate(
-                        ['title' => $organization['pelatihan_title']],
-                        ['description' => $organization['pelatihan_title'] ?? null]
-                    );
-
-                    // Prepare organization data with null safety
-                    $organizationInput = [
-                        'official_id' => $official->id,
-                        'organization_id' => $organizationModel->id,
-                        'nama' => $organization['nama'] ?? null,
-                        'posisi' => $organization['posisi'] ?? null,
-                        'mulai' => $organization['mulai'] ?? null,
-                        'selesai' => $organization['selesai'] ?? null,
-                        'pimpinan' => $organization['pimpinan'] ?? null,
-                        'alamat' => $organization['tempat'] ?? null,
-                        'keterangan' => $organization['keterangan'] ?? null,
-                    ];
-
-                    // Handle file upload
-                    if ($request->hasFile("organizations.{$index}.doc_scan")) {
-                        $file = $request->file("organizations.{$index}.doc_scan");
-                        $fileName = time() . '_' . $file->getClientOriginalName();
-                        $file->storeAs('public/uploads/organizations', $fileName);
-                        $organizationInput['doc_scan'] = $fileName;
-                    }
-
-                    OfficialOrganization::create($organizationInput);
-                }
-            } catch (\Throwable $th) {
-                // Log the error properly
-                \Log::error('Error saving organization data: ' . $th->getMessage());
-
-                // Provide more meaningful error handling
-                throw new \Exception('Failed to save organization data. Please try again.');
-            }
-
-            try {
-                // parent_officials data Orang Tua
-                $parents = $request->input('orang_tua');
-                foreach ($parents as $index => $parent) {
-                    // 0 = ayah, 1 = ibu
-                    $parentInput = [
-                        'official_id' => $official->id,
-                        'nama' => $parent['nama'],
-                        'tempat_lahir' => $parent['tempatLahir'],
-                        'tanggal_lahir' => $parent['tanggalLahir'],
-                        'pekerjaan' => $parent['pekerjaan'],
-                        'hubungan' => $index == 0 ? "ayah" : "ibu",
-                        'alamat' => $parent['alamat'],
-                        'rt' => $parent['rt'],
-                        'rw' => $parent['rw'],
-                        'no_telepon' => $parent['telp'],
-                        'kode_pos' => $parent['kodePos'],
-                        'province_code' => $parent['province_code'],
-                        'province_name' => $parent['province_name'],
-                        'regency_code' => $parent['regency_code'],
-                        'regency_name' => $parent['regency_name'],
-                        'district_code' => $parent['district_code'],
-                        'district_name' => $parent['district_name'],
-                        'village_code' => $parent['village_code'],
-                        'village_name' => $parent['village_name'],
-                    ];
-
-                    ParentOfficial::create($parentInput);
-                }
-            } catch (\Throwable $th) {
-                //throw $th;
-            }
-
-            // Simpan Pasangan
-            try {
-                $pasangan = $request->input('pasangan');
-                if ($pasangan) {
-                    // Jika Official memiliki pasangan dan official adalah laki-laki maka pasanganya adalah istri
-                    if ($pasangan['jenis_kelamin'] == 'Laki-laki') {
-                        $hubungan = 'istri';
-                    } else {
-                        $hubungan = 'suami';
-                    }
-                    $pasanganInput = [
-                        'official_id' => $official->id,
-                        'hubungan' => $hubungan,
-                        'nama' => $pasangan['nama'],
-                        'tempat_lahir' => $pasangan['tempat_lahir'],
-                        'tanggal_lahir' => $pasangan['tanggal_lahir'],
-                        'tanggal_nikah' => $pasangan['tanggal_nikah'],
-                        'pendidikan_umum' => $pasangan['pendidikan'],
-                        'pekerjaan' => $pasangan['pekerjaan'],
-                    ];
-
-                    SpouseOfficial::create($pasanganInput);
-                }
-            } catch (\Throwable $th) {
-                //throw $th;
-            }
-
-            // Simpan Anak
-            try {
-                $anakList = $request->input('anak');
-                foreach ($anakList as $index => $anak) {
-                    $anakInput = [
-                        'official_id' => $official->id,
-                        'nama' => $anak['nama'],
-                        'tempat_lahir' => $anak['tempat'],
-                        'tanggal_lahir' => $anak['tanggalLahir'],
-                        'jenis_kelamin' => $anak['jenisKelamin'],
-                        'status' => $anak['status'],
-                        'pendidikan_umum' => $anak['pendidikan'],
-                        'pekerjaan' => $anak['pekerjaan'],
-                    ];
-                    ChildrenOfficial::create($anakInput);
-                }
-            } catch (\Throwable $th) {
-                //throw $th;
-            }
-
-            // Jika Data sudah lengkap maka ubah status menjadi proses
-            if (isset($official) && $official->identities != null && $official->positions != null && $official->addresses != null && $official->contacts != null && $official->work_place != null) {
-                $official->status = 'proses';
-                $official->save();
-            }
-
-            // Commit transaksi jika semua berhasil
             DB::commit();
 
-            // Redirect ke halaman index dengan pesan sukses
-            return redirect()->route('village.official.index', [$role])->with('success', 'Data berhasil disimpan.');
+            return redirect()
+                ->route('village.official.index', [$role])
+                ->with('success', 'Data berhasil disimpan.');
         } catch (\Exception $e) {
 
-            dd($e);
-            // Rollback transaksi jika terjadi error
             DB::rollBack();
-
-            // Log error untuk debugging
+            dd($e, $request->all());
             Log::error('Error storing official data: ' . $e->getMessage());
 
-            // Redirect ke halaman sebelumnya dengan pesan error
-            return redirect()->back()
+            return redirect()
+                ->back()
                 ->with('error', 'Gagal menyimpan data. Silakan coba lagi.')
-                ->withInput(); // Pertahankan input yang sudah diisi
+                ->withInput();
+        }
+    }
+
+    protected function createOfficial(Request $request, $villageId)
+    {
+        $officialData = [
+            'village_id' => $villageId,
+            'nik' => $request->input('official.nik'),
+            'nipd' => $request->input('official.nipd'),
+            'nama_lengkap' => $request->input('official.nama_lengkap'),
+            'gelar_depan' => $request->input('official.gelar_depan'),
+            'gelar_belakang' => $request->input('official.gelar_belakang'),
+            'tempat_lahir' => $request->input('official.tempat_lahir'),
+            'tanggal_lahir' => $request->input('official.tanggal_lahir'),
+            'jenis_kelamin' => $request->input('official.jenis_kelamin'),
+            'agama' => $request->input('official.agama'),
+            'status_perkawinan' => $request->input('official.status_perkawinan'),
+            'status' => 'daftar',
+        ];
+
+        return Official::create($officialData);
+    }
+
+    protected function createOfficialAddress(Request $request, $official)
+    {
+        $officialAddress = [
+            'official_id' => $official->id,
+            'rt' => $request->input('official.rt'),
+            'rw' => $request->input('official.rw'),
+            'kode_pos' => $request->input('official.postal'),
+            'alamat' => $request->input('official.alamat'),
+            'province_code' => $request->input('official.province_code'),
+            'province_name' => $request->input('official.province_name'),
+            'regency_code' => $request->input('official.regency_code'),
+            'regency_name' => $request->input('official.regency_name'),
+            'district_code' => $request->input('official.district_code'),
+            'district_name' => $request->input('official.district_name'),
+            'village_code' => $request->input('official.village_code'),
+            'village_name' => $request->input('official.village_name'),
+            'user_village_id' => Auth::user()->id
+        ];
+
+        OfficialAddress::create($officialAddress);
+    }
+
+    protected function createOfficialContact(Request $request, $official)
+    {
+        $officialContact = [
+            'official_id' => $official->id,
+            'handphone' => $request->input('official.handphone'),
+        ];
+
+        OfficialContact::create($officialContact);
+    }
+
+    protected function createOfficialIdentity(Request $request, $official)
+    {
+        $officialIdentity = [
+            'official_id' => $official->id,
+            'gol_darah' => $request->input('official.gol_darah') ?? null,
+            'pendidikan_terakhir' => $request->input('official.pendidikan') ?? null,
+            'bpjs_kesehatan' => $request->input('official.bpjs_kesehatan') ?? null,
+            'bpjs_ketenagakerjaan' => $request->input('official.bpjs_ketenagakerjaan') ?? null,
+            'npwp' => $request->input('official.npwp') ?? null,
+        ];
+
+        if ($request->hasFile('official.foto')) {
+            $foto = $request->file('official.foto');
+            $filename = time() . '_' . $foto->getClientOriginalName();
+            $path = $foto->storeAs('public/officials', $filename);
+            $officialIdentity['foto'] = 'officials/' . $filename;
+        }
+
+        OfficialIdentity::create($officialIdentity);
+    }
+
+    protected function createStudies(Request $request, $official)
+    {
+        $studies = $request->input('studies', []);
+
+        foreach ($studies as $index => $study) {
+            $inputStudy = [
+                'official_id' => $official->id,
+                'pendidikan_umum' => $study['tingkatPendidikan'],
+                'nama_sekolah' => $study['namaSekolah'],
+                'alamat_sekolah' => $study['tempat'],
+                'nomor_ijazah' => $study['nomorIjazah'],
+                'tanggal' => $study['tanggalIjazah']
+            ];
+
+            if ($request->hasFile("studies.{$index}.dokumenIjazah")) {
+                $file = $request->file("studies.{$index}.dokumenIjazah");
+                $fileName = time() . '_' . $file->getClientOriginalName();
+                $file->storeAs('public/uploads/studies', $fileName);
+                $inputStudy['dokumen'] = $fileName;
+            }
+
+            OfficialStudy::create($inputStudy);
+        }
+    }
+
+    protected function createWorkplace(Request $request, $official)
+    {
+
+        // $regency = Regency::where('code_bps', $request->input('tempat_kerja.regency_code'))->first();
+        // $district = District::where('code_bps', $request->input('tempat_kerja.district_code'))->first();
+        // $village = Village::where('code_bps', $request->input('tempat_kerja.village_code'))->first();
+
+        // Auth
+        // dd(Auth::user()->user_village->village->district->regency);
+
+        // dd($regency, $district, $village, $request->all());
+
+        $village = Auth::user()->user_village->village;
+        $district = Auth::user()->user_village->village->district;
+        $regency = Auth::user()->user_village->village->district->regency;
+
+        $tempatKerja = [
+            'official_id' => $official->id,
+            'rt' => $request->input('tempat_kerja.rt'),
+            'rw' => $request->input('tempat_kerja.rw'),
+            'kode_pos' => $request->input('tempat_kerja.postal'),
+            'alamat' => $request->input('tempat_kerja.alamat'),
+            'regency_id' => $regency->id,
+            'district_id' => $district->id,
+            'village_id' => $village->id
+        ];
+
+        WorkPlaceOfficial::create($tempatKerja);
+    }
+
+    protected function createPosition(Request $request, $official)
+    {
+        $positionOfficial = [
+            'official_id' => $official->id,
+            'position_id' => $request->input('position.jabatanId') ?? null,
+            'penetap' => $request->input('position.penetap') ?? null,
+            'nomor_sk' => $request->input('position.nomorSk') ?? null,
+            'tanggal_sk' => $request->input('position.tanggalSk') ?? null,
+            'tmt_jabatan' => $request->input('position.tmtJabatan') ?? null,
+            'periode' => $request->input('position.period') ?? null
+        ];
+
+        if ($request->hasFile('position.file')) {
+            $foto = $request->file('position.file');
+            $filename = time() . '_' . $foto->getClientOriginalName();
+            $path = $foto->storeAs('public/officials', $filename);
+            $positionOfficial['file_sk'] = 'officials/' . $filename;
+        }
+
+        PositionOfficial::create($positionOfficial);
+    }
+
+    protected function createTrainings(Request $request, $official)
+    {
+        $trainings = $request->input('trainings', []);
+
+        foreach ($trainings as $index => $training) {
+            $trainingModel = Training::firstOrCreate(
+                ['title' => $training['pelatihan_title']],
+                ['description' => $training['description'] ?? null]
+            );
+
+            $trainingInput = [
+                'official_id' => $official->id,
+                'training_id' => $trainingModel->id,
+                'nama' => $training['nama'] ?? null,
+                'alamat' => $training['tempat'] ?? null,
+                'penyelenggara' => $training['penyelenggara'] ?? null,
+                'nomor_sertifikat' => $training['nomor'] ?? null,
+                'tanggal_sertifikat' => $training['tanggal'] ?? null,
+                'keterangan' => $training['keterangan'] ?? null,
+            ];
+
+            if ($request->hasFile("trainings.{$index}.docScan")) {
+                $file = $request->file("trainings.{$index}.docScan");
+                $fileName = time() . '_' . $file->getClientOriginalName();
+                $file->storeAs('public/uploads/trainings', $fileName);
+                $trainingInput['doc_scan'] = $fileName;
+            }
+
+            OfficialTraining::create($trainingInput);
+        }
+    }
+
+    protected function createOrganizations(Request $request, $official)
+    {
+        $organizations = $request->input('organizations', []);
+
+        foreach ($organizations as $index => $organization) {
+            $organizationModel = Organization::firstOrCreate(
+                ['title' => $organization['organization_title']],
+                ['description' => $organization['organization_title'] ?? null]
+            );
+
+            $organizationInput = [
+                'official_id' => $official->id,
+                'organization_id' => $organizationModel->id,
+                'nama' => $organization['nama'] ?? null,
+                'posisi' => $organization['posisi'] ?? null,
+                'mulai' => $organization['mulai'] ?? null,
+                'selesai' => $organization['selesai'] ?? null,
+                'pimpinan' => $organization['pimpinan'] ?? null,
+                'alamat' => $organization['tempat'] ?? null,
+                'keterangan' => $organization['keterangan'] ?? null,
+            ];
+
+            if ($request->hasFile("organizations.{$index}.doc_scan")) {
+                $file = $request->file("organizations.{$index}.doc_scan");
+                $fileName = time() . '_' . $file->getClientOriginalName();
+                $file->storeAs('public/uploads/organizations', $fileName);
+                $organizationInput['doc_scan'] = $fileName;
+            }
+
+            OfficialOrganization::create($organizationInput);
+        }
+    }
+
+    protected function createParents(Request $request, $official)
+    {
+        $parents = $request->input('orang_tua', []);
+
+        foreach ($parents as $index => $parent) {
+            $parentInput = [
+                'official_id' => $official->id,
+                'nama' => $parent['nama'],
+                'tempat_lahir' => $parent['tempat_lahir'],
+                'tanggal_lahir' => $parent['tanggal_lahir'],
+                'pekerjaan' => $parent['pekerjaan'],
+                'hubungan' => $index == 0 ? "ayah" : "ibu",
+                'alamat' => $parent['alamat'],
+                'rt' => $parent['rt'],
+                'rw' => $parent['rw'],
+                'no_telepon' => $parent['telp'],
+                'kode_pos' => $parent['kode_pos'],
+                'province_code' => $parent['province_code'],
+                'province_name' => $parent['province_name'],
+                'regency_code' => $parent['regency_code'],
+                'regency_name' => $parent['regency_name'],
+                'district_code' => $parent['district_code'],
+                'district_name' => $parent['district_name'],
+                'village_code' => $parent['village_code'],
+                'village_name' => $parent['village_name'],
+            ];
+
+            ParentOfficial::create($parentInput);
+        }
+    }
+
+    protected function createSpouse(Request $request, $official)
+    {
+        $pasangan = $request->input('pasangan');
+
+        if ($pasangan) {
+            $hubungan = $pasangan['jenis_kelamin'] == 'Laki-laki' ? 'istri' : 'suami';
+
+            $pasanganInput = [
+                'official_id' => $official->id,
+                'hubungan' => $hubungan,
+                'nama' => $pasangan['nama'],
+                'tempat_lahir' => $pasangan['tempat_lahir'],
+                'tanggal_lahir' => $pasangan['tanggal_lahir'],
+                'tanggal_nikah' => $pasangan['tanggal_nikah'],
+                'pendidikan_umum' => $pasangan['pendidikan'],
+                'pekerjaan' => $pasangan['pekerjaan'],
+            ];
+
+            SpouseOfficial::create($pasanganInput);
+        }
+    }
+
+    protected function createChildren(Request $request, $official)
+    {
+        $anakList = $request->input('anak', []);
+
+        foreach ($anakList as $index => $anak) {
+            $anakInput = [
+                'official_id' => $official->id,
+                'nama' => $anak['nama'],
+                'tempat_lahir' => $anak['tempat'],
+                'tanggal_lahir' => $anak['tanggalLahir'],
+                'jenis_kelamin' => $anak['jenisKelamin'],
+                'status' => $anak['status'],
+                'pendidikan_umum' => $anak['pendidikan'],
+                'pekerjaan' => $anak['pekerjaan'],
+            ];
+
+            ChildrenOfficial::create($anakInput);
+        }
+    }
+
+    protected function updateOfficialStatus($official)
+    {
+        if ($official->identities &&
+            $official->positions &&
+            $official->addresses &&
+            $official->contacts &&
+            $official->work_place) {
+            $official->status = 'proses';
+            $official->save();
         }
     }
 
@@ -507,205 +735,422 @@ class OfficialController extends Controller
         ]);
     }
 
+    // public function edit(string $role, string $id)
+    // {
+    //     // Ambil data official berdasarkan ID dengan relasi yang diperlukan
+    //     $official = Official::where('nik', $id)
+    //         ->with([
+    //             'addresses',
+    //             'contacts',
+    //             'identities',
+    //             'studies',
+    //             'positions.position',
+    //             'officialTrainings',
+    //             'officialOrganizations.organization',
+    //             'work_place',
+    //             'parents',
+    //             'spouse',
+    //             'children'
+    //         ])
+    //         ->firstOrFail();
+
+    //     // Format data studies sesuai input
+    //     $formattedStudies = [];
+    //     foreach ($official->studies as $study) {
+    //         $formattedStudies[] = [
+    //             'tingkatPendidikan' => $study->pendidikan_umum,
+    //             'namaSekolah' => $study->nama_sekolah,
+    //             'tempat' => $study->alamat_sekolah,
+    //             'nomorIjazah' => $study->nomor_ijazah,
+    //             'tanggalIjazah' => $study->tanggal,
+    //             // 'dokumenIjazah' => $study->dokumen ? 'exists' : null // Flag untuk menunjukkan dokumen ada
+    //         ];
+    //     }
+
+    //     // dd($formattedStudies);
+
+    //     // Format data trainings
+    //     $formattedTrainings = [];
+    //     foreach ($official->officialTrainings as $training) {
+    //         $formattedTrainings[] = [
+    //             'nama' => $training->nama,
+    //             'tempat' => $training->alamat,
+    //             'pelatihan' => $training->pelatihan,
+    //             'penyelenggara' => $training->penyelenggara,
+    //             'nomor' => $training->nomor_sertifikat,
+    //             'tanggal' => $training->tanggal_sertifikat,
+    //             'doc_scan' => $training->doc_scan ? 'exists' : null
+    //         ];
+    //     }
+
+    //     // dd($formattedTrainings);
+
+    //     // Format data organizations
+    //     $formattedOrganizations = [];
+    //     foreach ($official->officialOrganizations as $org) {
+    //         $formattedOrganizations[] = [
+    //             'organization_id' => $org->organization_id,
+    //             'nama' => $org->nama,
+    //             'posisi' => $org->posisi,
+    //             'mulai' => $org->mulai,
+    //             'selesai' => $org->selesai,
+    //             'pimpinan' => $org->pimpinan,
+    //             'tempat' => $org->alamat,
+    //             // 'doc_scan' => $org->doc_scan ? 'exists' : null
+    //         ];
+    //     }
+
+    //     // dd($formattedOrganizations);
+
+    //     // Format data orang tua
+    //     $formattedParents = [];
+    //     foreach ($official->parents as $parent) {
+    //         $formattedParents[] = [
+    //             'nama' => $parent->nama,
+    //             'tempatLahir' => $parent->tempat_lahir,
+    //             'tanggalLahir' => $parent->tanggal_lahir,
+    //             'pekerjaan' => $parent->pekerjaan,
+    //             'alamat' => $parent->alamat,
+    //             'rt' => $parent->rt,
+    //             'rw' => $parent->rw,
+    //             'telp' => $parent->no_telepon,
+    //             'kodePos' => $parent->kode_pos,
+    //             'province_code' => $parent->province_code,
+    //             'province_name' => $parent->province_name,
+    //             'regency_code' => $parent->regency_code,
+    //             'regency_name' => $parent->regency_name,
+    //             'district_code' => $parent->district_code,
+    //             'district_name' => $parent->district_name,
+    //             'village_code' => $parent->village_code,
+    //             'village_name' => $parent->village_name,
+    //         ];
+    //     }
+
+    //     // Format data pasangan
+    //     $formattedSpouse = $official->spouse ? [
+    //         'nama' => $official->spouse->nama,
+    //         'tempat_lahir' => $official->spouse->tempat_lahir,
+    //         'tanggal_lahir' => $official->spouse->tanggal_lahir,
+    //         'tanggal_nikah' => $official->spouse->tanggal_nikah,
+    //         'pendidikan' => $official->spouse->pendidikan_umum,
+    //         'pekerjaan' => $official->spouse->pekerjaan,
+    //         'jenis_kelamin' => $official->spouse->hubungan == 'istri' ? 'Perempuan' : 'Laki-laki'
+    //     ] : null;
+
+    //     // Format data anak
+    //     $formattedChildren = [];
+    //     foreach ($official->children as $child) {
+    //         $formattedChildren[] = [
+    //             'nama' => $child->nama,
+    //             'tempat' => $child->tempat_lahir,
+    //             'tanggalLahir' => $child->tanggal_lahir,
+    //             'jenisKelamin' => $child->jenis_kelamin,
+    //             'status' => $child->status,
+    //             'pendidikan' => $child->pendidikan_umum,
+    //             'pekerjaan' => $child->pekerjaan,
+    //         ];
+    //     }
+
+    //     // dd($official->work_place->village);
+    //     // Format tempat kerja
+    //     $formattedWorkPlace = $official->work_place ? [
+    //         'regency_code' => $official->work_place->regency->code_bps ??  $official->work_place->village->district->regency->code_bps,
+    //         'regency_name' => $official->work_place->regency->name ??  $official->work_place->village->district->regency->code_bps,
+    //         'district_code' => $official->work_place->district->code_bps ??  $official->work_place->village->district->code_bps,
+    //         'district_name' => $official->work_place->district->name ??  $official->work_place->village->district->name,
+    //         'village_code' => $official->work_place->village->code_bps,
+    //         'village_name' => $official->work_place->village->name,
+    //         // 'regency_code' => "",
+    //         // 'regency_name' => "",
+    //         // 'district_code' => "",
+    //         // 'district_name' => "",
+    //         // 'village_code' => "",
+    //         'village_name' => "",
+    //         'alamat' => $official->work_place->alamat,
+    //         'rt' => $official->work_place->rt,
+    //         'rw' => $official->work_place->rw,
+    //         'postal' => $official->work_place->kode_pos,
+    //     ] : null;
+
+    //     // Position
+    //     $formattedPosition = $official->position ? [
+    //         // 'position_id',
+    //         // 'official_id',
+    //         // 'penetap',
+    //         // 'nomor_sk',
+    //         // 'tanggal_sk',
+    //         // 'file_sk',
+    //         // 'tmt_jabatan',
+    //         // 'period',
+    //         // 'keterangan',
+    //         'penetap' => $official->position->penetap,
+    //         'nomorSk' => $official->position->nomor_sk,
+    //         'tanggalSk' => $official->position->tanggal_sk,
+    //         'period' => $official->position->period,
+    //         'tmtJabatan' => $official->position->tmt_jabatan,
+    //     ] : null;
+    //     // dd($formattedPosition);
+    //     // dd($official->position->toArray());
+
+    //     // return Inertia::render('Village/Official/Create', [
+    //     //     'initialPositions' => \App\Models\Position::all()->toArray(),
+    //     //     'initialTrainings' => \App\Models\Training::all()->toArray(),
+    //     //     // 'organizations' => \App\Models\Organization::all()->toArray(),
+    //     //     // Dummy data organizations
+    //     //     'initialOrganizations' => Organization::all()->toArray(),
+    //     //     'position' => $role,
+    //     //     'jabatan' => Position::where('slug', $role)->first(),
+    //     // ]);
+    //     return Inertia::render('Village/Official/Edit', [
+    //         'official' => $official,
+    //         // 'official' => [
+    //         //     'nik' => $official->nik,
+    //         //     'nipd' => $official->nipd,
+    //         //     'nama_lengkap' => $official->nama_lengkap,
+    //         //     'gelar_depan' => $official->gelar_depan,
+    //         //     'gelar_belakang' => $official->gelar_belakang,
+    //         //     'tempat_lahir' => $official->tempat_lahir,
+    //         //     'tanggal_lahir' => $official->tanggal_lahir,
+    //         //     'jenis_kelamin' => $official->jenis_kelamin,
+    //         //     'agama' => $official->agama,
+    //         //     'status_perkawinan' => $official->status_perkawinan,
+    //         //     'status' => $official->status,
+    //         //     'rt' => $official->addresses->rt ?? null,
+    //         //     'rw' => $official->addresses->rw ?? null,
+    //         //     'postal' => $official->addresses->kode_pos ?? null,
+    //         //     'alamat' => $official->addresses->alamat ?? null,
+    //         //     'province_code' => $official->addresses->province_code ?? null,
+    //         //     'province_name' => $official->addresses->province_name ?? null,
+    //         //     'regency_code' => $official->addresses->regency_code ?? null,
+    //         //     'regency_name' => $official->addresses->regency_name ?? null,
+    //         //     'district_code' => $official->addresses->district_code ?? null,
+    //         //     'district_name' => $official->addresses->district_name ?? null,
+    //         //     'village_code' => $official->addresses->village_code ?? null,
+    //         //     'village_name' => $official->addresses->village_name ?? null,
+    //         //     'handphone' => $official->contacts->handphone ?? null,
+    //         //     'gol_darah' => $official->identities->gol_darah ?? null,
+    //         //     'pendidikan' => $official->identities->pendidikan ?? null,
+    //         //     'bpjs_kesehatan' => $official->identities->bpjs_kesehatan ?? null,
+    //         //     'bpjs_ketenagakerjaan' => $official->identities->bpjs_ketenagakerjaan ?? null,
+    //         //     'npwp' => $official->identities->npwp ?? null,
+    //         //     'foto' => $official->identities->foto ?? null,
+    //         // ],
+    //         'studies' => $formattedStudies,
+    //         'tempat_kerja' => $formattedWorkPlace,
+    //         'position' => PositionOfficial::where('official_id', $official->id)->with(['position'])->first(),
+    //         'currentPosition' => $formattedPosition,
+    //         'trainings' => $formattedTrainings,
+    //         'organizations' => $formattedOrganizations,
+    //         'orang_tua' => $formattedParents,
+    //         'pasangan' => $formattedSpouse,
+    //         'anak' => $formattedChildren,
+    //         'initialPositions' => Position::all()->toArray(),
+    //         'initialOrganizations' => Organization::all()->toArray(),
+    //         'role' => $role,
+    //         'id' => $id,
+    //         'jabatan' => Position::where('slug', $role)->first(),
+    //     ]);
+    // }
     public function edit(string $role, string $id)
-    {
-        // Ambil data official berdasarkan ID dengan relasi yang diperlukan
-        $official = Official::where('nik', $id)
-            ->with([
-                'addresses',
-                'contacts',
-                'identities',
-                'studies',
-                'positions.position',
-                'officialTrainings',
-                'officialOrganizations.organization',
-                'work_place',
-                'parents',
-                'spouse',
-                'children'
-            ])
-            ->firstOrFail();
+{
+    // Ambil data official berdasarkan ID dengan relasi yang diperlukan
+    $official = Official::where('nik', $id)
+        ->with([
+            'addresses',
+            'contacts',
+            'identities',
+            'studies',
+            'positions.position',
+            'officialTrainings',
+            'officialOrganizations.organization',
+            'work_place',
+            'parents',
+            'spouse',
+            'children'
+        ])
+        ->firstOrFail();
 
-        // Format data studies sesuai input
-        $formattedStudies = [];
-        foreach ($official->studies as $study) {
-            $formattedStudies[] = [
-                'tingkatPendidikan' => $study->pendidikan_umum,
-                'namaSekolah' => $study->nama_sekolah,
-                'tempat' => $study->alamat_sekolah,
-                'nomorIjazah' => $study->nomor_ijazah,
-                'tanggalIjazah' => $study->tanggal,
-                // 'dokumenIjazah' => $study->dokumen ? 'exists' : null // Flag untuk menunjukkan dokumen ada
-            ];
-        }
+    // Format official data to match frontend expectations
+    $formattedOfficial = [
+        'nik' => $official->nik,
+        'nipd' => $official->nipd,
+        'nama_lengkap' => $official->nama_lengkap,
+        'gelar_depan' => $official->gelar_depan,
+        'gelar_belakang' => $official->gelar_belakang,
+        'tempat_lahir' => $official->tempat_lahir,
+        'tanggal_lahir' => $official->tanggal_lahir,
+        'jenis_kelamin' => $official->jenis_kelamin,
+        'agama' => $official->agama,
+        'status_perkawinan' => $official->status_perkawinan,
+        'status' => $official->status,
+        'rt' => $official->addresses->rt ?? null,
+        'rw' => $official->addresses->rw ?? null,
+        'kode_pos' => $official->addresses->kode_pos ?? null,
+        'alamat' => $official->addresses->alamat ?? null,
+        'province_code' => $official->addresses->province_code ?? null,
+        'province_name' => $official->addresses->province_name ?? null,
+        'regency_code' => $official->addresses->regency_code ?? null,
+        'regency_name' => $official->addresses->regency_name ?? null,
+        'district_code' => $official->addresses->district_code ?? null,
+        'district_name' => $official->addresses->district_name ?? null,
+        'village_code' => $official->addresses->village_code ?? null,
+        'village_name' => $official->addresses->village_name ?? null,
+        'handphone' => $official->contacts->handphone ?? null,
+        'gol_darah' => $official->identities->gol_darah ?? null,
+        'pendidikan' => $official->identities->pendidikan ?? null,
+        'bpjs_kesehatan' => $official->identities->bpjs_kesehatan ?? null,
+        'bpjs_ketenagakerjaan' => $official->identities->bpjs_ketenagakerjaan ?? null,
+        'npwp' => $official->identities->npwp ?? null,
+        'foto' => $official->identities->foto ?? null,
+    ];
 
-        // Format data trainings
-        $formattedTrainings = [];
-        foreach ($official->officialTrainings as $training) {
-            $formattedTrainings[] = [
-                'nama' => $training->nama,
-                'tempat' => $training->alamat,
-                'pelatihan' => $training->pelatihan,
-                'penyelenggara' => $training->penyelenggara,
-                'nomor' => $training->nomor_sertifikat,
-                'tanggal' => $training->tanggal_sertifikat,
-                'doc_scan' => $training->doc_scan ? 'exists' : null
-            ];
-        }
-
-        // Format data organizations
-        $formattedOrganizations = [];
-        foreach ($official->officialOrganizations as $org) {
-            $formattedOrganizations[] = [
-                'organization_id' => $org->organization_id,
-                'nama' => $org->nama,
-                'posisi' => $org->posisi,
-                'mulai' => $org->mulai,
-                'selesai' => $org->selesai,
-                'pimpinan' => $org->pimpinan,
-                'tempat' => $org->alamat,
-                // 'doc_scan' => $org->doc_scan ? 'exists' : null
-            ];
-        }
-
-        // Format data orang tua
-        $formattedParents = [];
-        foreach ($official->parents as $parent) {
-            $formattedParents[] = [
-                'nama' => $parent->nama,
-                'tempatLahir' => $parent->tempat_lahir,
-                'tanggalLahir' => $parent->tanggal_lahir,
-                'pekerjaan' => $parent->pekerjaan,
-                'alamat' => $parent->alamat,
-                'rt' => $parent->rt,
-                'rw' => $parent->rw,
-                'telp' => $parent->no_telepon,
-                'kodePos' => $parent->kode_pos,
-                'province_code' => $parent->province_code,
-                'province_name' => $parent->province_name,
-                'regency_code' => $parent->regency_code,
-                'regency_name' => $parent->regency_name,
-                'district_code' => $parent->district_code,
-                'district_name' => $parent->district_name,
-                'village_code' => $parent->village_code,
-                'village_name' => $parent->village_name,
-            ];
-        }
-
-        // Format data pasangan
-        $formattedSpouse = $official->spouse ? [
-            'nama' => $official->spouse->nama,
-            'tempat_lahir' => $official->spouse->tempat_lahir,
-            'tanggal_lahir' => $official->spouse->tanggal_lahir,
-            'tanggal_nikah' => $official->spouse->tanggal_nikah,
-            'pendidikan' => $official->spouse->pendidikan_umum,
-            'pekerjaan' => $official->spouse->pekerjaan,
-            'jenis_kelamin' => $official->spouse->hubungan == 'istri' ? 'Perempuan' : 'Laki-laki'
-        ] : null;
-
-        // Format data anak
-        $formattedChildren = [];
-        foreach ($official->children as $child) {
-            $formattedChildren[] = [
-                'nama' => $child->nama,
-                'tempat' => $child->tempat_lahir,
-                'tanggalLahir' => $child->tanggal_lahir,
-                'jenisKelamin' => $child->jenis_kelamin,
-                'status' => $child->status,
-                'pendidikan' => $child->pendidikan_umum,
-                'pekerjaan' => $child->pekerjaan,
-            ];
-        }
-
-        // Format tempat kerja
-        $formattedWorkPlace = $official->work_place ? [
-            'regency_code' => $official->work_place->regency->code_bps,
-            'regency_name' => $official->work_place->regency->name,
-            'district_code' => $official->work_place->district->code_bps,
-            'district_name' => $official->work_place->district->name,
-            'village_code' => $official->work_place->village->code_bps,
-            'village_name' => $official->work_place->village->name,
-            // 'regency_code' => "",
-            // 'regency_name' => "",
-            // 'district_code' => "",
-            // 'district_name' => "",
-            // 'village_code' => "",
-            'village_name' => "",
-            'alamat' => $official->work_place->alamat,
-            'rt' => $official->work_place->rt,
-            'rw' => $official->work_place->rw,
-            'postal' => $official->work_place->kode_pos,
-        ] : null;
-
-        // Position
-        $formattedPosition = $official->position ? [
-            // 'position_id',
-            // 'official_id',
-            // 'penetap',
-            // 'nomor_sk',
-            // 'tanggal_sk',
-            // 'file_sk',
-            // 'tmt_jabatan',
-            // 'period',
-            // 'keterangan',
-            'penetap' => $official->position->penetap,
-            'nomorSk' => $official->position->nomor_sk,
-            'tanggalSk' => $official->position->tanggal_sk,
-            'period' => $official->position->period,
-            'tmtJabatan' => $official->position->tmt_jabatan,
-            ] : null;
-            // dd($formattedPosition);
-        // dd($official->position->toArray());
-
-        return Inertia::render('Village/Official/Edit', [
-            'official' => $official,
-            // 'official' => [
-            //     'nik' => $official->nik,
-            //     'nipd' => $official->nipd,
-            //     'nama_lengkap' => $official->nama_lengkap,
-            //     'gelar_depan' => $official->gelar_depan,
-            //     'gelar_belakang' => $official->gelar_belakang,
-            //     'tempat_lahir' => $official->tempat_lahir,
-            //     'tanggal_lahir' => $official->tanggal_lahir,
-            //     'jenis_kelamin' => $official->jenis_kelamin,
-            //     'agama' => $official->agama,
-            //     'status_perkawinan' => $official->status_perkawinan,
-            //     'status' => $official->status,
-            //     'rt' => $official->addresses->rt ?? null,
-            //     'rw' => $official->addresses->rw ?? null,
-            //     'postal' => $official->addresses->kode_pos ?? null,
-            //     'alamat' => $official->addresses->alamat ?? null,
-            //     'province_code' => $official->addresses->province_code ?? null,
-            //     'province_name' => $official->addresses->province_name ?? null,
-            //     'regency_code' => $official->addresses->regency_code ?? null,
-            //     'regency_name' => $official->addresses->regency_name ?? null,
-            //     'district_code' => $official->addresses->district_code ?? null,
-            //     'district_name' => $official->addresses->district_name ?? null,
-            //     'village_code' => $official->addresses->village_code ?? null,
-            //     'village_name' => $official->addresses->village_name ?? null,
-            //     'handphone' => $official->contacts->handphone ?? null,
-            //     'gol_darah' => $official->identities->gol_darah ?? null,
-            //     'pendidikan' => $official->identities->pendidikan ?? null,
-            //     'bpjs_kesehatan' => $official->identities->bpjs_kesehatan ?? null,
-            //     'bpjs_ketenagakerjaan' => $official->identities->bpjs_ketenagakerjaan ?? null,
-            //     'npwp' => $official->identities->npwp ?? null,
-            //     'foto' => $official->identities->foto ?? null,
-            // ],
-            'studies' => $formattedStudies,
-            'tempat_kerja' => $formattedWorkPlace,
-            'position' => PositionOfficial::where('official_id', $official->id)->with(['position'])->first(),
-            'currentPosition' => $formattedPosition,
-            'trainings' => $formattedTrainings,
-            'organizations' => $formattedOrganizations,
-            'orang_tua' => $formattedParents,
-            'pasangan' => $formattedSpouse,
-            'anak' => $formattedChildren,
-            'initialPositions' => Position::all()->toArray(),
-            'initialOrganizations' => Organization::all()->toArray(),
-            'role' => $role,
-            'id' => $id,
-        ]);
+    // Format data studies sesuai input
+    $formattedStudies = [];
+    foreach ($official->studies as $study) {
+        $formattedStudies[] = [
+            'tingkatPendidikan' => $study->pendidikan_umum,
+            'namaSekolah' => $study->nama_sekolah,
+            'tempat' => $study->alamat_sekolah,
+            'nomorIjazah' => $study->nomor_ijazah,
+            'tanggalIjazah' => $study->tanggal,
+            'doc_scan' => $study->dokumen ? 'exists' : null
+        ];
     }
+
+    // Format data trainings
+    $formattedTrainings = [];
+    foreach ($official->officialTrainings as $training) {
+        $formattedTrainings[] = [
+            'nama' => $training->nama,
+            'tempat' => $training->alamat,
+            'pelatihan' => $training->pelatihan,
+            'penyelenggara' => $training->penyelenggara,
+            'nomor' => $training->nomor_sertifikat,
+            'tanggal' => $training->tanggal_sertifikat,
+            'doc_scan' => $training->doc_scan ? 'exists' : null
+        ];
+    }
+
+    // dd(OfficialOrganization::with(['official'])->first());
+    // dd($official->officialOrganizations);
+    // Format data organizations
+    $formattedOrganizations = [];
+    foreach ($official->officialOrganizations as $org) {
+        $formattedOrganizations[] = [
+            'organization_id' => $org->organization_id,
+            'organization_title' => $org->organization ? $org->organization->title : $org->nama, // Tambahkan organization_title
+            'nama' => $org->nama,
+            'posisi' => $org->posisi,
+            'mulai' => $org->mulai,
+            'selesai' => $org->selesai,
+            'pimpinan' => $org->pimpinan,
+            'tempat' => $org->alamat,
+            'doc_scan' => $org->doc_scan ? 'exists' : null,
+        ];
+    }
+
+    // Format data orang tua
+    $formattedParents = [];
+    foreach ($official->parents as $parent) {
+        $formattedParents[] = [
+            'nama' => $parent->nama,
+            'tempatLahir' => $parent->tempat_lahir,
+            'tanggalLahir' => $parent->tanggal_lahir,
+            'pekerjaan' => $parent->pekerjaan,
+            'alamat' => $parent->alamat,
+            'rt' => $parent->rt,
+            'rw' => $parent->rw,
+            'telp' => $parent->no_telepon,
+            'kodePos' => $parent->kode_pos,
+            'province_code' => $parent->province_code,
+            'province_name' => $parent->province_name,
+            'regency_code' => $parent->regency_code,
+            'regency_name' => $parent->regency_name,
+            'district_code' => $parent->district_code,
+            'district_name' => $parent->district_name,
+            'village_code' => $parent->village_code,
+            'village_name' => $parent->village_name,
+        ];
+    }
+
+    // Format data pasangan
+    $formattedSpouse = $official->spouse ? [
+        'nama' => $official->spouse->nama,
+        'tempat_lahir' => $official->spouse->tempat_lahir,
+        'tanggal_lahir' => $official->spouse->tanggal_lahir,
+        'tanggal_nikah' => $official->spouse->tanggal_nikah,
+        'pendidikan' => $official->spouse->pendidikan_umum,
+        'pekerjaan' => $official->spouse->pekerjaan,
+        'jenis_kelamin' => $official->spouse->hubungan == 'istri' ? 'Perempuan' : 'Laki-laki'
+    ] : [];
+
+    // Format data anak
+    $formattedChildren = [];
+    foreach ($official->children as $child) {
+        $formattedChildren[] = [
+            'nama' => $child->nama,
+            'tempat' => $child->tempat_lahir,
+            'tanggalLahir' => $child->tanggal_lahir,
+            'jenisKelamin' => $child->jenis_kelamin,
+            'status' => $child->status,
+            'pendidikan' => $child->pendidikan_umum,
+            'pekerjaan' => $child->pekerjaan,
+        ];
+    }
+
+    // Format tempat kerja
+    $formattedWorkPlace = $official->work_place ? [
+        'regency_code' => $official->work_place->regency->code_bps ?? null,
+        'regency_name' => $official->work_place->regency->name ?? null,
+        'district_code' => $official->work_place->district->code_bps ?? null,
+        'district_name' => $official->work_place->district->name ?? null,
+        'village_code' => $official->work_place->village->code_bps ?? null,
+        'village_name' => $official->work_place->village->name ?? null,
+        'alamat' => $official->work_place->alamat ?? null,
+        'rt' => $official->work_place->rt ?? null,
+        'rw' => $official->work_place->rw ?? null,
+        'postal' => $official->work_place->kode_pos ?? null,
+    ] : [
+        'regency_code' => null,
+        'regency_name' => null,
+        'district_code' => null,
+        'district_name' => null,
+        'village_code' => null,
+        'village_name' => null,
+        'alamat' => null,
+        'rt' => null,
+        'rw' => null,
+        'postal' => null,
+    ];
+
+    // Position
+    $formattedPosition = $official->positions->first() ? [
+        'penetap' => $official->positions->first()->penetap,
+        'nomorSk' => $official->positions->first()->nomor_sk,
+        'tanggalSk' => $official->positions->first()->tanggal_sk,
+        'period' => $official->positions->first()->period,
+        'tmtJabatan' => $official->positions->first()->tmt_jabatan,
+    ] : [];
+
+    return Inertia::render('Village/Official/Edit', [
+        'official' => $formattedOfficial,
+        'studies' => $formattedStudies,
+        'tempat_kerja' => $formattedWorkPlace,
+        'position' => PositionOfficial::where('official_id', $official->id)->with(['position'])->first() ?? [],
+        'currentPosition' => $formattedPosition,
+        'initialTrainings' => $formattedTrainings,
+        'initialOrganizations' => $formattedOrganizations,
+        'officialOrganizations' => $formattedOrganizations, // Gunakan officialOrganizations
+        'allOrganizations' => Organization::all()->toArray(), // Daftar semua organisasi untuk dropdown
+        'orang_tua' => $formattedParents,
+        'pasangan' => $formattedSpouse,
+        'anak' => $formattedChildren,
+        'initialPositions' => Position::all()->toArray(),
+        'role' => $role,
+        'id' => $id,
+        'jabatan' => Position::where('slug', $role)->first() ?? [],
+    ]);
+}
 
 
     // public function update(Request $request, $id)
@@ -878,319 +1323,476 @@ class OfficialController extends Controller
     //             ->withInput();
     //     }
     // }
-    public function update(Request $request, string $role, $id)
-    {
-        // dd($request->all());
-        // Mulai transaksi database
-        // DB::beginTransaction();
+    public function update(Request $request, string $role, string $id)
+{
+    // dd($request->all());
+    // Check if user has village access
+    if (Auth::user()->role == 'village') {
+        $village = Auth::user()->user_village->village;
+    }
 
-        try {
-            // Ambil data official yang akan diupdate
-            $official = Official::with([
-                'addresses',
-                'contacts',
-                'identities',
-                'studies',
-                'work_place',
-                'positions',
-                'trainings',
-                'organizations',
-                'parents',
-                'spouse',
-                'children'
-            ])->where('nik', $id)->firstOrFail();
-            // dd($official);
+    if (!$village) {
+        return redirect()->route('login');
+    }
 
-            // Update data official
-            $officialData = [
-                'nik' => $request->input('official.nik'),
-                'nipd' => $request->input('official.nipd'),
-                'nama_lengkap' => $request->input('official.nama_lengkap'),
-                'gelar_depan' => $request->input('official.gelar_depan'),
-                'gelar_belakang' => $request->input('official.gelar_belakang'),
-                'tempat_lahir' => $request->input('official.tempat_lahir'),
-                'tanggal_lahir' => $request->input('official.tanggal_lahir'),
-                'jenis_kelamin' => $request->input('official.jenis_kelamin'),
-                'agama' => $request->input('official.agama'),
-                'status_perkawinan' => $request->input('official.status_perkawinan'),
-                'status' => $request->input('official.status') ?? 'daftar',
-            ];
+    DB::beginTransaction();
 
-            $official->update($officialData);
-            // dd($official);
+    try {
+        $official = Official::where('nik', $id)->firstOrFail();
+        $village = Auth::user()->user_village->village;
 
-            // Update data alamat
-            $officialAddress = [
-                'rt' => $request->input('official.rt'),
-                'rw' => $request->input('official.rw'),
-                'kode_pos' => $request->input('official.postal'),
-                'alamat' => $request->input('official.alamat'),
-                'province_code' => $request->input('official.province_code'),
-                'province_name' => $request->input('official.province_name'),
-                'regency_code' => $request->input('official.regency_code'),
-                'regency_name' => $request->input('official.regency_name'),
-                'district_code' => $request->input('official.district_code'),
-                'district_name' => $request->input('official.district_name'),
-                'village_code' => $request->input('official.village_code'),
-                'village_name' => $request->input('official.village_name'),
-            ];
-            $official->addresses()->updateOrCreate(['official_id' => $official->id], $officialAddress);
+        // Update official
+        $this->updateOfficial($request, $official);
 
-            // Update data kontak
-            $officialContact = [
-                'handphone' => $request->input('official.handphone'),
-            ];
-            $official->contacts()->updateOrCreate(['official_id' => $official->id], $officialContact);
+        // Update related records
+        $this->updateOfficialAddress($request, $official);
+        $this->updateOfficialContact($request, $official);
+        $this->updateOfficialIdentity($request, $official);
+        $this->updateStudies($request, $official);
 
-            // Update data identitas tambahan
-            $officialIdentity = [
-                'gol_darah' => $request->input('official.gol_darah') ?? null,
-                'pendidikan_terakhir' => $request->input('official.pendidikan') ?? null,
-                'bpjs_kesehatan' => $request->input('official.bpjs_kesehatan') ?? null,
-                'bpjs_ketenagakerjaan' => $request->input('official.bpjs_ketenagakerjaan') ?? null,
-                'npwp' => $request->input('official.npwp') ?? null,
-            ];
+        // Update workplace
+        $this->updateWorkplace($request, $official);
 
-            if ($request->hasFile('official.foto')) {
-                // Hapus foto lama jika ada
-                if ($official->identities && $official->identities->foto) {
-                    Storage::delete('public/' . $official->identities->foto);
-                }
+        // Update position
+        $this->updatePosition($request, $official);
 
-                $foto = $request->file('official.foto');
-                $filename = time() . '_' . $foto->getClientOriginalName();
-                $path = $foto->storeAs('public/officials', $filename);
-                $officialIdentity['foto'] = 'officials/' . $filename;
+        // Update trainings
+        $this->updateTrainings($request, $official);
+
+        // Update organizations
+        $this->updateOrganizations($request, $official);
+
+        // Update family records
+        $this->updateParents($request, $official);
+        $this->updateSpouse($request, $official);
+        $this->updateChildren($request, $official);
+
+        // Update status if all required data is present
+        $this->updateOfficialStatus($official);
+
+        DB::commit();
+
+        return redirect()
+            ->route('village.official.index', [$role])
+            ->with('success', 'Data berhasil diperbarui.');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        dd($e);
+        Log::error('Error updating official data: ' . $e->getMessage());
+
+        return redirect()
+            ->back()
+            ->with('error', 'Gagal memperbarui data. Silakan coba lagi.')
+            ->withInput();
+    }
+}
+
+protected function updateOfficial(Request $request, $official)
+{
+    $officialData = [
+        'nik' => $request->input('official.nik'),
+        'nipd' => $request->input('official.nipd'),
+        'nama_lengkap' => $request->input('official.nama_lengkap'),
+        'gelar_depan' => $request->input('official.gelar_depan'),
+        'gelar_belakang' => $request->input('official.gelar_belakang'),
+        'tempat_lahir' => $request->input('official.tempat_lahir'),
+        'tanggal_lahir' => $request->input('official.tanggal_lahir'),
+        'jenis_kelamin' => $request->input('official.jenis_kelamin'),
+        'agama' => $request->input('official.agama'),
+        'status_perkawinan' => $request->input('official.status_perkawinan'),
+    ];
+
+    $official->update($officialData);
+}
+
+protected function updateOfficialAddress(Request $request, $official)
+{
+    $officialAddressData = [
+        'rt' => $request->input('official.rt'),
+        'rw' => $request->input('official.rw'),
+        'kode_pos' => $request->input('official.postal'),
+        'alamat' => $request->input('official.alamat'),
+        'province_code' => $request->input('official.province_code'),
+        'province_name' => $request->input('official.province_name'),
+        'regency_code' => $request->input('official.regency_code'),
+        'regency_name' => $request->input('official.regency_name'),
+        'district_code' => $request->input('official.district_code'),
+        'district_name' => $request->input('official.district_name'),
+        'village_code' => $request->input('official.village_code'),
+        'village_name' => $request->input('official.village_name'),
+        'user_village_id' => Auth::user()->id
+    ];
+
+    $official->addresses()->updateOrCreate(
+        ['official_id' => $official->id],
+        $officialAddressData
+    );
+}
+
+protected function updateOfficialContact(Request $request, $official)
+{
+    $officialContactData = [
+        'handphone' => $request->input('official.handphone'),
+    ];
+
+    $official->contacts()->updateOrCreate(
+        ['official_id' => $official->id],
+        $officialContactData
+    );
+}
+
+protected function updateOfficialIdentity(Request $request, $official)
+{
+    $officialIdentityData = [
+        'gol_darah' => $request->input('official.gol_darah') ?? null,
+        'pendidikan_terakhir' => $request->input('official.pendidikan') ?? null,
+        'bpjs_kesehatan' => $request->input('official.bpjs_kesehatan') ?? null,
+        'bpjs_ketenagakerjaan' => $request->input('official.bpjs_ketenagakerjaan') ?? null,
+        'npwp' => $request->input('official.npwp') ?? null,
+    ];
+
+    if ($request->hasFile('official.foto')) {
+        // Delete old photo if exists
+        if ($official->identities && $official->identities->foto) {
+            Storage::delete('public/' . $official->identities->foto);
+        }
+
+        $foto = $request->file('official.foto');
+        $filename = time() . '_' . $foto->getClientOriginalName();
+        $path = $foto->storeAs('public/officials', $filename);
+        $officialIdentityData['foto'] = 'officials/' . $filename;
+    }
+
+    $official->identities()->updateOrCreate(
+        ['official_id' => $official->id],
+        $officialIdentityData
+    );
+}
+
+protected function updateStudies(Request $request, $official)
+{
+    $studies = $request->input('studies', []);
+    $existingStudyIds = $official->studies()->pluck('id')->toArray();
+    $updatedStudyIds = [];
+
+    foreach ($studies as $index => $study) {
+        $inputStudy = [
+            'official_id' => $official->id,
+            'pendidikan_umum' => $study['tingkatPendidikan'],
+            'nama_sekolah' => $study['namaSekolah'],
+            'alamat_sekolah' => $study['tempat'],
+            'nomor_ijazah' => $study['nomorIjazah'],
+            'tanggal' => $study['tanggalIjazah']
+        ];
+
+        if ($request->hasFile("studies.{$index}.dokumenIjazah")) {
+            $file = $request->file("studies.{$index}.dokumenIjazah");
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('public/uploads/studies', $fileName);
+            $inputStudy['dokumen'] = $fileName;
+        }
+
+        // Update or create study record
+        if (isset($study['id'])) {
+            $studyRecord = OfficialStudy::where('id', $study['id'])
+                ->where('official_id', $official->id)
+                ->first();
+
+            if ($studyRecord) {
+                $studyRecord->update($inputStudy);
+                $updatedStudyIds[] = $studyRecord->id;
             }
-
-            $official->identities()->updateOrCreate(['official_id' => $official->id], $officialIdentity);
-
-            try {
-                // Update data studies (pendidikan)
-                $official->studies()->delete();
-                $studies = $request->input('studies');
-                foreach ($studies as $index => $study) {
-                    $inputStudy = [
-                        'official_id' => $official->id,
-                        'pendidikan_umum' => $study['tingkatPendidikan'],
-                        'nama_sekolah' => $study['namaSekolah'],
-                        'alamat_sekolah' => $study['tempat'],
-                        'nomor_ijazah' => $study['nomorIjazah'],
-                        'tanggal' => $study['tanggalIjazah']
-                    ];
-
-                    if ($request->hasFile("studies.{$index}.dokumenIjazah")) {
-                        $file = $request->file("studies.{$index}.dokumenIjazah");
-                        $fileName = time() . '_' . $file->getClientOriginalName();
-                        $file->storeAs('public/uploads/studies', $fileName);
-                        $inputStudy['dokumen'] = $fileName;
-                    }
-
-                    OfficialStudy::create($inputStudy);
-                }
-            } catch (\Throwable $th) {
-                //throw $th;
-            }
-
-            // Update Tempat Kerja
-            $regency = \App\Models\Regency::where('code_bps', $request->input('tempat_kerja.regency_code'))->first();
-            $district = \App\Models\District::where('code_bps', $request->input('tempat_kerja.district_code'))->first();
-            $village = \App\Models\Village::where('code_bps', $request->input('tempat_kerja.village_code'))->first();
-
-            $tempatKerja = [
-                'rt' => $request->input('tempat_kerja.rt'),
-                'rw' => $request->input('tempat_kerja.rw'),
-                'kode_pos' => $request->input('tempat_kerja.postal'),
-                'alamat' => $request->input('tempat_kerja.alamat'),
-                'regency_id' => $regency->id,
-                'district_id' => $district->id,
-                'village_id' => $village->id
-            ];
-            $official->work_place()->updateOrCreate(['official_id' => $official->id], $tempatKerja);
-
-            // Update data positions (jabatan)
-            $positionOfficial = [
-                'position_id' => $request->input('position.jabatanId') ?? null,
-                'penetap' => $request->input('position.penetap') ?? null,
-                'nomor_sk' => $request->input('position.nomorSk') ?? null,
-                'tanggal_sk' => $request->input('position.tanggalSk') ?? null,
-                'tmt_jabatan' => $request->input('position.tmtJabatan') ?? null,
-                'periode' => $request->input('position.period') ?? null
-            ];
-
-            if ($request->hasFile('position.file')) {
-                // Hapus file lama jika ada
-                if ($official->positions && $official->positions->file_sk) {
-                    Storage::delete('public/' . $official->positions->file_sk);
-                }
-
-                $foto = $request->file('position.file');
-                $filename = time() . '_' . $foto->getClientOriginalName();
-                $path = $foto->storeAs('public/officials', $filename);
-                $positionOfficial['file_sk'] = 'officials/' . $filename;
-            }
-
-            $official->positions()->updateOrCreate(['official_id' => $official->id], $positionOfficial);
-
-            try {
-                // Update data trainings (pelatihan)
-            $official->trainings()->delete();
-            $trainings = $request->input('trainings');
-            foreach ($trainings as $index => $training) {
-                $trainingInput = [
-                    'official_id' => $official->id,
-                    'nama' => $training['nama'],
-                    'alamat' => $training['tempat'],
-                    'pelatihan' => $training['pelatihan'],
-                    'penyelenggara' => $training['penyelenggara'],
-                    'nomor_sertifikat' => $training['nomor'],
-                    'tanggal_sertifikat' => $training['tanggal'],
-                ];
-
-                if ($request->hasFile("trainings.{$index}.docScan")) {
-                    $file = $request->file("trainings.{$index}.docScan");
-                    $fileName = time() . '_' . $file->getClientOriginalName();
-                    $file->storeAs('public/uploads/trainings', $fileName);
-                    $trainingInput['doc_scan'] = $fileName;
-                }
-
-                OfficialTraining::create($trainingInput);
-            }
-            } catch (\Throwable $th) {
-                //throw $th;
-            }
-
-            try {
-                // Update data organizations (organisasi)
-            $official->organizations()->delete();
-            $organizations = $request->input('organizations');
-            foreach ($organizations as $index => $organization) {
-                $organizationInput = [
-                    'official_id' => $official->id,
-                    'organization_id' => $organization['organization_id'],
-                    'nama' => $organization['nama'],
-                    'posisi' => $organization['posisi'],
-                    'mulai' => $organization['mulai'],
-                    'selesai' => $organization['selesai'],
-                    'pimpinan' => $organization['pimpinan'],
-                    'alamat' => $organization['tempat'],
-                ];
-
-                if ($request->hasFile("organizations.{$index}.doc_scan")) {
-                    $file = $request->file("organizations.{$index}.doc_scan");
-                    $fileName = time() . '_' . $file->getClientOriginalName();
-                    $file->storeAs('public/uploads/organizations', $fileName);
-                    $organizationInput['doc_scan'] = $fileName;
-                }
-
-                OfficialOrganization::create($organizationInput);
-            }
-            } catch (\Throwable $th) {
-                //throw $th;
-            }
-
-            try {
-                // Update data Orang Tua
-            $official->parents()->delete();
-            $parents = $request->input('orang_tua');
-            foreach ($parents as $index => $parent) {
-                $parentInput = [
-                    'official_id' => $official->id,
-                    'nama' => $parent['nama'],
-                    'tempat_lahir' => $parent['tempatLahir'],
-                    'tanggal_lahir' => $parent['tanggalLahir'],
-                    'pekerjaan' => $parent['pekerjaan'],
-                    'hubungan' => $index == 0 ? "ayah" : "ibu",
-                    'alamat' => $parent['alamat'],
-                    'rt' => $parent['rt'],
-                    'rw' => $parent['rw'],
-                    'no_telepon' => $parent['telp'],
-                    'kode_pos' => $parent['kodePos'],
-                    'province_code' => $parent['province_code'],
-                    'province_name' => $parent['province_name'],
-                    'regency_code' => $parent['regency_code'],
-                    'regency_name' => $parent['regency_name'],
-                    'district_code' => $parent['district_code'],
-                    'district_name' => $parent['district_name'],
-                    'village_code' => $parent['village_code'],
-                    'village_name' => $parent['village_name'],
-                ];
-
-                ParentOfficial::create($parentInput);
-            }
-            } catch (\Throwable $th) {
-                //throw $th;
-            }
-
-            try {
-                // Update Pasangan
-            $official->spouse()->delete();
-            $pasangan = $request->input('pasangan');
-            if ($pasangan) {
-                $hubungan = ($pasangan['jenis_kelamin'] == 'Laki-laki') ? 'istri' : 'suami';
-                $pasanganInput = [
-                    'official_id' => $official->id,
-                    'hubungan' => $hubungan,
-                    'nama' => $pasangan['nama'],
-                    'tempat_lahir' => $pasangan['tempat_lahir'],
-                    'tanggal_lahir' => $pasangan['tanggal_lahir'],
-                    'tanggal_nikah' => $pasangan['tanggal_nikah'],
-                    'pendidikan_umum' => $pasangan['pendidikan'],
-                    'pekerjaan' => $pasangan['pekerjaan'],
-                ];
-
-                SpouseOfficial::create($pasanganInput);
-            }
-            } catch (\Throwable $th) {
-                //throw $th;
-            }
-
-            try {
-                // Update Anak
-            $official->children()->delete();
-            $anakList = $request->input('anak');
-            foreach ($anakList as $index => $anak) {
-                $anakInput = [
-                    'official_id' => $official->id,
-                    'nama' => $anak['nama'],
-                    'tempat_lahir' => $anak['tempat'],
-                    'tanggal_lahir' => $anak['tanggalLahir'],
-                    'jenis_kelamin' => $anak['jenisKelamin'],
-                    'status' => $anak['status'],
-                    'pendidikan_umum' => $anak['pendidikan'],
-                    'pekerjaan' => $anak['pekerjaan'],
-                ];
-                ChildrenOfficial::create($anakInput);
-            }
-            } catch (\Throwable $th) {
-                //throw $th;
-            }
-
-            // Jika Data sudah lengkap maka ubah status menjadi proses
-            if (isset($official) && $official->identities != null && $official->positions != null && $official->addresses != null && $official->contacts != null && $official->work_place != null) {
-                $official->status = 'proses';
-                $official->save();
-            }
-
-            // Commit transaksi jika semua berhasil
-            // DB::commit();
-
-
-            // Redirect ke halaman index dengan pesan sukses
-            return redirect()->route('village.official.index', [$role])->with('success', 'Data berhasil diperbarui.');
-        } catch (\Exception $e) {
-            // Rollback transaksi jika terjadi error
-            // DB::rollBack();
-            dd($e);
-            // Log error untuk debugging
-            Log::error('Error updating official data: ' . $e->getMessage());
-
-            // Redirect ke halaman sebelumnya dengan pesan error
-            return redirect()->back()
-                ->with('error', 'Gagal memperbarui data. Silakan coba lagi.')
-                ->withInput();
+        } else {
+            $newStudy = OfficialStudy::create($inputStudy);
+            $updatedStudyIds[] = $newStudy->id;
         }
     }
+
+    // Delete studies that were removed
+    $toDelete = array_diff($existingStudyIds, $updatedStudyIds);
+    if (!empty($toDelete)) {
+        OfficialStudy::whereIn('id', $toDelete)->delete();
+    }
+}
+
+protected function updateWorkplace(Request $request, $official)
+{
+    $village = Auth::user()->user_village->village;
+    $district = Auth::user()->user_village->village->district;
+    $regency = Auth::user()->user_village->village->district->regency;
+
+    $tempatKerjaData = [
+        'rt' => $request->input('tempat_kerja.rt'),
+        'rw' => $request->input('tempat_kerja.rw'),
+        'kode_pos' => $request->input('tempat_kerja.postal'),
+        'alamat' => $request->input('tempat_kerja.alamat'),
+        'regency_id' => $regency->id,
+        'district_id' => $district->id,
+        'village_id' => $village->id
+    ];
+
+    $official->work_place()->updateOrCreate(
+        ['official_id' => $official->id],
+        $tempatKerjaData
+    );
+}
+
+protected function updatePosition(Request $request, $official)
+{
+    $positionOfficialData = [
+        'position_id' => $request->input('position.jabatanId') ?? null,
+        'penetap' => $request->input('position.penetap') ?? null,
+        'nomor_sk' => $request->input('position.nomorSk') ?? null,
+        'tanggal_sk' => $request->input('position.tanggalSk') ?? null,
+        'tmt_jabatan' => $request->input('position.tmtJabatan') ?? null,
+        'periode' => $request->input('position.period') ?? null
+    ];
+
+    if ($request->hasFile('position.file')) {
+        // Delete old file if exists
+        if ($official->positions && $official->positions->file_sk) {
+            Storage::delete('public/' . $official->positions->file_sk);
+        }
+
+        $file = $request->file('position.file');
+        $filename = time() . '_' . $file->getClientOriginalName();
+        $path = $file->storeAs('public/officials', $filename);
+        $positionOfficialData['file_sk'] = 'officials/' . $filename;
+    }
+
+    $official->positions()->updateOrCreate(
+        ['official_id' => $official->id],
+        $positionOfficialData
+    );
+}
+
+protected function updateTrainings(Request $request, $official)
+{
+    $trainings = $request->input('trainings', []);
+    $existingTrainingIds = $official->trainings()->pluck('id')->toArray();
+    $updatedTrainingIds = [];
+
+    foreach ($trainings as $index => $training) {
+        $trainingModel = Training::firstOrCreate(
+            ['title' => $training['pelatihan_title']],
+            ['description' => $training['description'] ?? null]
+        );
+
+        $trainingInput = [
+            'official_id' => $official->id,
+            'training_id' => $trainingModel->id,
+            'nama' => $training['nama'] ?? null,
+            'alamat' => $training['tempat'] ?? null,
+            'penyelenggara' => $training['penyelenggara'] ?? null,
+            'nomor_sertifikat' => $training['nomor'] ?? null,
+            'tanggal_sertifikat' => $training['tanggal'] ?? null,
+            'keterangan' => $training['keterangan'] ?? null,
+        ];
+
+        if ($request->hasFile("trainings.{$index}.docScan")) {
+            $file = $request->file("trainings.{$index}.docScan");
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('public/uploads/trainings', $fileName);
+            $trainingInput['doc_scan'] = $fileName;
+        }
+
+        // Update or create training record
+        if (isset($training['id'])) {
+            $trainingRecord = OfficialTraining::where('id', $training['id'])
+                ->where('official_id', $official->id)
+                ->first();
+
+            if ($trainingRecord) {
+                $trainingRecord->update($trainingInput);
+                $updatedTrainingIds[] = $trainingRecord->id;
+            }
+        } else {
+            $newTraining = OfficialTraining::create($trainingInput);
+            $updatedTrainingIds[] = $newTraining->id;
+        }
+    }
+
+    // Delete trainings that were removed
+    $toDelete = array_diff($existingTrainingIds, $updatedTrainingIds);
+    if (!empty($toDelete)) {
+        OfficialTraining::whereIn('id', $toDelete)->delete();
+    }
+}
+
+protected function updateOrganizations(Request $request, $official)
+{
+    $organizations = $request->input('organizations', []);
+    $existingOrganizationIds = $official->organizations()->pluck('id')->toArray();
+    $updatedOrganizationIds = [];
+
+    foreach ($organizations as $index => $organization) {
+        $organizationModel = Training::firstOrCreate(
+            ['title' => $organization['pelatihan_title']],
+            ['description' => $organization['pelatihan_title'] ?? null]
+        );
+
+        $organizationInput = [
+            'official_id' => $official->id,
+            'organization_id' => $organizationModel->id,
+            'nama' => $organization['nama'] ?? null,
+            'posisi' => $organization['posisi'] ?? null,
+            'mulai' => $organization['mulai'] ?? null,
+            'selesai' => $organization['selesai'] ?? null,
+            'pimpinan' => $organization['pimpinan'] ?? null,
+            'alamat' => $organization['tempat'] ?? null,
+            'keterangan' => $organization['keterangan'] ?? null,
+        ];
+
+        if ($request->hasFile("organizations.{$index}.doc_scan")) {
+            $file = $request->file("organizations.{$index}.doc_scan");
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('public/uploads/organizations', $fileName);
+            $organizationInput['doc_scan'] = $fileName;
+        }
+
+        // Update or create organization record
+        if (isset($organization['id'])) {
+            $orgRecord = OfficialOrganization::where('id', $organization['id'])
+                ->where('official_id', $official->id)
+                ->first();
+
+            if ($orgRecord) {
+                $orgRecord->update($organizationInput);
+                $updatedOrganizationIds[] = $orgRecord->id;
+            }
+        } else {
+            $newOrg = OfficialOrganization::create($organizationInput);
+            $updatedOrganizationIds[] = $newOrg->id;
+        }
+    }
+
+    // Delete organizations that were removed
+    $toDelete = array_diff($existingOrganizationIds, $updatedOrganizationIds);
+    if (!empty($toDelete)) {
+        OfficialOrganization::whereIn('id', $toDelete)->delete();
+    }
+}
+
+protected function updateParents(Request $request, $official)
+{
+    $parents = $request->input('orang_tua', []);
+    $existingParentIds = $official->parents()->pluck('id')->toArray();
+    $updatedParentIds = [];
+
+    foreach ($parents as $index => $parent) {
+        $parentInput = [
+            'official_id' => $official->id,
+            'nama' => $parent['nama'],
+            'tempat_lahir' => $parent['tempatLahir'],
+            'tanggal_lahir' => $parent['tanggalLahir'],
+            'pekerjaan' => $parent['pekerjaan'],
+            'hubungan' => $index == 0 ? "ayah" : "ibu",
+            'alamat' => $parent['alamat'],
+            'rt' => $parent['rt'],
+            'rw' => $parent['rw'],
+            'no_telepon' => $parent['telp'],
+            'kode_pos' => $parent['kodePos'],
+            'province_code' => $parent['province_code'],
+            'province_name' => $parent['province_name'],
+            'regency_code' => $parent['regency_code'],
+            'regency_name' => $parent['regency_name'],
+            'district_code' => $parent['district_code'],
+            'district_name' => $parent['district_name'],
+            'village_code' => $parent['village_code'],
+            'village_name' => $parent['village_name'],
+        ];
+
+        // Update or create parent record
+        if (isset($parent['id'])) {
+            $parentRecord = ParentOfficial::where('id', $parent['id'])
+                ->where('official_id', $official->id)
+                ->first();
+
+            if ($parentRecord) {
+                $parentRecord->update($parentInput);
+                $updatedParentIds[] = $parentRecord->id;
+            }
+        } else {
+            $newParent = ParentOfficial::create($parentInput);
+            $updatedParentIds[] = $newParent->id;
+        }
+    }
+
+    // Delete parents that were removed
+    $toDelete = array_diff($existingParentIds, $updatedParentIds);
+    if (!empty($toDelete)) {
+        ParentOfficial::whereIn('id', $toDelete)->delete();
+    }
+}
+
+protected function updateSpouse(Request $request, $official)
+{
+    $pasangan = $request->input('pasangan');
+
+    if ($pasangan) {
+        $hubungan = $pasangan['jenis_kelamin'] == 'Laki-laki' ? 'istri' : 'suami';
+
+        $pasanganInput = [
+            'official_id' => $official->id,
+            'hubungan' => $hubungan,
+            'nama' => $pasangan['nama'],
+            'tempat_lahir' => $pasangan['tempat_lahir'],
+            'tanggal_lahir' => $pasangan['tanggal_lahir'],
+            'tanggal_nikah' => $pasangan['tanggal_nikah'],
+            'pendidikan_umum' => $pasangan['pendidikan'],
+            'pekerjaan' => $pasangan['pekerjaan'],
+        ];
+
+        $official->spouse()->updateOrCreate(
+            ['official_id' => $official->id],
+            $pasanganInput
+        );
+    } else {
+        // Remove spouse if exists but not in request
+        $official->spouse()->delete();
+    }
+}
+
+protected function updateChildren(Request $request, $official)
+{
+    $anakList = $request->input('anak', []);
+    $existingChildrenIds = $official->children()->pluck('id')->toArray();
+    $updatedChildrenIds = [];
+
+    foreach ($anakList as $index => $anak) {
+        $anakInput = [
+            'official_id' => $official->id,
+            'nama' => $anak['nama'],
+            'tempat_lahir' => $anak['tempat'],
+            'tanggal_lahir' => $anak['tanggalLahir'],
+            'jenis_kelamin' => $anak['jenisKelamin'],
+            'status' => $anak['status'],
+            'pendidikan_umum' => $anak['pendidikan'],
+            'pekerjaan' => $anak['pekerjaan'],
+        ];
+
+        // Update or create child record
+        if (isset($anak['id'])) {
+            $childRecord = ChildrenOfficial::where('id', $anak['id'])
+                ->where('official_id', $official->id)
+                ->first();
+
+            if ($childRecord) {
+                $childRecord->update($anakInput);
+                $updatedChildrenIds[] = $childRecord->id;
+            }
+        } else {
+            $newChild = ChildrenOfficial::create($anakInput);
+            $updatedChildrenIds[] = $newChild->id;
+        }
+    }
+
+    // Delete children that were removed
+    $toDelete = array_diff($existingChildrenIds, $updatedChildrenIds);
+    if (!empty($toDelete)) {
+        ChildrenOfficial::whereIn('id', $toDelete)->delete();
+    }
+}
 
     /**
      * Remove the specified resource from storage.

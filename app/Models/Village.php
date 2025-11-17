@@ -18,7 +18,12 @@ class Village extends Model
         'logo_path',
         'description',
         'website',
-        'code'
+        'active',
+        'code',
+    ];
+
+    protected $casts = [
+        'active' => 'boolean',
     ];
 
     // Relasi ke District

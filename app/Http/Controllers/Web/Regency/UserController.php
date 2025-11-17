@@ -10,6 +10,8 @@ use App\Models\Village;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class UserController extends Controller
@@ -24,16 +26,12 @@ class UserController extends Controller
             'districts.villages.officials'
         ])->first();
 
-
-
-
         // Debug request
         Log::info('Request parameters:', $request->all());
 
         // Query utama
         $users = User::with(['user_regency.regency', 'user_village.village.district.regency'])
-            ->where('role', '!=', 'admin')
-            ->where('role', '!=', 'regency')
+            ->where('role', 'village')
             ->when($request->has('search') && $request->search !== '', function ($query) use ($request) {
                 $query->where(function ($q) use ($request) {
                     $q->where('name', 'like', '%' . $request->search . '%')
@@ -46,15 +44,7 @@ class UserController extends Controller
             })
             ->when($regency, function ($query) use ($regency) {
                 $query->whereHas('user_village.village.district.regency', function ($q) use ($regency) {
-                    // foreach ($regency->districts as $k_district => $v_district) {
-                        # code...
-
-                        // foreach ($v_district->villages as $k_village => $v_village) {
-                            // dd($v_village);
-                            # code...
-                            $q->where('id', $regency->id); // Filter berdasarkan ID village
-                    //     }
-                    // }
+                    $q->where('id', $regency->id); // Filter berdasarkan ID regency
                 });
             })
             ->orderBy(
@@ -134,5 +124,44 @@ class UserController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    /**
+     * Reset password for a user.
+     */
+    public function resetPassword(Request $request, string $id)
+    {
+        // Check if the authenticated user has higher role
+        $authUser = Auth::user();
+        $userToReset = User::findOrFail($id);
+
+        // Define role hierarchy (higher number = higher role)
+        $roleHierarchy = [
+            'village' => 1,
+            'regency' => 2,
+            'admin' => 3
+        ];
+
+        $authRoleLevel = $roleHierarchy[$authUser->role] ?? 0;
+        $targetRoleLevel = $roleHierarchy[$userToReset->role] ?? 0;
+
+        // Only allow reset if authenticated user has higher role
+        if ($authRoleLevel <= $targetRoleLevel) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to reset this user\'s password.'
+            ], 403);
+        }
+
+        // Generate new password
+        $newPassword = Str::random(8);
+        $userToReset->password = Hash::make($newPassword);
+        $userToReset->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password has been reset successfully.',
+            'new_password' => $newPassword
+        ]);
     }
 }

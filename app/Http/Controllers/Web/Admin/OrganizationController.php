@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Web\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\OfficialOrganization;
 use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,58 +29,45 @@ class OrganizationController extends Controller
     //     ]);
     // }
     public function index(Request $request)
-{
-    // Debug request
-    Log::info('Request parameters:', $request->all());
+    {
+        // Debug request
+        Log::info('Request parameters:', $request->all());
 
-    // Get all organizations untuk dropdown filter
-    $organizations = Organization::all();
+        // Query utama untuk organizations dengan filter dan sorting
+        $organizations = Organization::when($request->filled('search'), function ($query) use ($request) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('title', 'like', '%' . $request->search . '%')
+                      ->orWhere('description', 'like', '%' . $request->search . '%');
+                });
+            })
+            ->orderBy(
+                in_array($request->sort_field, ['id', 'title', 'description', 'created_at', 'updated_at']) ? $request->sort_field : 'id',
+                in_array(strtolower($request->sort_direction), ['asc', 'desc']) ? strtolower($request->sort_direction) : 'asc'
+            )
+            ->paginate($request->per_page ?? 10);
 
-    // Query utama untuk official_organizations dengan filter dan sorting
-    $official_organizations = OfficialOrganization::with(['official.village.district.regency', 'organization', 'official'])
-        ->when($request->has('search') && $request->search !== '', function ($query) use ($request) {
-            $query->where(function ($q) use ($request) {
-                $q->whereHas('organization', function ($q) use ($request) {
-                    $q->where('title', 'like', '%' . $request->search . '%');
-                })
-                ->orWhere('nama', 'like', '%' . $request->search . '%');
-            });
-        })
-        ->when($request->filled('filters'), function ($query) use ($request) {
-            $query->whereHas('organization', function ($q) use ($request) {
-                $q->where('id', $request->filters); // Filter berdasarkan ID organization
-            });
-        })
-        ->orderBy(
-            in_array($request->sort_field, ['id', 'nama', 'posisi', 'keterangan', 'created_at', 'updated_at']) ? $request->sort_field : 'id',
-            in_array(strtolower($request->sort_direction), ['asc', 'desc']) ? strtolower($request->sort_direction) : 'asc'
-        )
-        ->paginate($request->per_page ?? 10);
-    // dd($official_organizations);
-    // Kembalikan data menggunakan Inertia
-    return Inertia::render('Admin/Organization/Page', [
-        'organizations' => $organizations, // Data untuk dropdown filter
-        'official_organizations' => [
-            'current_page' => $official_organizations->currentPage(),
-            'data' => $official_organizations->items(),
-            'total' => $official_organizations->total(),
-            'per_page' => $official_organizations->perPage(),
-            'last_page' => $official_organizations->lastPage(),
-            'from' => $official_organizations->firstItem(),
-            'to' => $official_organizations->lastItem(),
-        ],
-        'filters' => $request->filters, // Kirim filter yang aktif
-        'sort' => $request->only(['sort_field', 'sort_direction']), // Kirim sorting yang aktif
-        'search' => $request->search, // Kirim pencarian yang aktif
-    ]);
-}
+        // Kembalikan data menggunakan Inertia
+        return Inertia::render('Admin/Organization/Page', [
+            'organizations' => [
+                'current_page' => $organizations->currentPage(),
+                'data' => $organizations->items(),
+                'total' => $organizations->total(),
+                'per_page' => $organizations->perPage(),
+                'last_page' => $organizations->lastPage(),
+                'from' => $organizations->firstItem(),
+                'to' => $organizations->lastItem(),
+            ],
+            'sort' => $request->only(['sort_field', 'sort_direction']),
+            'search' => $request->search,
+        ]);
+    }
 
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        //
+        return Inertia::render('Admin/Organization/Form');
     }
 
     /**
@@ -89,7 +75,17 @@ class OrganizationController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'title' => 'required|string|max:255|unique:organizations,title',
+            'description' => 'nullable|string',
+        ]);
+
+        Organization::create([
+            'title' => $request->title,
+            'description' => $request->description,
+        ]);
+
+        return redirect()->route('admin.organization.index')->with('success', 'Organization created successfully.');
     }
 
     /**
@@ -97,7 +93,10 @@ class OrganizationController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $organization = Organization::findOrFail($id);
+        return Inertia::render('Admin/Organization/Show', [
+            'organization' => $organization,
+        ]);
     }
 
     /**
@@ -105,7 +104,10 @@ class OrganizationController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $organization = Organization::findOrFail($id);
+        return Inertia::render('Admin/Organization/Form', [
+            'organization' => $organization,
+        ]);
     }
 
     /**
@@ -113,7 +115,19 @@ class OrganizationController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $organization = Organization::findOrFail($id);
+
+        $request->validate([
+            'title' => 'required|string|max:255|unique:organizations,title,' . $id,
+            'description' => 'nullable|string',
+        ]);
+
+        $organization->update([
+            'title' => $request->title,
+            'description' => $request->description,
+        ]);
+
+        return redirect()->route('admin.organization.index')->with('success', 'Organization updated successfully.');
     }
 
     /**
@@ -121,6 +135,9 @@ class OrganizationController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $organization = Organization::findOrFail($id);
+        $organization->delete();
+
+        return redirect()->route('admin.organization.index')->with('success', 'Organization deleted successfully.');
     }
 }

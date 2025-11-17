@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Official extends Model
 {
-    //
     use HasFactory;
 
     protected $fillable = [
@@ -30,7 +29,6 @@ class Official extends Model
         'user_regency_id',
     ];
 
-
     protected $hidden = [
         'id',
     ];
@@ -45,9 +43,9 @@ class Official extends Model
         return $this->hasMany(OfficialTraining::class);
     }
 
-    public function trainings()
+    public function officialOrganizations()
     {
-        return $this->hasMany(OfficialTraining::class);
+        return $this->hasMany(OfficialOrganization::class);
     }
 
     public function officialStudies()
@@ -60,20 +58,6 @@ class Official extends Model
         return $this->hasMany(OfficialStudy::class);
     }
 
-    public function positionOfficial()
-    {
-        return $this->hasOne(PositionOfficial::class);
-    }
-
-    public function officialOrganizations()
-    {
-        return $this->hasMany(OfficialOrganization::class);
-    }
-
-    public function organizations()
-    {
-        return $this->hasMany(OfficialOrganization::class);
-    }
     public function userVillage()
     {
         return $this->belongsTo(Village::class, 'user_village_id');
@@ -89,9 +73,19 @@ class Official extends Model
         return $this->belongsTo(Regency::class, 'user_regency_id');
     }
 
+    public function officialAddresses()
+    {
+        return $this->hasOne(OfficialAddress::class);
+    }
+
     public function addresses()
     {
         return $this->hasOne(OfficialAddress::class);
+    }
+
+    public function officialContacts()
+    {
+        return $this->hasOne(OfficialContact::class);
     }
 
     public function contacts()
@@ -99,28 +93,28 @@ class Official extends Model
         return $this->hasOne(OfficialContact::class);
     }
 
-    public function identities()
+    public function officialIdentities()
     {
         return $this->hasOne(OfficialIdentity::class);
     }
 
-
+    public function positionOfficials()
+    {
+        return $this->hasMany(PositionOfficial::class);
+    }
     public function positions()
     {
-        return $this->hasOne(PositionOfficial::class);
+        return $this->hasMany(PositionOfficial::class);
     }
 
-    public function position()
+    public function positionCurrent()
     {
-        return $this->hasOne(PositionOfficial::class);
+        return $this->hasOne(PositionOfficial::class)->latest();
     }
 
-    // Posisi saat ini
     public function position_current()
     {
-        // Ambil Data paling baru dari PositionOfficial berdasarkan id dari official ini
         return $this->hasOne(PositionOfficial::class)->latest();
-        // return $this->belongsTo(Position::class, 'position_id');
     }
 
     public function statusLogs()
@@ -128,8 +122,7 @@ class Official extends Model
         return $this->hasMany(OfficialStatusLog::class);
     }
 
-    // Tempat Bekerja
-    public function work_place()
+    public function workPlace()
     {
         return $this->hasOne(WorkPlaceOfficial::class);
     }
@@ -147,5 +140,10 @@ class Official extends Model
     public function spouse()
     {
         return $this->hasOne(SpouseOfficial::class);
+    }
+
+    public function identities()
+    {
+        return $this->hasOne(OfficialIdentity::class);
     }
 }

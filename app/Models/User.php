@@ -73,4 +73,16 @@ class User extends Authenticatable
     {
         return $this->hasMany(OfficialStatusLog::class);
     }
+
+    public function villages()
+    {
+        return $this->belongsToMany(Village::class, 'user_villages', 'user_id', 'village_id')
+                    ->withTimestamps();
+    }
+
+    public function regencies()
+    {
+        return $this->belongsToMany(Regency::class, 'user_regencies', 'user_id', 'regency_id')
+                    ->withTimestamps();
+    }
 }
