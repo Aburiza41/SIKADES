@@ -1,1 +1,0 @@
-import{r as o,a as i}from"./app-EIz8nQ5Q.js";const n=()=>{const[t,r]=o.useState([]),e=async()=>{try{const s=await i.get("/api/positions");r(s.data)}catch(s){console.error("Error fetching positions:",s)}};return o.useEffect(()=>{e()},[]),{positions:t}};export{n as default};

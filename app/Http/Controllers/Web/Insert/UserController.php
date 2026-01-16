@@ -95,7 +95,7 @@ class UserController extends Controller
             } catch (\Throwable $th) {
                 Log::error("Error processing row {$k_user}: {$th->getMessage()}", [
                     'data' => $v_user,
-                    'village' => $village ? $village->toArray() : null,
+                    'village' => (isset($village) && $village) ? $village->toArray() : null,
                     'regency' => $regency ? $regency->toArray() : null,
                 ]);
                 echo "Failed at row {$k_user}: Username {$v_user['username']} (Name: {$v_user['nama']}) - Error: {$th->getMessage()}<br>";
@@ -248,8 +248,8 @@ class UserController extends Controller
             ->orWhere('code', $cleanCode)
             ->when($formattedCode, function ($query) use ($formattedCode) {
                 return $query->orWhere('code_bps', $formattedCode)
-                             ->orWhere('code_dagri', $formattedCode)
-                             ->orWhere('code', $formattedCode);
+                    ->orWhere('code_dagri', $formattedCode)
+                    ->orWhere('code', $formattedCode);
             })
             ->first();
 
